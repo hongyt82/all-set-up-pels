@@ -205,7 +205,7 @@
 (function(document, Math, undefined) { // performance/minified-size optimization
 (function(factory) {
     if(typeof define === 'function' && define.amd) {
-        define(['all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery'], factory);
+        define(['all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery'], factory);
     } else if (jQuery && !jQuery.fn.sparkline) {
         factory(jQuery);
     }

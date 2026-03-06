@@ -31,11 +31,11 @@
 
 	if ( typeof define === 'function' && define.amd ) {
 		// Define as an AMD module if possible
-		define( 'datatables', ['all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery'], factory );
+		define( 'datatables', ['all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery'], factory );
 	}
     else if ( typeof exports === 'object' ) {
         // Node/CommonJS
-        factory( require( 'all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery' ) );
+        factory( require( 'all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery' ) );
     }
 	else if ( jQuery && !jQuery.fn.dataTable ) {
 		// Define using browser globals otherwise

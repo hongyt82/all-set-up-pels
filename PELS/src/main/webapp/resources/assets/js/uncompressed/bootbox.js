@@ -11,12 +11,12 @@
   "use strict";
   if (typeof define === "function" && define.amd) {
     // AMD. Register as an anonymous module.
-    define(["all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery"], factory);
+    define(["all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery"], factory);
   } else if (typeof exports === "object") {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.
-    module.exports = factory(require("all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery"));
+    module.exports = factory(require("all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery"));
   } else {
     // Browser globals (root is window)
     root.bootbox = factory(root.jQuery);

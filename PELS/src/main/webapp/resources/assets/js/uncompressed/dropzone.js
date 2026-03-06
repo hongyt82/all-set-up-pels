@@ -1865,10 +1865,10 @@ require.register("dropzone/lib/dropzone.js", function (exports, module) {
 });
 
 if (typeof exports == "object") {
-  module.exports = require("all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/dropzone");
+  module.exports = require("all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/dropzone");
 } else if (typeof define == "function" && define.amd) {
-  define([], function(){ return require("all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/dropzone"); });
+  define([], function(){ return require("all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/dropzone"); });
 } else {
-  this["Dropzone"] = require("all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/dropzone");
+  this["Dropzone"] = require("all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/dropzone");
 }
 })()

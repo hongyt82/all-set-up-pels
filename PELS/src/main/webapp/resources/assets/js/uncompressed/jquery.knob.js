@@ -13,7 +13,7 @@
 (function (factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
-        define(['all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery'], factory);
+        define(['all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery'], factory);
     } else {
         // Browser globals
         factory(jQuery);

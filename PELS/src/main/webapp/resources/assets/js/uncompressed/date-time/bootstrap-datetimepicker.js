@@ -29,7 +29,7 @@ THE SOFTWARE.
 ; (function (factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD is used - Register as an anonymous module.
-        define(['jquery', 'all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/date-time/moment'], factory);
+        define(['jquery', 'all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/date-time/moment'], factory);
     } else {
         // AMD is not used - Attempt to fetch dependencies from scope.
         if (!jQuery) {

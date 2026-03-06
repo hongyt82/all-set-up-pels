@@ -6,7 +6,7 @@
 
 (function(factory) {
 	if (typeof define === 'function' && define.amd) {
-		define([ 'all-set-up-pers/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery', 'moment' ], factory);
+		define([ 'all-set-up-pels/PELS/src/main/webapp/resources/assets/js/uncompressed/jquery', 'moment' ], factory);
 	}
 	else {
 		factory(jQuery, moment);
