@@ -1,0 +1,27 @@
+﻿# 무선기반업무지원서버 - 개발
+apiService:
+  id: WMSS-SERVER
+  name: 무선기반업무지원서버
+  domain: WMSS
+  apiKey: 
+apiHttpClient:
+  host:
+  port:
+winectComponent:
+  gatewayAddress: 10.151.11.196:9000
+  loggingAddress: 10.151.11.196:9091, 10.151.11.196:9092, 10.151.11.196:9093
+  controlPlaneAddress: 10.151.11.196:9020 
+runMode: CP
+
+
+# 로컬 테스트 설정
+apiService:
+  apiKey: 
+apiHttpClient:
+  host: 10.151.11.196
+  port: 9000
+winectComponent:
+  gatewayAddress:
+  loggingAddress:
+  controlPlaneAddress:
+runMode: CLIENT_TEST

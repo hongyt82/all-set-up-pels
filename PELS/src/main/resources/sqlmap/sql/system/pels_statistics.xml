@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.system.message">
+	<select id="StatsConnectList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+        SELECT REGPR_ID, REGPR_NM, CNT||'' CNT FROM (
+            SELECT ROW_NUMBER() OVER (ORDER BY CNT DESC) AS LISTNUM,
+                REGPR_ID, REGPR_NM, CNT 
+              FROM (
+                SELECT REGPR_ID, REGPR_NM, count(*) CNT FROM GE_MP_USE_S
+                 GROUP BY REGPR_ID, REGPR_NM
+             )
+             ORDER BY CNT DESC
+        )
+	</select>
+	
+	<select id="StatsExamList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+        SELECT PRCDOC_NO, CNT||'' CNT FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY CNT DESC) AS LISTNUM,
+			   PRCDOC_NO, CNT FROM (
+					SELECT B.PRCDOC_NO, count(*) CNT FROM GE_MP_CHECK_S A, GE_MP_PRCDOC_M B
+					 WHERE A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+					   AND B.PRCDOC_CFY = #{PRCDOC_CFY}
+					 GROUP BY B.PRCDOC_NO
+				) 
+				ORDER BY CNT DESC
+		)
+	</select>
+</mapper>

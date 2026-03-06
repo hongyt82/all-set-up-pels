@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.schedule.schedule">
+	<select id="ScheduleList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			A.UNQ_KY_VAL,
+			A.PRCDOC_UNQ_KY_VAL,
+			B.DIVS_CD,
+			B.PPCD,
+			A.CHCK_DY,
+			REGEXP_REPLACE(A.CHCK_DY, '(.{4})(.{2})(.{2})','\1-\2-\3') AS FM_CHCK_DY,
+			A.CHKPR_FNM,
+			B.PRCDOC_NO,
+			B.PRCDOC_NM,
+			B.RRD_CFY,
+			A.REGPR_ID,
+			A.REGPR_NM,
+			A.RG_DT,
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
+		FROM GE_MP_SCHE_S A
+		JOIN GE_MP_PRCDOC_M B
+		ON A.PRCDOC_UNQ_KY_VAL = B.PRCDOC_UNQ_KY_VAL
+		<if test='PPCD != ""'>
+		   AND B.PPCD = #{PPCD}
+		</if>
+		<if test='PRCDOC_NO != ""'>
+		   AND B.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+		</if>
+		<if test='PRCDOC_NM != ""'>
+		   AND B.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+		</if>
+		WHERE 1 = 1
+		<if test='CHKPR_FNM != ""'>
+		   AND A.CHKPR_FNM = #{CHKPR_FNM}
+		</if>
+		AND A.CHCK_DY BETWEEN #{CHCK_DY_S} AND #{CHCK_DY_E}
+		ORDER BY RG_DT DESC
+	</select>
+	
+	<select id="ScheduleCount" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*) 
+		FROM GE_MP_SCHE_S A
+		JOIN GE_MP_PRCDOC_M B
+		ON A.PRCDOC_UNQ_KY_VAL = B.PRCDOC_UNQ_KY_VAL
+		<if test='PPCD != ""'>
+		   AND B.PPCD = #{PPCD}
+		</if>
+		<if test='PRCDOC_NO != ""'>
+		   AND B.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+		</if>
+		<if test='PRCDOC_NM != ""'>
+		   AND B.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+		</if>
+		WHERE 1 = 1
+		<if test='CHKPR_FNM != ""'>
+		   AND A.CHKPR_FNM = #{CHKPR_FNM}
+		</if>
+		AND A.CHCK_DY BETWEEN #{CHCK_DY_S} AND #{CHCK_DY_E}
+	</select>
+	
+	<insert id="InsertSchedule" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_SCHE_S
+		(
+			UNQ_KY_VAL,
+			PRCDOC_UNQ_KY_VAL,
+			CHCK_DY,
+			CHKPR_FNM,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT
+		)
+		VALUES
+		(
+			(SELECT NVL(MAX(UNQ_KY_VAL), 0) +1 FROM GE_MP_SCHE_S),
+			#{PRCDOC_UNQ_KY_VAL},
+			#{CHCK_DY},
+			#{CHKPR_FNM},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE
+		)
+	</insert>
+	
+	<update id="UpdateSchedule" parameterType="java.util.HashMap">
+		UPDATE GE_MP_SCHE_S
+		   SET CHCK_DY   = #{CHCK_DY},
+			   CHKPR_FNM = #{CHKPR_FNM},
+			   REGPR_ID  = #{REGPR_ID},
+			   REGPR_NM  = #{REGPR_NM},
+			   RG_DT     = SYSDATE
+		 WHERE UNQ_KY_VAL = #{UNQ_KY_VAL}
+	</update>
+	
+	<delete id="DeleteSchedule" parameterType="java.util.HashMap">
+		DELETE FROM GE_MP_SCHE_S
+		 WHERE UNQ_KY_VAL IN (${CHK_ITEMS})
+	</delete>
+	
+	<select id="ScheduleDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			A.UNQ_KY_VAL,
+			A.PRCDOC_UNQ_KY_VAL,
+			B.DIVS_CD,
+			B.PPCD,
+			A.CHCK_DY,
+			REGEXP_REPLACE(A.CHCK_DY, '(.{4})(.{2})(.{2})','\1-\2-\3') AS FM_CHCK_DY,
+			A.CHKPR_FNM,
+			B.PRCDOC_NO,
+			B.PRCDOC_NM,
+			B.RRD_CFY,
+			A.REGPR_ID,
+			A.REGPR_NM,
+			A.RG_DT,
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
+		FROM GE_MP_SCHE_S A
+		JOIN GE_MP_PRCDOC_M B
+		ON A.PRCDOC_UNQ_KY_VAL = B.PRCDOC_UNQ_KY_VAL
+		WHERE UNQ_KY_VAL = #{UNQ_KY_VAL}
+	</select>
+</mapper>

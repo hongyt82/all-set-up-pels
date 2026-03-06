@@ -1,0 +1,49 @@
+
+/* DefaultPanel */
+.RealPanel{margin-bottom:5px;}
+.RealPanel .Title{}
+.RealPanel .Title .Outline{width:100%}
+.RealPanel .Title .TitleArea{float:left;height:34px;}
+.RealPanel .Title .ControlArea{float:right;height:34px;}
+.RealPanel .Title:after{content:"";display:block;clear:both}
+
+.RealPanel .Title .SubTitle{line-height:34px;color:#0057a9;font-weight:bold;display:inline-block;font-size:14px;padding-right:10px;}
+.RealPanel .Title .count{line-height:34px;color:#0057a9;font-weight:bold;padding-right:10px;}
+.RealPanel .Title .ControlArea .Label{line-height:34px}
+
+/* Expanded Style */
+.RealPanel .Expanded{border:1px solid #fff;}
+.RealPanel .Expanded .Title{}
+.RealPanel .Expanded .Title .SubTitle{}
+.RealPanel .Expanded .Title .SubTitle .Wrap{}
+
+/* Collapsed Style */
+.RealPanel .Collapsed{width:100%;border:1px solid #ccc;background:#f0f0f0}
+.RealPanel .Collapsed .Title{padding:0 3px;}
+.RealPanel .Collapsed .Title .SubTitle{background:url('../Image/CollapsedTitlebullet.gif') no-repeat 0px 50%;}
+
+.RealPanel .ContentPanel{}
+
+/* LinePanel*/
+.RealPanel .LinePanel{}
+.RealPanel .LinePanel .ContentPanel{padding:16px 20px;border:1px solid #e1e1e1;}
+.RealPanel .LinePanel .ContentPanel p{padding:0;margin:0}
+
+/* DualPanel */
+.DualPanel{clear:both;}
+.DualPanel .Title{}
+
+.DualPanel .ContentPanel{border:1px solid #dadada;background:#f5f5f5;padding:5px;border-sizing:border-box}
+.DualPanel .ContentPanel .ContentPanel{background:#fff;padding:5px;}
+.DualPanel .ContentPanel .RealPanel{margin-bottom:0}
+
+.DualPanelCenter{padding:0px 5px;vertical-align:middle;} 
+
+
+
+
+
+
+
+
+

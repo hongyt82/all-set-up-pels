@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.outcome.item">
+	<select id="OutcomeAplprList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+			SELECT TST_UNQ_KY_VAL,
+				APRV_CFY,
+				APRV_SEQ,
+			    APLPR_ID, 
+			    APLPR_NM,
+			    APLPR_SCTN_ID,
+			    APLPR_SCTN_NM,
+			    APRV_YN,
+			    APRV_DT,
+			    APLPR_OPNN_CTT,
+				APRV_TYP,
+				APLPR_JBPS_NM,
+				TO_CHAR(A.APRV_DT, 'YY/MM/DD') AS FM_APRV_DT
+			FROM GE_MP_APLPR_S A
+			WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+			ORDER BY APRV_SEQ
+	</select>
+	
+	<insert id="InsertAplpr" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_APLPR_S
+		(
+			TST_UNQ_KY_VAL,
+			APRV_CFY,
+			APRV_SEQ,
+			APLPR_ID,
+			APLPR_NM,
+			APLPR_SCTN_ID,
+			APLPR_SCTN_NM,
+			APRV_YN,
+			APRV_DT,
+			APLPR_OPNN_CTT,
+			APRV_TYP,
+			APLPR_JBPS_NM
+		)
+		VALUES
+		(
+			#{TST_UNQ_KY_VAL},
+			#{APRV_CFY},
+			#{APRV_SEQ},
+			#{APLPR_ID},
+			#{APLPR_NM},
+			#{APLPR_SCTN_ID},
+			#{APLPR_SCTN_NM},
+			#{APRV_YN},
+			SYSDATE,
+			#{APLPR_OPNN_CTT},
+			#{APRV_TYP},
+			#{APLPR_JBPS_NM}
+		)
+	</insert>
+	
+	<insert id="InsertAplpr2" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_APLPR_S
+		(
+			TST_UNQ_KY_VAL,
+			APRV_CFY,
+			APRV_SEQ,
+			APLPR_ID,
+			APLPR_NM,
+			APLPR_SCTN_ID,
+			APLPR_SCTN_NM,
+			APRV_YN,
+			APRV_DT,
+			APLPR_OPNN_CTT,
+			APRV_TYP,
+			APLPR_JBPS_NM
+		)
+		VALUES
+		(
+			#{TST_UNQ_KY_VAL},
+			#{APRV_CFY},
+			#{APRV_SEQ},
+			#{APLPR_ID},
+			#{APLPR_NM},
+			#{APLPR_SCTN_ID},
+			#{APLPR_SCTN_NM},
+			#{APRV_YN},
+			#{APRV_DT},
+			#{APLPR_OPNN_CTT},
+			#{APRV_TYP},
+			#{APLPR_JBPS_NM}
+		)
+	</insert>
+	
+	<update id="UpdateAplprApprove" parameterType="java.util.HashMap">
+		UPDATE GE_MP_APLPR_S
+		   SET APRV_YN 	   = 'Y',
+			   APRV_DT 	   = SYSDATE
+	 	 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	  	   AND APRV_SEQ = #{APRV_SEQ}
+	   	   AND APLPR_ID = #{APLPR_ID}
+	</update>
+	
+	<delete id="DeleteAplpr" parameterType="java.util.HashMap">
+		DELETE FROM GE_MP_APLPR_S
+		 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	</delete>	
+	
+</mapper>

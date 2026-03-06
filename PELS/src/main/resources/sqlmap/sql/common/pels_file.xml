@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.file">
+	<select id="FileList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			ATFL_KY_VAL,
+			ATFL_GRUP_NM,
+			UNQ_NO,
+			ATFL_ID,
+			ATFL_PTH_NM,
+			ATFL_TITL_NM,
+			ATFL_ORSRC_NM,
+			ATFL_PHCL_NM,
+			ATFL_FEXT_NM,
+			ATFL_SZ
+		FROM GE_MP_FILE_S A
+		WHERE 1 = 1
+	    <if test='ATFL_GRUP_NM != ""'>
+		    AND A.ATFL_GRUP_NM = #{ATFL_GRUP_NM}
+	    </if>
+	    <if test='UNQ_NO != ""'>
+		    AND A.UNQ_NO = #{UNQ_NO}
+	    </if>
+	    <if test='ATFL_ID != ""'>
+		    AND A.ATFL_ID = #{ATFL_ID}
+	    </if>
+	</select>
+	
+	<select id="FileCount" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*) 
+		FROM GE_MP_FILE_S A
+		WHERE 1 = 1
+		<if test='ATFL_GRUP_NM != ""'>
+		    AND A.ATFL_GRUP_NM = #{ATFL_GRUP_NM}
+	    </if>
+	    <if test='UNQ_NO != ""'>
+		    AND A.UNQ_NO = #{UNQ_NO}
+	    </if>
+	    <if test='ATFL_ID != ""'>
+		    AND A.ATFL_ID = #{ATFL_ID}
+	    </if>
+	</select>
+	
+	<insert id="InsertFile" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_FILE_S
+		(
+			ATFL_KY_VAL,
+			ATFL_GRUP_NM,
+			UNQ_NO,
+			ATFL_ID,
+			ATFL_PTH_NM,
+			ATFL_TITL_NM,
+			ATFL_ORSRC_NM,
+			ATFL_PHCL_NM,
+			ATFL_FEXT_NM,
+			ATFL_SZ,
+			RG_DT,
+			DLT_YN
+		)
+		VALUES
+		(
+			(SELECT NVL(MAX(ATFL_KY_VAL), 0) +1 FROM GE_MP_FILE_S),
+			#{ATFL_GRUP_NM},
+			#{UNQ_NO},
+			#{ATFL_ID},
+			#{ATFL_PTH_NM},
+			#{ATFL_TITL_NM},
+			#{ATFL_ORSRC_NM},
+			#{ATFL_PHCL_NM},
+			#{ATFL_FEXT_NM},
+			#{ATFL_SZ},
+			SYSDATE,
+			'N'
+		)
+	</insert>
+	
+	<update id="UpdateFile" parameterType="java.util.HashMap">
+		UPDATE GE_MP_FILE_S
+		   SET <if test='ATFL_PTH_NM != ""'>
+		    	ATFL_PTH_NM = #{ATFL_PTH_NM},
+	    	   </if>
+			   <if test='ATFL_ORSRC_NM != ""'>
+			   	ATFL_ORSRC_NM = #{ATFL_ORSRC_NM},
+			   </if>
+			   <if test='ATFL_PHCL_NM != ""'>
+			    ATFL_PHCL_NM = #{ATFL_PHCL_NM},
+			   </if>
+			   <if test='ATFL_FEXT_NM != ""'>
+			    ATFL_FEXT_NM = #{ATFL_FEXT_NM},
+			   </if>
+			   <if test='ATFL_SZ != ""'>
+			    ATFL_SZ = #{ATFL_SZ},
+			   </if>
+			   ATFL_TITL_NM = #{ATFL_TITL_NM}
+		 WHERE ATFL_GRUP_NM = #{ATFL_GRUP_NM}
+		 AND   UNQ_NO = #{UNQ_NO}
+		 AND   ATFL_ID = #{ATFL_ID}
+	</update>
+	
+	<update id="DeleteFile" parameterType="java.util.HashMap">
+		UPDATE GE_MP_FILE_S
+		   SET DLT_YN = 'Y'
+		WHERE ATFL_GRUP_NM = #{ATFL_GRUP_NM}
+		AND   UNQ_NO = #{UNQ_NO}
+		<if test='ATFL_ID != ""'>
+			AND   ATFL_ID = #{ATFL_ID}
+		</if>
+	</update>
+	
+	<!-- 
+	<delete id="DeleteFile" parameterType="java.util.HashMap">
+		DELETE FROM GE_MP_FILE_S
+		WHERE ATFL_GRUP_NM = #{ATFL_GRUP_NM}
+		AND   UNQ_NO = #{UNQ_NO}
+		<if test='ATFL_ID != ""'>
+			AND   ATFL_ID = #{ATFL_ID}
+		</if>
+	</delete>
+	-->
+	
+	<update id="DeleteFiles" parameterType="java.util.HashMap">
+		UPDATE GE_MP_FILE_S
+		   SET DLT_YN = 'Y'
+		WHERE ATFL_GRUP_NM = #{ATFL_GRUP_NM}
+		AND   UNQ_NO IN (${CHK_ITEMS})
+	</update>
+	
+	<!-- 	
+	<delete id="DeleteFiles" parameterType="java.util.HashMap">
+		DELETE FROM GE_MP_FILE_S
+		WHERE ATFL_GRUP_NM = #{ATFL_GRUP_NM}
+		AND   UNQ_NO IN (${CHK_ITEMS})
+	</delete>
+	 -->	
+	
+	<select id="FileDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			ATFL_KY_VAL,
+			ATFL_GRUP_NM,
+			UNQ_NO,
+			ATFL_ID,
+			ATFL_PTH_NM,
+			ATFL_TITL_NM,
+			ATFL_ORSRC_NM,
+			ATFL_PHCL_NM,
+			ATFL_FEXT_NM,
+			ATFL_SZ
+		FROM GE_MP_FILE_S A
+		WHERE 1 = 1
+	    AND A.ATFL_GRUP_NM = #{ATFL_GRUP_NM}
+	    AND A.UNQ_NO = #{UNQ_NO}
+	    AND A.ATFL_ID = #{ATFL_ID}
+	</select>
+</mapper>

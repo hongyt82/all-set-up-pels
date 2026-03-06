@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.board.board">
+	<select id="BoardList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY A.MDF_DT DESC) AS LISTNUM,
+				GRUP_CFY_CD,
+				BLBR_UNQ_KY_VAL,
+				BLBR_TITL_NM,
+				FIRST_INPPR_ID,
+				FIRST_INPPR_NM,
+				FIRST_INPT_DT,
+				UPDR_ID,
+				UPDR_NM,
+				MDF_DT,
+				BLBR_CTT,
+				TO_CHAR(MDF_DT, 'YYYY-MM-DD') AS FM_MDF_DT,
+	            (SELECT ATFL_ORSRC_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_BOARD_S' AND UNQ_NO = A.BLBR_UNQ_KY_VAL AND ATFL_ID = '1') ONAME1,
+	            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_BOARD_S' AND UNQ_NO = A.BLBR_UNQ_KY_VAL AND ATFL_ID = '1') FNAME1
+			FROM GE_MP_BOARD_S A
+			WHERE DLT_YN = 'N'
+			<if test='GRUP_CFY_CD != ""'>
+			  AND GRUP_CFY_CD =  #{GRUP_CFY_CD}
+			</if>
+			<if test='BLBR_TITL_NM != ""'>
+			   AND A.BLBR_TITL_NM = #{BLBR_TITL_NM}
+			</if>
+			ORDER BY MDF_DT DESC
+		)
+		WHERE LISTNUM BETWEEN #{DISPSTART} AND #{DISPEND}		
+	</select>
+	
+	<select id="BoardCount" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*) 
+		FROM GE_MP_BOARD_S A
+		WHERE GRUP_CFY_CD =  #{GRUP_CFY_CD}
+		  AND DLT_YN = 'N'
+		<if test='BLBR_TITL_NM != ""'>
+		   AND A.BLBR_TITL_NM = #{BLBR_TITL_NM}
+		</if>
+	</select>
+	
+	<select id="BoardLastUnqNo" resultType="string">
+		SELECT NVL(MAX(BLBR_UNQ_KY_VAL), 0) +1 FROM GE_MP_BOARD_S
+	</select>	
+	
+	<insert id="InsertBoard" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_BOARD_S
+		(
+			GRUP_CFY_CD,
+			BLBR_UNQ_KY_VAL,
+			BLBR_TITL_NM,
+			FIRST_INPPR_ID,
+			FIRST_INPPR_NM,
+			FIRST_INPT_DT,
+			UPDR_ID,
+			UPDR_NM,
+			MDF_DT,
+			BLBR_CTT,
+			DLT_YN
+		)
+		VALUES
+		(
+			#{GRUP_CFY_CD},
+			#{BLBR_UNQ_KY_VAL},
+			#{BLBR_TITL_NM},
+			#{FIRST_INPPR_ID},
+			#{FIRST_INPPR_NM},
+			SYSDATE,
+			#{UPDR_ID},
+			#{UPDR_NM},
+			SYSDATE,
+			#{BLBR_CTT},
+			'N'
+		)
+	</insert>	
+	
+	<select id="BoardDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+				GRUP_CFY_CD,
+				BLBR_UNQ_KY_VAL,
+				BLBR_TITL_NM,
+				FIRST_INPPR_ID,
+				FIRST_INPPR_NM,
+				FIRST_INPT_DT,
+				UPDR_ID,
+				UPDR_NM,
+				MDF_DT,
+				BLBR_CTT,
+				TO_CHAR(MDF_DT, 'YYYY-MM-DD') AS FM_MDF_DT,
+	            (SELECT ATFL_ORSRC_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_BOARD_S' AND UNQ_NO = A.BLBR_UNQ_KY_VAL AND ATFL_ID = '1') ONAME1,
+	            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_BOARD_S' AND UNQ_NO = A.BLBR_UNQ_KY_VAL AND ATFL_ID = '1') FNAME1
+	  	 FROM GE_MP_BOARD_S A
+		 WHERE BLBR_UNQ_KY_VAL = #{BLBR_UNQ_KY_VAL}
+	</select>	
+	
+	<update id="UpdateBoard" parameterType="java.util.HashMap">
+		UPDATE GE_MP_BOARD_S
+		   SET BLBR_TITL_NM = #{BLBR_TITL_NM},
+			   BLBR_CTT  	= #{BLBR_CTT},
+			   UPDR_ID 		= #{UPDR_ID},
+			   UPDR_NM 		= #{UPDR_NM},
+			   MDF_DT 		= SYSDATE
+		 WHERE BLBR_UNQ_KY_VAL = #{BLBR_UNQ_KY_VAL}
+	</update>	
+	
+	<update id="DeleteBoard" parameterType="java.util.HashMap">
+		UPDATE GE_MP_BOARD_S
+		   SET DLT_YN = 'Y',
+			   UPDR_ID 		= #{UPDR_ID},
+			   UPDR_NM 		= #{UPDR_NM},
+			   MDF_DT 		= SYSDATE
+		 WHERE BLBR_UNQ_KY_VAL = #{BLBR_UNQ_KY_VAL}
+	</update>
+	
+</mapper>

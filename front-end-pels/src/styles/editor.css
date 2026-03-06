@@ -1,0 +1,148 @@
+@import 'tailwindcss';
+
+/* PDF Editor 전용 스타일 */
+
+.editor-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.editor-header h1 {
+  color: white;
+  font-weight: 600;
+}
+
+.editor-toolbar {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.editor-toolbar-btn {
+  padding-left: 0.75rem; /* px-3 */
+  padding-right: 0.75rem; /* px-3 */
+  padding-top: 0.5rem; /* py-2 */
+  padding-bottom: 0.5rem; /* py-2 */
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  color: #374151; /* text-gray-700 */
+  border-radius: 0.375rem; /* rounded-md */
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-duration: 150ms; /* transition-colors */
+}
+
+.editor-toolbar-btn:hover {
+  background-color: #f3f4f6; /* hover:bg-gray-100 */
+}
+
+.editor-pdf-content {
+  background: #fefefe;
+}
+
+.editor-footer {
+  background: #1e293b;
+}
+
+.editor-footer p {
+  color: #cbd5e1;
+}
+
+/* 편집기 특화 애니메이션 */
+.editor-fade-in {
+  animation: editorFadeIn 0.3s ease-in-out;
+}
+
+@keyframes editorFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 오버레이 특화 스타일 */
+.overlay-active {
+  background: linear-gradient(
+    45deg,
+    rgba(139, 69, 19, 0.15) 0%,
+    rgba(160, 82, 45, 0.2) 50%,
+    rgba(139, 69, 19, 0.15) 100%
+  );
+  border: 2px dashed rgba(139, 69, 19, 0.8);
+  box-shadow:
+    inset 0 0 20px rgba(139, 69, 19, 0.1),
+    0 4px 12px rgba(139, 69, 19, 0.2);
+}
+
+.overlay-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(139, 69, 19, 0.05) 10px,
+    rgba(139, 69, 19, 0.05) 20px
+  );
+  pointer-events: none;
+}
+
+/* 커스텀 슬라이더 스타일 */
+.slider-custom [data-slot='slider-track'] {
+  background: rgba(75, 85, 99, 0.6) !important; /* 기본 트랙 색상 - 회색 */
+  height: 8px !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.slider-custom [data-slot='slider-range'] {
+  background: linear-gradient(
+    90deg,
+    #3b82f6 0%,
+    #1d4ed8 100%
+  ) !important; /* 파란색 그라데이션 */
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  transition: all 0.3s ease;
+}
+
+.slider-custom [data-slot='slider-thumb'] {
+  width: 20px !important;
+  height: 20px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 50% !important;
+  box-shadow:
+    0 4px 12px rgba(59, 130, 246, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer;
+}
+
+.slider-custom [data-slot='slider-thumb']:hover {
+  transform: scale(1.1);
+  box-shadow:
+    0 6px 16px rgba(59, 130, 246, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  border-color: #1d4ed8 !important;
+}
+
+.slider-custom [data-slot='slider-thumb']:active {
+  transform: scale(1.05);
+  box-shadow:
+    0 4px 12px rgba(59, 130, 246, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+.slider-custom [data-slot='slider-thumb']:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+}

@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="lib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/PELS/src/main/webapp/WEB-INF/lib/scsl.jar!/" />
+      <root url="jar://$PROJECT_DIR$/PELS/src/main/webapp/WEB-INF/lib/javase.jar!/" />
+      <root url="jar://$PROJECT_DIR$/PELS/src/main/webapp/WEB-INF/lib/wisenut30.jar!/" />
+      <root url="jar://$PROJECT_DIR$/PELS/src/main/webapp/WEB-INF/lib/sqljdbc4.jar!/" />
+      <root url="jar://$PROJECT_DIR$/PELS/src/main/webapp/WEB-INF/lib/wisegateway.jar!/" />
+      <root url="jar://$PROJECT_DIR$/PELS/src/main/webapp/WEB-INF/lib/webserviceutils.jar!/" />
+      <root url="jar://$PROJECT_DIR$/PELS/src/main/webapp/WEB-INF/lib/core.jar!/" />
+      <root url="jar://$PROJECT_DIR$/PELS/src/main/webapp/WEB-INF/lib/WAJavaAPI_v1.3.1.52.190430_jdk1.6.0_45.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

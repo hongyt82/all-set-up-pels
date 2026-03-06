@@ -1,0 +1,111 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# ============================================
+# Default settings for all files
+# ============================================
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# ============================================
+# Specific file types
+# ============================================
+
+# TypeScript and JavaScript files
+[*.{js,jsx,ts,tsx}]
+indent_style = space
+indent_size = 2
+
+# JSON files
+[*.json]
+indent_style = space
+indent_size = 2
+
+# CSS and SCSS files
+[*.{css,scss,sass}]
+indent_style = space
+indent_size = 2
+
+# HTML files
+[*.html]
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+indent_style = space
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# ============================================
+# Configuration files
+# ============================================
+
+# Package.json and config files
+[package.json]
+indent_style = space
+indent_size = 2
+
+[*.config.{js,ts,cjs,mjs}]
+indent_style = space
+indent_size = 2
+
+# ============================================
+# Windows-specific files
+# ============================================
+
+# Batch files (Windows)
+[*.{bat,cmd}]
+end_of_line = crlf
+indent_style = space
+indent_size = 2
+
+# PowerShell files
+[*.ps1]
+end_of_line = crlf
+indent_style = space
+indent_size = 2
+
+# ============================================
+# Unix-specific files
+# ============================================
+
+# Shell scripts
+[*.{sh,bash}]
+end_of_line = lf
+indent_style = space
+indent_size = 2
+
+# ============================================
+# Special files
+# ============================================
+
+# Git files
+[.gitignore]
+end_of_line = lf
+indent_style = space
+indent_size = 2
+
+[.gitattributes]
+end_of_line = lf
+indent_style = space
+indent_size = 2
+
+# EditorConfig file itself
+[.editorconfig]
+end_of_line = lf
+indent_style = space
+indent_size = 2

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.common">
+	<select id="UserInfo" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+        SELECT DISTINCT A.*,
+        	   NVL(NVL(JIKJE6, NVL(JIKJE5, NVL(JIKJE4, NVL(JIKJE3, NVL(JIKJE2, NVL(JIKJE1, '')))))), '00000000') AS JIKJE,
+               NVL(JJTXT6, NVL(JJTXT5, NVL(JJTXT4, NVL(JJTXT3, NVL(JJTXT2, NVL(JJTXT1, '')))))) AS JJTXT,
+               (SELECT AUTH_CD FROM (SELECT AUTH_CD FROM COMM.USER_AUTH_V@HPOSS_LINK WHERE USER_ID = #{USER_ID} AND SYS_CD = 'MPPS' ORDER BY AUTH_CD ASC) WHERE ROWNUM = 1) AS AUTH_CD 
+		  FROM COMM.USER_INFO_V@HPOSS_LINK A
+		 WHERE A.USER_ID = #{USER_ID}
+		   AND A.DUP_FLAG = '0'
+    </select>
+    
+	<!-- 발전소 타입 조회 -->
+	<select id="GetPlantType" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT DISTINCT PWPL_CFY
+			 , DECODE(PWPL_CFY, 1, '수력', 2, '양수', 3, '원자력') AS PWPL_CFY_NM
+		  FROM GE_MP_PWPL_C
+		 ORDER BY PWPL_CFY
+	</select>
+	
+	<!-- 발전소 코드 조회 -->
+	<select id="GetPlantCode" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT PPCD, PWPL_NM AS PWPL_NM
+		  FROM GE_MP_PWPL_C
+		 WHERE PWPL_CFY = #{PWPL_CFY}
+	</select>
+	
+	<!-- 발전소 코드 조회 -->
+	<select id="GetPlantHead" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT DISTINCT DIVS_CD AS PPCD, DIVS_NM AS PWPL_NM
+		  FROM GE_MP_PWPL_C
+		 WHERE PWPL_CFY = 3
+	</select>
+	
+	<!-- 발전소 호기 조회 -->
+	<select id="GetHogi" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+ 		SELECT PPCD AS HOGI_CODE, PWPL_NM AS HOGI_NAME
+		  FROM GE_MP_PWPL_C
+		 WHERE PPCD LIKE ''||#{DIVS_CD}||'%'	
+	</select>    
+	
+	<insert id="InsertMessage" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_MSGE_S
+		(
+			TST_UNQ_KY_VAL,
+			FRM_CFY,
+			RELTN_SCTN_NM,
+			MSG_CTT,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT
+		)
+		VALUES
+		(
+			#{TST_UNQ_KY_VAL},
+			#{FRM_CFY},
+			#{RELTN_SCTN_NM},
+			#{MSG_CTT},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE
+		)
+	</insert>	
+	
+	<select id="MessageList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT TST_UNQ_KY_VAL, FRM_CFY, RELTN_SCTN_NM, MSG_CTT, REGPR_ID, REGPR_NM, RG_DT
+		  FROM GE_MP_MSGE_S
+		 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+		   AND FRM_CFY = #{FRM_CFY}
+      ORDER BY RG_DT ASC		   
+	</select>	
+	
+	<insert id="SetUsecase" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_USE_S
+		(
+			PPCD,
+			TYPE_CD,
+			RG_SCCD,
+			HOLD_SCCD,
+			DOC_UNQ_ID,
+			SYS_ACSS_CFY_CD,
+			RMK,
+			REGPR_IP_ADDR,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT
+		)
+		VALUES
+		(
+			#{PPCD},
+			#{TYPE_CD},
+			#{RG_SCCD},
+			#{HOLD_SCCD},
+			#{DOC_UNQ_ID},
+			#{SYS_ACSS_CFY_CD},
+			#{RMK},
+			#{REGPR_IP_ADDR},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE
+		)
+	</insert>	
+	
+	<insert id="InsertEcap" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_ECAP_S
+		(
+			TST_UNQ_KY_VAL,
+			DIVS_CD,
+			PPCD,
+			NOTN_DCR,
+			NOTN_CTT,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			DLT_YN
+		)
+		VALUES
+		(
+			#{TST_UNQ_KY_VAL},
+			#{DIVS_CD},
+			#{PPCD},
+			#{NOTN_DCR},
+			#{NOTN_CTT},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE,
+			'N'
+		)
+	</insert>	
+	
+	<select id="GetSchedule" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT FRM_UNQ_KY_VAL||'' AS FRM_UNQ_KY_VAL, ATCT_NM, RRD_CFY  
+		  FROM GE_MP_PRCDOC_M
+		 WHERE DLT_YN = 'N'
+		    AND AUCR_YN = 'Y'
+    </select>
+    
+	<insert id="InsertRfcJob" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_RFCJOB_S
+		(
+			PWPL_PUCD,
+			PLN_SCCD,
+			PLN_SCTN_NM,
+			WRK_SCCD,
+			WRK_SCTN_NM,
+			WRK_SRVLNC_ID,
+			WRK_SPRVS_FNM,
+			WRKOR_TYP_CD,
+			WRKOR_NO,
+			FNCLC_ID,
+			WRK_NM,
+			BSC_STRT_DY,
+			BSC_STRT_TM,
+			BSC_END_DY,
+			BSC_END_TM,
+			PJB_TYPE_NM,
+			PJB_TYPE_CD,
+			PJB_TM,
+			PJB_PLC_NM,
+			RG_DT
+		)
+		VALUES
+		(
+			#{PWPL_PUCD},
+			#{PLN_SCCD},
+			#{PLN_SCTN_NM},
+			#{WRK_SCCD},
+			#{WRK_SCTN_NM},
+			#{WRK_SRVLNC_ID},
+			#{WRK_SPRVS_FNM},
+			#{WRKOR_TYP_CD},
+			#{WRKOR_NO},
+			#{FNCLC_ID},
+			#{WRK_NM},
+			#{BSC_STRT_DY},
+			#{BSC_STRT_TM},
+			#{BSC_END_DY},
+			#{BSC_END_TM},
+			#{PJB_TYPE_NM},
+			#{PJB_TYPE_CD},
+			#{PJB_TM},
+			#{PJB_PLC_NM},
+			SYSDATE
+		)
+	</insert>	
+        
+</mapper>

@@ -1,0 +1,207 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta charset="utf-8" />
+		<title>정주기시험 모바일절차서 시스템</title>
+		<meta name="description" content="overview &amp; stats" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+		<link rel="stylesheet" href="/resources/assets/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="/resources/assets/css/font-awesome.min.css" />
+		<link rel="stylesheet" href="/resources/assets/css/all.css"> <!--load all styles -->
+		<link rel="stylesheet" href="/resources/assets/css/ace-fonts.css" />
+		<link rel="stylesheet" href="/resources/assets/css/ace.min.css" id="main-ace-style" />		
+		<link rel="stylesheet" href="/resources/themes/QuartzLight/QuartzLight.css">
+		<link rel="stylesheet" href="/resources/assets/css/ace-skins.min.css" />
+		<link rel="stylesheet" href="/resources/assets/css/ace-rtl.min.css" />
+		
+		<link rel="stylesheet" type="text/css" href="/resources/datepicker/jquery-ui.min.css">
+		<link rel="stylesheet" href="/resources/assets/css/datepicker.css" />
+		<link rel="stylesheet" href="/resources/assets/css/daterangepicker.css" />
+		<link rel="stylesheet" href="/resources/assets/css/bootstrap-datetimepicker.css" />		
+		<script src="/resources/assets/js/ace-extra.min.js"></script>
+		<script type="text/javascript">
+			window.jQuery || document.write("<script src='/resources/assets/js/jquery.min.js'>"+"<"+"/script>");
+		</script>
+		<script type="text/javascript" src="/resources/assets/datepicker/jquery-ui.min.js" ></script>
+		<script type="text/javascript">
+			const PDF_IP = 'http://10.53.0.21';
+		
+			function dateInit () {
+				$("#PBLSH_DY, #RG_DT_S, #RG_DT_E, #RG_DT, #SHOOT_DATE, #FLMNG_DT_S, #FLMNG_DT_E, #SCH_DATE_S, #SCH_DATE_E, #CHCK_DY, #CHCK_DY_S, #CHCK_DY_E, #CHCK_STRT_DT, #CHCK_END_DT, #OCCR_DY").datepicker({
+					onSelect: function (date, evt) {
+						if(evt.id == "incident_date") fncSetIncidentNo(3, date);
+					},		
+					showAnimation: 'slideDown',
+					showOtherMonths: true,
+					selectOtherMonths: true,
+					changeYear: true,
+					changeMonth: true,
+					/*yearSuffix: '년',*/
+					dateFormat: 'yy-mm-dd', /* yy/mm/dd = 2014/12/23 */
+					prevText: '이전 달',
+					nextText: '다음 달',
+					monthNames: ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+					monthNamesShort: ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+					dayNames: ['일','월','화','수','목','금','토'],
+					dayNamesShort: ['일','월','화','수','목','금','토'],
+					dayNamesMin: ['일','월','화','수','목','금','토'],
+					showMonthAfterYear: true
+				});
+			}
+			
+			function fncDatePicker (id) {
+				let obj = document.getElementById(id);
+				if (obj != null && obj != "undefined") {
+					$("#"+id).datepicker('show');
+				}
+			}
+			
+			// 필수값 체크
+			function gfnChkReqValidation () {
+				const selElement = $('#form select')
+				const txtElement = $('#form input')
+				const teaElement = $('#form textarea')
+				
+				for (let i = 0; i < selElement.length; i++) {
+					if ($(selElement[i]).attr('required')) {
+						let selVal = $.trim($(selElement[i]).val())
+						if (selVal == null || selVal.length == 0 || selVal == undefined) {
+							alert('['+$(selElement[i]).attr('title') + '] 은(는) 필수 입력값입니다.')
+							return false
+							break
+						}
+					}
+				}
+				
+				for (let i = 0; i < txtElement.length; i++) {
+					if ($(txtElement[i]).attr('required')) {
+						let txtVal = $.trim($(txtElement[i]).val())
+						if (txtVal == null || txtVal.length == 0 || txtVal == undefined) {
+							alert('['+$(txtElement[i]).attr('title') + '] 은(는) 필수 입력값입니다.')
+							return false
+							break
+						}
+					}
+				}
+				
+				for (let i = 0; i < teaElement.length; i++) {
+					if ($(teaElement[i]).attr('required')) {
+						let teaVal = $.trim($(teaElement[i]).val())
+						if (teaVal == null || teaVal.length == 0 || teaVal == undefined) {
+							alert('['+$(teaElement[i]).attr('title') + '] 은(는) 필수 입력값입니다.')
+							return false
+							break
+						}
+					}
+				}
+				
+				
+				return true
+			}
+			
+			function gfnIsNull (v) {
+				return !($.trim(v) != undefined && $.trim(v) != null && $.trim(v) != '')
+			}
+			
+			function gfnNvl (a, b) {
+				if (gfnIsNull(a)) return b
+				else return a
+			}
+			
+			
+			function ctrlGroupChart () {
+				$('#treeMn li').on('click', function(e){
+					$('#treeMn li span').removeClass('slcted');
+					$(this).find('> span').addClass('slcted');
+					e.stopPropagation();
+				});
+				
+				$('.wrapGroupChart .btnOepnAll').on('click', function () {
+					$('.filetree li.expandable span').trigger('click');
+					$('.filetree li.collapsable ul').show();
+					return false
+				});
+				
+				$('.wrapGroupChart .btnCloseAll').on('click', function(){
+					$('.filetree li.collapsable span').trigger('click');
+					return false
+				});
+				
+				//200818 조직도 선택시 즉시처리(사진조회 - 부서 사진 경우만)
+				/*$("#treeMn span").on('click', function(){
+					if(document.URL.indexOf('imageShareDept') != -1){
+						$("#deptCd").val($(this).parent('li').attr('id'));
+						setDept();
+					}
+			    });*/
+			}
+			
+			// layer popup - open
+			window.openLayer = function(el){
+				var h = 0;
+				var w = 0;
+				var scArea = $('.wrapPop .cnt .scrollArea');
+				$(el).show();
+				h = $(el).find('.popCnt').outerHeight();
+				w = $(el).find('.popCnt').outerWidth();
+				$(el).find('.popCnt').css({'margin-top':-(h/2), 'margin-left':-(w/2)});
+				if($(el).find('.scrollArea').length > 0){ // has scrollArea
+					scArea.scrollTop(0);
+				}
+			}
+			// layer popup - close
+			window.closeLayer = function(el){
+				$(el).hide();
+			}
+			
+			// layer popup - close
+			var btnClosePop = $('.wrapPop .btnClose');
+			btnClosePop.on('click', function(){
+				var el = $(this).parents('.wrapPop');
+				closeLayer(el);
+				return false
+			});
+			
+			// 체크박스 한개만
+			function checkOnlyOne(element) {
+				const chkElements = document.getElementsByName("CHK_ITEM");
+				const isChecked = element.checked;
+				
+				for (let i = 0; i < chkElements.length; i++) {
+					chkElements[i].checked = false;
+				}
+				
+				element.checked = isChecked;
+			}
+			/*
+			function showLoadingSpinner () {
+				const spinnerDiv = `
+					<div id='spinner' class='spinner'>
+						<i class='fas fa-spinner fa-10x fa-spin'></i>
+					</div>
+				`
+				
+				$('body').append(spinnerDiv)
+			}
+			
+			function hideLoadingSpinner () {
+				$('body').remove($('#spinner'))
+			}
+			*/
+		</script>
+	</head>
+    <style>
+        .ui-widget {font-size: 1.2em;}
+        .ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active{
+            border: 1px solid #aaa; background: #fff url("images/ui-bg_glass_65_ffffff_1x400.png") 50% 50% repeat-x;
+            font-weight: normal;color: #212121;}
+        .ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight{
+            border: 1px solid #fcefa1; background: #fbf9ee url("images/ui-bg_glass_55_fbf9ee_1x400.png") 50% 50% repeat-x;
+            font-weight:600; color: #ff0000;
+        }
+        .ui-datepicker td>a.ui-state-active {background-color:#2283c5; color:#fff;}
+    </style>

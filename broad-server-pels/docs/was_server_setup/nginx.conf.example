@@ -1,0 +1,93 @@
+# ============================================
+# Nginx WebSocket Reverse Proxy 설정 예시
+# ============================================
+# 이 프로젝트(sync-server) 기준 예시입니다.
+# Node는 WebSocket 8700, Health Check 8701(HTTP)에서 동작합니다.
+# 실제 배포 시 Nginx 설정 파일에 적용한 뒤 server_name, ssl 경로를 수정하세요.
+#
+# .env.production과 맞출 것:
+#   INTERNAL_PORT=8700  → websocket_backend
+#   Health는 항상 INTERNAL_PORT+1 (8701) → health_backend
+#   PROXY_PATH=/ws, HEALTH_CHECK_PATH=/health
+# ============================================
+
+# WebSocket: Node가 리스닝하는 포트 (.env.production INTERNAL_PORT=8700)
+upstream websocket_backend {
+    server 127.0.0.1:8700;
+    keepalive 32;
+}
+
+# Health Check: Node가 port+1에서 HTTP로 제공 (기본 8701)
+upstream health_backend {
+    server 127.0.0.1:8701;
+}
+
+# HTTP (80)
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location /ws {
+        proxy_pass http://websocket_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+        proxy_connect_timeout 60;
+        proxy_buffering off;
+    }
+
+    location /health {
+        proxy_pass http://health_backend/health;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_connect_timeout 5;
+        proxy_read_timeout 5;
+        proxy_send_timeout 5;
+    }
+
+    # return 301 https://$server_name$request_uri;
+}
+
+# HTTPS (443)
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate     /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    location /ws {
+        proxy_pass http://websocket_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+        proxy_connect_timeout 60;
+        proxy_buffering off;
+    }
+
+    location /health {
+        proxy_pass http://health_backend/health;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_connect_timeout 5;
+        proxy_read_timeout 5;
+        proxy_send_timeout 5;
+    }
+}

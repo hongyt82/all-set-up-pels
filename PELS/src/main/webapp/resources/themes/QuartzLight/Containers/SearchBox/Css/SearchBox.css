@@ -1,0 +1,39 @@
+/* SearchBox */
+.RealSearchBox{}
+.RealSearchBox .NormalSearch{margin-bottom:12px;clear:both;position:relative;z-index:1}
+.RealSearchBox .NormalSearch td{white-space:nowrap;color:#666;}
+.RealSearchBox .NormalSearch .TextBox{border:1px solid #acacac;color:#3c6fc2;}
+.RealSearchBox .NormalSearch .SelectBox{}
+
+/* SearchBox Panel Style */
+.RealSearchBox .NormalSearch{border:1px solid #dae1e6;background:#fbfcfd;padding:6px;}
+.RealSearchBox .NormalSearch table{min-height:34px;}
+
+/* SearchBox Contents Style */
+.RealSearchBox .NormalSearch .Outline{table-layout:fixed;width:100%}
+.RealSearchBox .NormalSearch col.Title{width:86px;white-space:nowrap;}
+.RealSearchBox .NormalSearch col.Button{width:100px;white-space:nowrap;}
+
+.RealSearchBox .NormalSearch  [class^=Title],
+.RealSearchBox .NormalSearch .Title{color:#000;padding:8px 18px;font-weight:bold}
+.RealSearchBox .NormalSearch  [class^=Title]:before,
+.RealSearchBox .NormalSearch .Title:before{content: "";display:inline-block;width:3px;height:3px;background:#000;margin-right:4px;position:relative;top:-3px}
+.RealSearchBox .NormalSearch  [class^=Value],
+.RealSearchBox .NormalSearch .Value{padding-right:24px;min-height:30px}
+.RealSearchBox .NormalSearch .Value:last-child{padding-right:100px}
+.RealSearchBox .NormalSearch .Separator{}
+
+
+/* SearchBox Button Style */
+.RealSearchBox .NormalSearch a.SearchButton{display:block;background:#616161;text-decoration:none;padding:0px 10px;border:solid 1px #616161;position:absolute;z-index:2;right:16px;top:12px}
+.RealSearchBox .NormalSearch a.SearchButton .Text{color:white;font-weight:normal;text-align:center;line-height:21px;display:block;padding:0px;font-size:13px;text-align:center;white-space:nowrap;}
+.RealSearchBox .NormalSearch a.SearchButton:hover{}
+
+.RealSearchBox .NormalSearch .btn-util{margin:0;padding:0;position:absolute;z-index:2;right:14px;top:45px}
+.RealSearchBox .NormalSearch .btn-util li{list-style:none;float:left;padding:0;margin:0 2px}
+.RealSearchBox .NormalSearch .btn-util a{display:inline-block;border:1px solid #a9b8c6;height:24px;width:24px;vertical-align:middle;color:#aeaeae;text-align:center;line-height:22px;background:#fff}
+.RealSearchBox .NormalSearch .btn-util .search:before{content: "\f002";display:block;font-family:FontAwesome;}
+.RealSearchBox .NormalSearch .btn-util .sync:before{content: "\f021";display:block;font-family:FontAwesome;}
+.RealSearchBox .NormalSearch .btn-util .collapse:before{content: "\f077";display:block;font-family:FontAwesome;}
+.RealSearchBox .NormalSearch .btn-util .expand:before{content: "\f078";display:block;font-family:FontAwesome;}
+

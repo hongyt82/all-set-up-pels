@@ -1,0 +1,51 @@
+{
+  "name": "broad-server",
+  "version": "1.0.0",
+  "description": "Node WebSocket room broad server",
+  "main": "src/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "start:src": "cross-env NODE_ENV=production node src/index.js",
+    "build": "node builder/build.cjs",
+    "check:reserved": "node builder/check_reserved_strings.cjs",
+    "dev": "cross-env NODE_ENV=development node --watch src/index.js",
+    "dev:watch": "cross-env NODE_ENV=development node --watch src/index.js",
+    "prod": "cross-env NODE_ENV=production node dist/index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecosystem.config.js",
+    "pm2:delete": "pm2 delete ecosystem.config.js",
+    "pm2:logs": "pm2 logs sync-server",
+    "pm2:monit": "pm2 monit",
+    "pm2:status": "pm2 status",
+    "pm2:save": "pm2 save",
+    "lint": "eslint src --ext .js",
+    "lint:fix": "eslint src --ext .js --fix",
+    "format": "prettier --write \"src/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.js\""
+  },
+  "dependencies": {
+    "dotenv": "16.6.1",
+    "ws": "8.19.0"
+  },
+  "devDependencies": {
+    "cross-env": "7.0.3",
+    "@eslint/js": "9.39.2",
+    "esbuild": "0.27.3",
+    "eslint": "9.39.2",
+    "eslint-config-prettier": "9.1.2",
+    "globals": "17.3.0",
+    "javascript-obfuscator": "5.3.0",
+    "prettier": "3.8.1"
+  },
+  "overrides": {
+    "conf": {
+      "ajv": "8.18.0"
+    },
+    "minimatch": "10.2.1"
+  }
+}

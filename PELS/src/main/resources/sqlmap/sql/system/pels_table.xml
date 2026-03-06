@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.system.table">
+	<select id="TableList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT /*+ALL_ROWS*/
+		  ROW_NUMBER() OVER (ORDER BY A.TABLE_NAME) AS LISTNUM,
+		  A.TABLE_NAME AS TBL_NAME, A.COMMENTS AS TBL_DESC, TO_CHAR(B.NUM_ROWS) AS ROW_CNT,
+		  ROUND(SUM((B.NUM_ROWS - C.NUM_NULLS)) / DECODE((COUNT(C.COLUMN_NAME) * B.NUM_ROWS), 0, 1, (COUNT(C.COLUMN_NAME) * B.NUM_ROWS)), 3) * 100 ROW_PER
+		  FROM ALL_TAB_COMMENTS A, ALL_TABLES B, ALL_TAB_COL_STATISTICS C
+		 WHERE 1=1
+		   AND A.OWNER = B.OWNER
+		   AND A.OWNER = C.OWNER
+		   AND A.TABLE_NAME = B.TABLE_NAME
+		   AND A.TABLE_NAME = C.TABLE_NAME   
+		   AND A.OWNER = 'MPPS'
+		   AND A.TABLE_TYPE = 'TABLE'
+		   GROUP BY A.TABLE_NAME, COMMENTS, B.NUM_ROWS
+		   ORDER BY A.TABLE_NAME
+	</select>
+	
+	<select id="TableCount" resultType="int" parameterType="java.util.HashMap">
+        SELECT count(*) FROM ALL_TABLES
+         WHERE 1=1
+           AND OWNER = 'MPPS'
+	</select>	
+	
+	<select id="TableDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT
+		   ROW_NUMBER() OVER (ORDER BY A.COLUMN_ID) AS LISTNUM,
+		   A.TABLE_NAME, A.COLUMN_NAME AS COL_NAME, B.COMMENTS AS COL_COMMENT, A.DATA_TYPE, A.DATA_LENGTH AS COL_LEN,
+		   A.COLUMN_ID AS COL_ID, A.NULLABLE AS NULL_YN, (D.NUM_ROWS - C.NUM_NULLS) AS NOTNULL_CNT,  D.NUM_ROWS AS ROW_CNT,
+		   DECODE(D.NUM_ROWS, 0, 0, ROUND((D.NUM_ROWS - C.NUM_NULLS) / D.NUM_ROWS, 3) * 100) CNT_PER
+		  FROM ALL_TAB_COLUMNS A, ALL_COL_COMMENTS B, ALL_TAB_COL_STATISTICS C, ALL_TABLES D
+		 WHERE 1=1
+		   AND A.TABLE_NAME = B.TABLE_NAME AND A.TABLE_NAME = C.TABLE_NAME 
+		   AND B.TABLE_NAME = C.TABLE_NAME AND A.TABLE_NAME = D.TABLE_NAME
+		   AND A.COLUMN_NAME = C.COLUMN_NAME 
+		   AND B.COLUMN_NAME = C.COLUMN_NAME   
+		   AND A.OWNER = 'MPPS'
+		   AND B.TABLE_NAME = #{TABLE_NAME}
+		   <!-- AND B.TABLE_NAME = #{TBL_NAME} -->
+		 ORDER BY A.COLUMN_ID
+	</select>	
+		
+	<select id="TableHeaderList" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT A.COLUMN_NAME AS COL_NAME, A.COLUMN_NAME||DECODE(B.COMMENTS, NULL, '', CHR(13)||CHR(10)||'('||B.COMMENTS||')') AS COL_DESC  FROM ALL_TAB_COLUMNS A, ALL_COL_COMMENTS B
+		 WHERE 1=1
+		   AND A.TABLE_NAME = B.TABLE_NAME
+		   AND A.COLUMN_NAME = B.COLUMN_NAME
+		   AND A.OWNER = 'MPPS' 
+		   AND B.TABLE_NAME = #{TABLE_NAME}
+	</select>
+
+	<select id="TableDataCount" resultType="int" parameterType="java.util.HashMap">
+        SELECT count(*) FROM ${TABLE_NAME}
+         WHERE 1=1
+	</select>	
+				
+	<select id="TableDataList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (
+		SELECT ROWNUM AS LISTNUM, A.*
+		  FROM ${TABLE_NAME} A
+		)
+		WHERE 1=1
+		  AND LISTNUM BETWEEN #{DISPSTART} AND #{DISPEND}
+	</select>
+	
+	<select id="TableExcelHeader" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT A.COLUMN_NAME||DECODE(B.COMMENTS, NULL, '', CHR(13)||CHR(10)||'('||B.COMMENTS||')') AS COL_DESC  FROM ALL_TAB_COLUMNS A, ALL_COL_COMMENTS B
+		 WHERE 1=1
+		   AND A.TABLE_NAME = B.TABLE_NAME
+		   AND A.COLUMN_NAME = B.COLUMN_NAME
+		   AND A.OWNER = 'MPPS' 
+		   AND B.TABLE_NAME = #{TABLE_NAME}
+	</select>
+		
+	<select id="TableDataExcelDown" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT * FROM ${TABLE_NAME}
+		 WHERE 1=1
+	</select>	
+</mapper>

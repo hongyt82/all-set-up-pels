@@ -1,0 +1,118 @@
+/* Grid Common */
+.Grid, .SubGrid, .StatusGrid, .GridView, .GridWrite{clear:both;}
+.Grid th,
+.SubGrid th,
+.StatusGrid th,
+.Grid .Header td,
+.SubGrid .Header td,
+.StatusGrid .Header td{text-align:center;vertical-align:middle;white-space:nowrap;line-height:16px;font-weight:bold; color:#335f98;padding:8px;} 
+.Grid .Header a,
+.SubGrid .Header a,
+.StatusGrid .Header a{color:#335A93;}
+.Grid td,
+.SubGrid td,
+.StatusGrid td{white-space:normal;color:#595959;line-height:16px;}
+.GridView td,
+.GridWrite td,
+.SubGridView td,
+.SubGridWrite td{white-space:normal;color:#595959;} 
+ 
+tr.Item{background-color:white;}
+tr.Item td{padding:6px 8px;}
+tr.ItemAlt{background-color:#f7f8fa;}
+tr.ItemAlt td{padding:6px 8px;}
+
+.Grid tr.RowOver{background-color:#fbfbef;}
+.StatusGrid tr.RowOver{background-color:#fbfbef;}
+
+tr.ItemSelected{background:#fcf7f1;}
+tr.ItemSelected td{color:#00162b;padding:6px 8px;}
+
+tr.ItemInput{background:#e4f1ff;}
+tr.ItemInput td{padding:6px 8px;color:#3c66ad;font-weight:bold;}
+tr.ItemInput input.TextBox{border:1px solid #5ba4ef;}
+
+tr.ItemTitleRow{}
+tr.ItemTitleRow td{padding:6px 8px;}
+tr.ItemTitleRow .ItemTitle{background:url(../Image/GridTitleBullet.gif) no-repeat 5px center;padding-left:11px;color:#004ea5;}
+
+/* Grid Style */ 
+.Grid{border-top:1px solid #354a5f;}
+.Grid .Outline{table-layout:fixed;border-collapse:collapse;width:100%} 
+.Grid .Header{}
+.Grid th{background:#f7f7f7;border:1px solid #bfd4f1;color:#15498b}
+.Grid td{border:1px solid #dae1e6;}
+
+/* StatusGrid Style */
+.StatusGrid{width:auto;border-top:1px solid #354a5f;}
+.StatusGrid .Outline{table-layout:fixed;border-collapse:collapse;width:100%}
+.StatusGrid .RowHeader{background:#f5f9ff;}
+.StatusGrid .ItemSum{background:#f5f5f5;}
+.StatusGrid .ItemSum td{font-weight:bold;padding:6px 8px;}
+.StatusGrid .ItemTotal{background:#f0f0f0;}
+.StatusGrid .ItemTotal td{font-weight:bold;color:#002a64;padding:6px 8px;}
+
+.StatusGrid .Header .Comparison{background:#c6f283;color:#414d31}
+.StatusGrid .Header2Row .Comparison{background:#d7f5ab;color:#414d31}
+.StatusGrid .Header .Comparison01{background:#c5f0eb;color:#000}
+.StatusGrid td.Comparison01{background-color:#f0f4fa;}
+.StatusGrid td.Issue{color:red;font-weight:bold;}
+
+.StatusGrid td{border:1px solid #dae1e6;}
+.StatusGrid tr:first-child td{border-top:0}
+.StatusGrid .Header{} 
+.StatusGrid th{border:1px solid #bfd4f1;background:#f7f7f7;}
+.StatusGrid .Header2Row th{background:#f7f7f7;}
+.StatusGrid .Header .Blank{border-left:0px;}
+
+.StatusGrid .ItemSubGrid{border-bottom:1px solid #e0e0e0;padding:0px 3px 0px 10px;}
+
+.StatusGrid td.Sub{}
+.StatusGrid td.Comparison{background:#fafafa;}
+.StatusGrid td.Delay{background:#ffebeb;font-weight:bold;}
+.StatusGrid td.Blank{border-left:0px;}
+.StatusGrid .Separator{border-left:1px solid #999;}
+.StatusGrid .Header .Separator,
+.StatusGrid .Header .VSeparator{border-left:1px solid #dddddd;}
+.StatusGrid .Separator,
+.StatusGrid .VSeparator{border-left:1px solid #999 !important;}
+.StatusGrid .ItemTitleRow .ItemTitle{border:1px solid #dae1e6;}
+/*2015-07-21*/
+.StatusGrid .border-left{border-left:1px solid #dae1e6 !important;}
+.StatusGrid .border-right{border-right:1px solid #dae1e6 !important;}
+.StatusGrid .Header .border-left{border-left:1px solid #bfd4f1 !important;}
+.StatusGrid .Header .border-right{border-right:1px solid #bfd4f1 !important;}
+.StatusGrid .border-none-left{border-left:0 !important;}
+.StatusGrid .border-none-right{border-right-width:0 !important;}
+
+/* GridView Style */
+.GridView{background-color:white;border-top:1px solid #354a5f;}
+.GridView .Outline{table-layout:fixed;width:100%}
+.GridView .Row{}
+.GridView col.Title, 
+.GridView th.Title{width:100px;background:#f7f7f7;}
+.GridView [class^=Title],
+.GridView .Title{border:1px solid #d9d9d9;background-color:#f7f7f7;color:#333;text-align:left;padding:7px 0;}
+.GridView th label,.GridView th .Label{padding:0 7px;color:#335f98;font-weight:normal;white-space:nowrap;}
+.GridView [class^=Value],
+.GridView .Value{border:1px solid #d9d9d9;padding:7px 6px;line-height:16px;}
+.GridView [class^=Value]
+.GridView .Text{color:#595959;padding:0px;display:block;}
+.GridView .SubButtonGroup{padding-top:3px}
+.GridView .ValueSubGrid{padding:1px;}
+
+/* GridWrite Style */
+.GridWrite{border-top:1px solid #354a5f;}
+.GridWrite .Outline{table-layout:fixed;width:100%}
+.GridWrite .Row{}
+.GridWrite col.Title,
+.GridWrite th.Title{width:100px;background:#f7f7f7;}
+.GridWrite [class^=Title],
+.GridWrite .Title{border:1px solid #d9d9d9;border-top:0;text-align:left;background-color:#f7f7f7;padding:7px 3px;}
+.GridWrite th label,.GridWrite th .Label{padding:0 7px;color:#335f98;font-weight:normal;white-space:nowrap;}
+.GridWrite [class^=Value],
+.GridWrite .Value{border:1px solid #d9d9d9;padding:3px 6px 3px 4px;}
+.GridWrite .Text{color:#595959;}
+.GridWrite .SubButtonGroup{padding-top:3px}
+.GridWrite .ValueSubGrid{padding:1px;}
+

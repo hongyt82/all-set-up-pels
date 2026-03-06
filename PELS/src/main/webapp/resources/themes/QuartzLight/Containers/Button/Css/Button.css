@@ -1,0 +1,77 @@
+/* Button */
+table a.MainButton,table a.SubButton,table a.InfoButton{text-decoration:none;}
+table a.MainButton:hover,table a.SubButton:hover,table a.InfoButton:hover{text-decoration:none;}
+
+/* Button Input Style */ 
+.Grid .MainButtonGroup{padding-bottom:0px;text-align:right;} 
+.StatusGrid .MainButtonGroup{padding-bottom:0px;text-align:right;} 
+.GridView .MainButtonGroup{text-align:center;} 
+.GridWrite .MainButtonGroup{text-align:center;} 
+
+/* Main Button Style */
+.PageButtonGroup{position:absolute;z-index:1;right:19px;top:16px}
+a.btn-m,
+.btn-m{margin:0 1px;display:inline-block;text-decoration:none;padding:0px 0px 0px 10px;vertical-align:middle;width:auto;background:#286eb4;}
+a.btn-m .Text,
+.btn-m .Text a{color:#fff;font-weight:normal;display:inline-block;padding:0px 18px 0px 8px;text-align:center;line-height:30px;font-size:13px;font-weight:bold}
+a:hover.btn-m,
+.btn-m a:hover{text-decoration:none;}
+
+a.btn-ms, .btn-ms{background:#e9730c;}
+a.btn-ms .Text, .btn-ms .Text a{}
+
+.MainButtonGroup{text-align:right;padding:16px 0}
+
+/* Gird Button Style */
+.GirdButtonGroup{padding:2px 0px;text-align:right;}
+.SubButton{padding:0px;margin:0px 0px;text-decoration:none;vertical-align:middle;white-space:nowrap;display:inline-block;border:solid 1px #d4d4d4;background-color: #efefef; line-height:14px;}
+.SubButton .Text{display:inline-block;color:#222;font-weight:normal;text-align:center;padding:0px 8px 2px;line-height:10px;}
+.SubButton:hover{text-decoration:none;}
+
+/* Info Button Style */
+.InfoButtonGroup{padding:2px 0px;}
+.InfoButton{margin:0 1px;text-decoration:none;vertical-align:middle;white-space:nowrap;display:inline-block;background:#f0f7ff;border:1px solid #8db7d9;}
+.InfoButton .Text{color:#427cac;line-height:20px;padding:0 12px;}
+.InfoButton:hover{text-decoration:none;}
+
+/* Icon Button Style */
+.IconButtonGroup{padding:10px 10px 10px 10px;text-align:left;background:#efefef;}
+.IconButton{}
+
+a:hover.IconButton,
+.IconButton a:hover{text-decoration:none;}
+
+a.IconButton{vertical-align:middle;text-decoration:none;cursor:pointer;display:inline-block;width:18px;height:18px;}
+a.IconButton span{width:18px;height:18px;overflow:hidden;display:inline-block;}
+
+a.IconButton .Search{background:url('../Image/Icon_search.gif') ;}
+a.IconButton .Up{background:url('../Image/Icon_up.gif') no-repeat;}
+a.IconButton .Down{background:url('../Image/Icon_down.gif') no-repeat;}
+a.IconButton .Back{background:url('../Image/Icon_back.gif') no-repeat;}
+a.IconButton .Front{background:url('../Image/Icon_front.gif') no-repeat;}
+a.IconButton .Add{background:url('../Image/Icon_add.gif') no-repeat;}
+a.IconButton .Delete{background:url('../Image/Icon_delete.gif') no-repeat;}
+a.IconButton .Save{background:url('../Image/Icon_save.gif') no-repeat;}
+a.IconButton .Attachfile{background:url('../Image/Icon_attachfile.gif') no-repeat;}
+a.IconButton .Download{background:url('../Image/Icon_download.gif') no-repeat;}
+a.IconButton .Upload{background:url('../Image/Icon_upload.gif') no-repeat;}
+a.IconButton .Edit{background:url('../Image/Icon_edit.gif') no-repeat;}
+a.IconButton .Modify{background:url('../Image/Icon_modify.gif') no-repeat;}
+a.IconButton .Circulation{background:url('../Image/Icon_circulation.gif') no-repeat;}
+a.IconButton .Refresh{background:url('../Image/Icon_refresh.gif') no-repeat;}
+a.IconButton .Organization{background:url('../Image/Icon_organization.gif') no-repeat;}
+a.IconButton .Document{background:url('../Image/Icon_document.gif') no-repeat;}
+a.IconButton .Calendar{background:url('../Image/Icon_calendar.gif') no-repeat;}
+a.IconButton .Print{background:url('../Image/Icon_print.gif') no-repeat;}
+a.IconButton .View{background:url('../Image/Icon_view.gif') no-repeat;}
+a.IconButton .Cancel{background:url('../Image/Icon_cancel.gif') no-repeat;}
+a.IconButton .Exit{background:url('../Image/Icon_exit.gif') no-repeat;}
+a.IconButton .First{background:url('../Image/Icon_first.gif') no-repeat;}
+a.IconButton .Prev{background:url('../Image/Icon_prev.gif') no-repeat;}
+a.IconButton .Next{background:url('../Image/Icon_next.gif') no-repeat;}
+a.IconButton .Last{background:url('../Image/Icon_last.gif') no-repeat;}
+
+
+
+
+

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+    <component name="ProjectModuleManager">
+        <modules>
+            <module fileurl="file://$PROJECT_DIR$/all-set-up-pels.iml" filepath="$PROJECT_DIR$/all-set-up-pels.iml" />
+            <module fileurl="file://$PROJECT_DIR$/broad-server-pels/broad-server-pels.iml" filepath="$PROJECT_DIR$/broad-server-pels/broad-server-pels.iml" group="all-set-up-pels" />
+            <module fileurl="file://$PROJECT_DIR$/front-end-pels/front-end-pels.iml" filepath="$PROJECT_DIR$/front-end-pels/front-end-pels.iml" group="all-set-up-pels" />
+        </modules>
+    </component>
+</project>

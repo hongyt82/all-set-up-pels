@@ -1,0 +1,69 @@
+/*========================================================*/
+/* TabStrip
+/*========================================================*/
+.TabStrip{padding:0px;clear:both;margin-bottom:12px;z-index:1;position:relative}
+.TabStrip ul{width:100%;margin:0;padding:0;display:inline-block;white-space:normal;border-bottom:1px solid #e1e1e1;vertical-align:bottom}
+.TabStrip li{float:left;list-style:none;display:inline-block;white-space:nowrap;padding:0;}
+
+.TabStrip li a{display:inline-block;text-decoration:none;margin-right:2px;padding:1px 26px 0;}
+.TabStrip li a .Text{color:#354a5f;font-size:13px;line-height:28px;}
+.TabStrip li a:hover{text-decoration:none;}
+
+.TabStrip li a.selected{position:relative;z-index: 1}
+.TabStrip li a.selected:before{content: "";display: block;width:100%;height:2px;position: absolute;z-index: 2;left:0px;bottom:-1px;background:#427cac}
+.TabStrip li a.selected .Text{color:#0151a2;font-weight:bold}
+
+.TabStrip li a.disable{}
+.TabStrip li a.disable .Text{color:#ccc;}
+
+.tab-2-dept {border-top:0;margin-top:-12px}
+.tab-2-dept ul{border:0}
+.tab-2-dept li {float:left;display:inline-block;}
+.tab-2-dept li a{display:inline-block;text-decoration:none;margin-right:0;border:0;background:none;}
+.tab-2-dept li a .Text{color:#666;line-height:32px;}
+.tab-2-dept li a.selected{border-bottom:0}
+.tab-2-dept li a.selected:before{display:none}
+.tab-2-dept li a.selected .Text{}
+
+.tab-3-dept {margin-top:-10px;padding-bottom:10px}
+.tab-3-dept ul{border:0}
+.tab-3-dept li a{display:inline-block;text-decoration:none;margin-right:3px;border:1px solid #e0e0e0}
+.tab-3-dept li a:hover{background-color:#f0f7ff}
+.tab-3-dept li a .Text{color:#666;line-height:28px;}
+.tab-3-dept li a:hover{text-decoration:none;}
+
+.tab-3-dept li a.selected{background-color: #fff;border-color:#66a0dc;}
+.tab-3-dept li a.selected:before{display:none}
+/* .tab-3-dept li a.selected:before{content: "\f00c";height:10px;width:16px;display: inline-block;background:none; font-family:FontAwesome;top:4px;right:10px;left:auto;font-weight:normal} */
+.tab-3-dept li a.selected .Text{color:#0062b4;font-weight:bold;}
+
+/* GridTabStrip Style */
+.TabStrip .GridTab{margin-bottom:-5px}
+.TabStrip .GridTab ul{border-width:0;}
+.TabStrip .GridTab li a .Wrap{border-bottom:0;}
+
+/* Panel TabStrip Style */
+.TabStrip .PanelTab{}
+.TabStrip .PanelTab ul{}
+.TabStrip .PanelTab li a.selected .Innerwrap{}
+
+.LinePanel .TabStrip{margin-bottom:-1px;}
+.LinePanel .TabStrip .PanelTab{}
+
+.DualPanel .TabStrip{margin-bottom:-1px;}
+.DualPanel .TabStrip .PanelTab{}
+.DualPanel .TabStrip .PanelTab li a.selected{}
+.DualPanel .TabStrip .PanelTab li a.selected .Text{}
+
+.DualPanel .DualPanel .TabStrip .PanelTab{}
+.DualPanel .DualPanel .TabStrip .PanelTab li a.selected{}
+.DualPanel .DualPanel .TabStrip .PanelTab li a.selected .Text{}
+
+
+
+
+
+
+
+
+

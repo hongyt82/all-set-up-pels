@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.outcome.dissat">
+			<select id="DissatList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			A.TST_UNQ_KY_VAL,
+			A.FRM_UNQ_KY_VAL,
+			A.CHCK_STRT_DT,
+			A.CHCK_END_DT,
+			REGEXP_REPLACE(CHCK_STRT_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') || ' ~ ' || REGEXP_REPLACE(CHCK_END_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') AS CHCK_DT,
+			C.PRCDOC_UNQ_KY_VAL,
+			C.PRCDOC_NO,
+			C.PRCDOC_NM,
+			C.DOC_TYP,
+			C.DOC_PART_NO,
+			C.PRCDOC_RVSN_NO,
+			C.PRCDOC_CFY,
+			CASE WHEN C.PRCDOC_CFY = 'P' THEN '정주기'
+			     WHEN C.PRCDOC_CFY = 'M' THEN '점검지'
+			     ELSE ''
+			END AS PRCDOC_CFY_NM,			
+			C.ATCT_NM,
+			C.MNTRG_YN,
+			B.ATCT_CFY,
+			A.TITL_NM,
+			A.CHKPR_ID,
+			A.CHKPR_FNM,
+			A.CNMR_ID,
+			A.CNMR_FNM,
+			A.ATWT_ID,
+			A.ATWT_FNM,
+			A.WRKOR_NO,
+			A.ATWT_PPL_CNT,
+			A.ATWT_RQST_YN,
+			A.PRSTS_CFY,
+			CASE WHEN A.PRSTS_CFY = 'R' THEN '준비'
+			     WHEN A.PRSTS_CFY = 'A' THEN '허가'
+			     WHEN A.PRSTS_CFY = 'F' THEN '수행'
+			     WHEN A.PRSTS_CFY = 'S' THEN '정지'
+			     WHEN A.PRSTS_CFY = 'C' THEN '완료'
+			     ELSE ''
+			END AS PRSTS_CFY_NM,
+			A.REGPR_ID,
+			A.REGPR_NM,
+			A.RG_DT,
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT,
+            (SELECT T2.ATFL_GRUP_NM ||  '/' || T2.ATFL_PHCL_NM || '.' || T2.ATFL_FEXT_NM FROM GE_MP_JOB_S T1, GE_MP_FILE_S T2 WHERE T1.UNQ_KY_VAL  = T2.UNQ_NO AND T2.ATFL_GRUP_NM ='GE_MP_JOB_S' AND  T1.TST_UNQ_KY_VAL = A.TST_UNQ_KY_VAL AND T2.ATFL_ID = '1') JOB_FNAME1,
+            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_CHECK_S' AND UNQ_NO = A.TST_UNQ_KY_VAL AND ATFL_ID = '1') OZD_FNAME1,
+            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_DISSAT_S' AND UNQ_NO = A.TST_UNQ_KY_VAL AND ATFL_ID = '1') DIS_FNAME1,
+            (SELECT UNQ_KY_VAL FROM GE_MP_DISSAT_S WHERE TST_UNQ_KY_VAL = A.TST_UNQ_KY_VAL) UNQ_KY_VAL
+		FROM GE_MP_CHECK_S A
+		JOIN GE_MP_FRM_M B
+		ON A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+		JOIN GE_MP_PRCDOC_M C
+		ON B.PRCDOC_UNQ_KY_VAL = C.PRCDOC_UNQ_KY_VAL
+		<if test='PRCDOC_CFY != ""'>
+		   AND C.PRCDOC_CFY = #{PRCDOC_CFY}
+		</if>
+		<if test='PRCDOC_NO != ""'>
+		   AND C.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+		</if>
+		<if test='PRCDOC_NM != ""'>
+		   AND C.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+		</if>
+		JOIN GE_MP_DISSAT_S D
+		ON A.TST_UNQ_KY_VAL = D.TST_UNQ_KY_VAL 
+		WHERE A.DLT_YN = 'N'
+		<if test='CHCK_STRT_DT != ""'>
+		   AND A.CHCK_STRT_DT >= #{CHCK_STRT_DT}
+		</if>
+		<if test='CHCK_END_DT != ""'>
+		   AND A.CHCK_END_DT <![CDATA[<=]]> #{CHCK_END_DT}
+		</if>
+		<if test='PRSTS_CFY != ""'>
+		   AND A.PRSTS_CFY = #{PRSTS_CFY}
+		</if>
+		<if test='TITL_NM != ""'>
+		   AND A.TITL_NM LIKE '%'||#{TITL_NM}||'%'
+		</if>
+		ORDER BY A.RG_DT DESC
+	</select>
+	
+	<select id="DissatCount" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*)
+		FROM GE_MP_CHECK_S A
+		JOIN GE_MP_FRM_M B
+		ON A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+		JOIN GE_MP_PRCDOC_M C
+		ON B.PRCDOC_UNQ_KY_VAL = C.PRCDOC_UNQ_KY_VAL
+		<if test='PRCDOC_CFY != ""'>
+		   AND C.PRCDOC_CFY = #{PRCDOC_CFY}
+		</if>
+		<if test='PRCDOC_NO != ""'>
+		   AND C.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+		</if>
+		<if test='PRCDOC_NM != ""'>
+		   AND C.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+		</if>
+		JOIN GE_MP_DISSAT_S D
+		ON A.TST_UNQ_KY_VAL = D.TST_UNQ_KY_VAL 
+		WHERE A.DLT_YN = 'N'
+		<if test='CHCK_STRT_DT != ""'>
+		   AND A.CHCK_STRT_DT >= #{CHCK_STRT_DT}
+		</if>
+		<if test='CHCK_END_DT != ""'>
+		   AND A.CHCK_END_DT <![CDATA[<=]]> #{CHCK_END_DT}
+		</if>
+		<if test='PRSTS_CFY != ""'>
+		   AND A.PRSTS_CFY = #{PRSTS_CFY}
+		</if>
+		<if test='TITL_NM != ""'>
+		   AND A.TITL_NM LIKE '%'||#{TITL_NM}||'%'
+		</if>
+	</select>
+		
+	<insert id="InsertDissat" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_DISSAT_S
+		(
+			UNQ_KY_VAL,
+			TST_UNQ_KY_VAL,
+			DIVS_CD,
+			PPCD,
+			SAP_SNO,
+			OCCR_DY,
+			PRCDOC_NO,
+			PRCDOC_NM,
+			TST_BSS_CTT,
+			TST_HMDPT_NM,
+			CHKPR_ID,
+			CHKPR_FNM,
+			TST_DSSTN_CTT,
+			MNMT_CTT,
+			NOTN_NO,
+			PBLSH_DY,
+			WRK_SCTN_NM,
+			TSP_CTT,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			DLT_YN
+		)
+		VALUES
+		(
+			#{UNQ_KY_VAL},
+			#{TST_UNQ_KY_VAL},
+			#{DIVS_CD},
+			#{PPCD},
+			#{SAP_SNO},
+			#{OCCR_DY},
+			#{PRCDOC_NO},
+			#{PRCDOC_NM},
+			#{TST_BSS_CTT},
+			#{TST_HMDPT_NM},
+			#{CHKPR_ID},
+			#{CHKPR_FNM},
+			#{TST_DSSTN_CTT},
+			#{MNMT_CTT},
+			#{NOTN_NO},
+			#{PBLSH_DY},
+			#{WRK_SCTN_NM},
+			#{TSP_CTT},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE,
+			'N'
+		)
+	</insert>	
+	
+	<select id="DissatLastUnqNo" resultType="string">
+		SELECT NVL(MAX(UNQ_KY_VAL), 0) +1 FROM GE_MP_DISSAT_S
+	</select>	
+	
+	<select id="DissatDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			UNQ_KY_VAL,
+			TST_UNQ_KY_VAL,
+			DIVS_CD,
+			PPCD,
+			SAP_SNO,
+			OCCR_DY,
+			PRCDOC_NO,
+			PRCDOC_NM,
+			TST_BSS_CTT,
+			TST_HMDPT_NM,
+			CHKPR_ID,
+			CHKPR_FNM,
+			TST_DSSTN_CTT,
+			MNMT_CTT,
+			NOTN_NO,
+			PBLSH_DY,
+			WRK_SCTN_NM,
+			TSP_CTT,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			DLT_YN,
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
+		FROM GE_MP_DISSAT_S A
+		WHERE UNQ_KY_VAL = #{UNQ_KY_VAL}
+	</select>
+	
+	<update id="UpdateDissat" parameterType="java.util.HashMap">
+		UPDATE GE_MP_DISSAT_S
+		   SET SAP_SNO = #{SAP_SNO},
+			   OCCR_DY  = #{OCCR_DY},
+			   PRCDOC_NO 		= #{PRCDOC_NO},
+			   PRCDOC_NM 	= #{PRCDOC_NM},
+			   TST_BSS_CTT 		= #{TST_BSS_CTT},
+			   TST_HMDPT_NM 	= #{TST_HMDPT_NM},
+			   CHKPR_ID 		= #{CHKPR_ID},
+			   CHKPR_FNM 	= #{CHKPR_FNM},
+			   TST_DSSTN_CTT 	= #{TST_DSSTN_CTT},
+			   MNMT_CTT = #{MNMT_CTT},
+			   NOTN_NO = #{NOTN_NO},
+			   PBLSH_DY = #{PBLSH_DY},
+			   WRK_SCTN_NM = #{WRK_SCTN_NM},
+			   TSP_CTT = #{TSP_CTT},
+			   REGPR_ID 	= #{REGPR_ID},
+			   REGPR_NM 	= #{REGPR_NM},
+			   RG_DT 		= SYSDATE
+		 WHERE UNQ_KY_VAL = #{UNQ_KY_VAL}
+	</update>
+	
+</mapper>

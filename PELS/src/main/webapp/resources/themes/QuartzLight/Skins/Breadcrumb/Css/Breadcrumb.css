@@ -1,0 +1,10 @@
+/*========================================================*/
+/* Breadcrumb
+/*========================================================*/
+.Breadcrumb{}
+.Breadcrumb ul{margin:0;padding:0;}
+.Breadcrumb li{list-style-type:none;display:inline-block;line-height:14px;padding-top:8px;float:left;}
+.Breadcrumb li a{color:#A6A6A6;text-decoration:none;padding:0px 0px 0px 0px;}
+.Breadcrumb li a .Wrap{padding:0px 0px 0px 0px;}
+.Breadcrumb li a:hover{color:#4c4c4c;text-decoration:none;}
+.Breadcrumb li.spt{color:#A6A6A6;margin:0 8px}

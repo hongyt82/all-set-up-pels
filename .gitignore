@@ -1,0 +1,15 @@
+# IntelliJ IDEA
+#.idea/workspace.xml
+#.idea/tasks.xml
+#.idea/dictionaries
+out/
+target/
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Optional: uncomment to ignore entire legacy workspace
+# workspace/

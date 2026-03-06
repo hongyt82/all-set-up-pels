@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.form.etcform">
+	<select id="EtcHistoryFormList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+        SELECT 
+            B.UNQ_KY_VAL,
+            A.FRM_UNQ_KY_VAL,
+            A.DIVS_CD,
+            A.PPCD,
+            A.FRM_CFY,
+            CASE WHEN A.FRM_CFY = 'JOB' THEN '작업전'
+                 WHEN A.FRM_CFY = 'OZR' THEN '일반'
+                 WHEN A.FRM_CFY = 'PDF' THEN '필기'
+                 ELSE ''
+            END AS FRM_CFY_NM,
+            A.FRM_NM,
+            B.REGPR_ID,
+            B.REGPR_NM,
+            B.RG_DT,
+            B.TITL_NM,
+            TO_CHAR(B.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT,
+            (SELECT ATFL_GRUP_NM || '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM = 'GE_MP_ETCFRM_M' AND UNQ_NO = A.FRM_UNQ_KY_VAL AND ATFL_ID = '1') PDF_FNAME1,
+            (SELECT ATFL_GRUP_NM || '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM = 'GE_MP_ETCFRM_S' AND UNQ_NO = B.UNQ_KY_VAL AND ATFL_ID = '1') OZD_FNAME1
+        FROM GE_MP_ETCFRM_S B, GE_MP_ETCFRM_M A
+        WHERE A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+		  AND B.DLT_YN = 'N'
+		<if test='FRM_CFY != ""'>
+		   AND A.FRM_CFY = #{FRM_CFY}
+		</if>
+		<if test='FRM_NM != ""'>
+		   AND A.FRM_NM LIKE '%'||#{FRM_NM}||'%'
+		</if>
+		<if test='REGPR_NM != ""'>
+		   AND B.REGPR_NM LIKE '%'||#{REGPR_NM}||'%'
+		</if>
+		ORDER BY B.RG_DT DESC
+	</select>
+	
+	<select id="EtcHistoryFormCount" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*)
+		FROM GE_MP_ETCFRM_S B, GE_MP_ETCFRM_M A
+		WHERE A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+		  AND B.DLT_YN = 'N'
+		<if test='FRM_CFY != ""'>
+		   AND A.FRM_CFY = #{FRM_CFY}
+		</if>
+		<if test='FRM_NM != ""'>
+		   AND A.FRM_NM LIKE '%'||#{FRM_NM}||'%'
+		</if>
+		<if test='REGPR_NM != ""'>
+		   AND B.REGPR_NM LIKE '%'||#{REGPR_NM}||'%'
+		</if>
+	</select>
+	
+	<insert id="InsertEtcHistoryForm" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_ETCFRM_S
+		(
+			UNQ_KY_VAL,
+			FRM_UNQ_KY_VAL,
+			FRM_CFY,
+			TITL_NM,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			DLT_YN
+		)
+		VALUES
+		(
+			#{UNQ_KY_VAL},
+			#{FRM_UNQ_KY_VAL},
+			#{FRM_CFY},
+			#{TITL_NM},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE,
+			'N'
+		)
+	</insert>
+	
+	<update id="UpdateEtcHistoryForm" parameterType="java.util.HashMap">
+		UPDATE GE_MP_ETCFRM_S
+		   SET TITL_NM = #{TITL_NM},
+		       RG_DT = SYSDATE
+		 WHERE UNQ_KY_VAL = #{UNQ_KY_VAL}
+	</update>
+	
+	<delete id="DeleteEtcHistoryForm" parameterType="java.util.HashMap">
+		UPDATE GE_MP_ETCFRM_S
+		       SET DLT_YN = 'Y'
+		 WHERE UNQ_KY_VAL IN(${CHK_ITEMS})
+	</delete>
+	
+	<select id="EtcFormHistoryDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			UNQ_KY_VAL,
+			FRM_UNQ_KY_VAL,
+			FRM_CFY,
+			TITL_NM,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			TO_CHAR(RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
+		FROM GE_MP_ETCFRM_S
+		WHERE UNQ_KY_VAL = #{UNQ_KY_VAL}
+	</select>
+	
+	
+	<select id="EtcHistoryFormLastUnqNo" resultType="string">
+		SELECT NVL(MAX(UNQ_KY_VAL), 0) +1 FROM GE_MP_ETCFRM_S
+	</select>	
+
+</mapper>

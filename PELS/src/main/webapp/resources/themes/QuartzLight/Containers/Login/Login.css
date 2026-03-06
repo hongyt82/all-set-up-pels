@@ -1,0 +1,46 @@
+/*========================================================*/
+/* 2008-12-23 AUTHOR YJKO             	
+/*========================================================*/
+/* Login
+/*========================================================*/
+/*body, td, span, div, input, select {	font-size:12px ;}*/
+
+
+.RealwebLogin .Text {
+	color:#4c4c4c;
+	font-weight:normal; 
+	display:inline-block;
+	font-family:tahoma,@µ¸¿òÃ¼;
+	font-size:11px;
+	}
+
+
+.RealwebLogin {margin-top:140px; background:url('Image/Footer.gif') no-repeat center 350px;  }
+.RealwebLogin .Outline {width:100%;}
+.RealwebLogin .Login {margin:0 auto;}
+.RealwebLogin .Contents {margin:0 auto;padding:0px;width:506px;}
+.RealwebLogin .Logo {background:url('Image/Logo.gif') no-repeat; height:40px;margin:0px 0px 5px 5px;}
+.RealwebLogin .Content {background:url('Image/Bg.jpg') no-repeat 0 0;height:500px;padding-top:84px;}
+.RealwebLogin .Content .Box {background:url('Image/InputBoxBg.gif') no-repeat;width:258px; height:134px;margin-left:224px;margin-bottom:20px;}
+
+.RealwebLogin .InputBox {padding:0px 15px;}
+.RealwebLogin .InputBox .Input {}
+.RealwebLogin .InputBox .Input .Text {background:url('Image/Bullet.gif') no-repeat 0px 8px;line-height:24px; padding-left:10px;vertical-align:middle; text-align:left; width:44px;}
+
+.RealwebLogin .InputBox .Check {}
+
+    
+.RealwebLogin .SearchButton a {
+	 background: url('Image/SearchBtn.gif') no-repeat left 0px;
+	 display:block;
+	 width:64px;
+	 height:22px;
+	 cursor:pointer;
+	}
+.banner {clear:both;height:80px;padding-top:10px;}
+.banner .user-manual{background:url('Image/banner_01.png') no-repeat;width:177px; height:59px;display:inline-block;float:left;}
+.banner .PM-manual{background:url('Image/banner_02.png') no-repeat;width:177px; height:59px;display:inline-block;float:left;margin:0 5px}
+.banner .reg-form{background:url('Image/banner_03.png') no-repeat;width:142px; height:59px;display:inline-block;float:right;}
+.banner > div > span {display:none}
+.callcenter{background:url('Image/banner_03.jpg') no-repeat;width:506px;height:89px;clear:both;}
+.callcenter > span {display:none}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+  <!-- Oracle JDBC(oracle.net.aso.*) 스캔 시 StackOverflowError 방지 -->
+  <JarScanner>
+    <JarScanFilter pluggabilitySkip="ojdbc*.jar,oraclepki.jar,osdt*.jar"/>
+  </JarScanner>
+</Context>

@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.system.procedure">
+	<select id="ProcedureList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY A.RG_DT DESC) AS LISTNUM,
+				PRCDOC_UNQ_KY_VAL,
+				DIVS_CD,
+				PPCD,
+				PRCDOC_CFY,
+				PRCDOC_NO,
+				PRCDOC_NM,
+				DOC_TYP,
+				DOC_PART_NO,
+				RRD_CFY,
+				PRCDOC_RVSN_NO,
+				ATCT_NM,
+				FNCLC_ID,
+				REGPR_ID,
+				REGPR_NM,
+				RG_DT,
+				FRM_UNQ_KY_VAL,
+				MNTRG_YN,
+				TO_CHAR(RG_DT, 'YYYY-MM-DD') AS FM_RG_DT,
+                (SELECT count(*) FROM GE_MP_FRM1_M WHERE FRM_UNQ_KY_VAL = A.FRM_UNQ_KY_VAL) FRM_CNT,
+                (SELECT count(*) FROM GE_MP_FRMID_M WHERE FRM_UNQ_KY_VAL = A.FRM_UNQ_KY_VAL) FRMID_CNT,
+                (SELECT count(*) FROM GE_MP_QR_M WHERE PRCDOC_UNQ_KY_VAL = A.PRCDOC_UNQ_KY_VAL) QR_CNT
+			FROM GE_MP_PRCDOC_M A
+			WHERE DLT_YN = 'N'
+			<if test='PPCD != ""'>
+			   AND A.PPCD = #{PPCD}
+			</if>
+			<if test='PRCDOC_CFY != ""'>
+			   AND A.PRCDOC_CFY = #{PRCDOC_CFY}
+			</if>
+			<if test='PRCDOC_NO != ""'>
+			   AND A.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+			</if>
+			<if test='PRCDOC_NM != ""'>
+			   AND A.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+			</if>
+			ORDER BY RG_DT DESC
+		)
+		WHERE LISTNUM BETWEEN #{DISPSTART} AND #{DISPEND}		
+	</select>
+	
+	<select id="ProcedureCount" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*) 
+		FROM GE_MP_PRCDOC_M A
+		WHERE DLT_YN = 'N'
+		<if test='PPCD != ""'>
+		   AND A.PPCD = #{PPCD}
+		</if>
+		<if test='PRCDOC_CFY != ""'>
+		   AND A.PRCDOC_CFY = #{PRCDOC_CFY}
+		</if>
+		<if test='PRCDOC_NO != ""'>
+		   AND A.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+		</if>
+		<if test='PRCDOC_NM != ""'>
+		   AND A.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+		</if>
+	</select>
+	
+	<insert id="InsertProcedure" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_PRCDOC_M
+		(
+			PRCDOC_UNQ_KY_VAL,
+			DIVS_CD,
+			PPCD,
+			PRCDOC_CFY,
+			PRCDOC_NO,
+			PRCDOC_NM,
+			ATCT_NM,
+			FNCLC_ID,
+			DOC_TYP,
+			DOC_PART_NO,
+			RRD_CFY,
+			MNTRG_YN,
+			AUCR_YN,
+			APRV_YN_CFY,
+			APRV_STEP_CFY,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			DLT_YN
+		)
+		VALUES
+		(
+			(SELECT NVL(MAX(PRCDOC_UNQ_KY_VAL), 0) +1 FROM GE_MP_PRCDOC_M),
+			#{DIVS_CD},
+			#{PPCD},
+			#{PRCDOC_CFY},
+			#{PRCDOC_NO},
+			#{PRCDOC_NM},
+			#{ATCT_NM},
+			#{FNCLC_ID},
+			#{DOC_TYP},
+			#{DOC_PART_NO},
+			#{RRD_CFY},
+			#{MNTRG_YN},
+			#{AUCR_YN},
+			#{APRV_YN_CFY},
+			#{APRV_STEP_CFY},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE,
+			'N'
+		)
+	</insert>
+	
+	<update id="UpdateProcedure" parameterType="java.util.HashMap">
+		UPDATE GE_MP_PRCDOC_M
+		   SET DIVS_CD 	   = #{DIVS_CD},
+			   PPCD 	   = #{PPCD},
+			   PRCDOC_NO   = #{PRCDOC_NO},
+			   PRCDOC_NM   = #{PRCDOC_NM},
+			   DOC_TYP     = #{DOC_TYP},
+			   DOC_PART_NO = #{DOC_PART_NO},
+			   RRD_CFY     = #{RRD_CFY},
+			   ATCT_NM     = #{ATCT_NM},
+			   FNCLC_ID    = #{FNCLC_ID},
+			   MNTRG_YN    = #{MNTRG_YN},
+			   AUCR_YN    = #{AUCR_YN},
+			   APRV_YN_CFY    = #{APRV_YN_CFY},
+			   APRV_STEP_CFY    = #{APRV_STEP_CFY},
+			   REGPR_ID    = #{REGPR_ID},
+			   REGPR_NM    = #{REGPR_NM},
+			   RG_DT       = SYSDATE
+		 WHERE PRCDOC_UNQ_KY_VAL = #{PRCDOC_UNQ_KY_VAL}
+	</update>
+	
+	<update id="DeleteProcedure" parameterType="java.util.HashMap">
+		UPDATE GE_MP_PRCDOC_M
+		   SET DLT_YN 	   = 'Y'
+		 WHERE PRCDOC_UNQ_KY_VAL IN(${CHK_ITEMS})
+	</update>
+	
+	<select id="ProcedureDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			PRCDOC_UNQ_KY_VAL,
+			DIVS_CD,
+			PPCD,
+			PRCDOC_NO,
+			PRCDOC_NM,
+			DOC_TYP,
+			DOC_PART_NO,
+			PRCDOC_RVSN_NO,
+			ATCT_NM,
+			FNCLC_ID,
+			RRD_CFY,
+			MNTRG_YN,
+			AUCR_YN,
+			APRV_YN_CFY,
+			APRV_STEP_CFY,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			TO_CHAR(RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
+	  	 FROM GE_MP_PRCDOC_M
+		 WHERE PRCDOC_UNQ_KY_VAL = #{PRCDOC_UNQ_KY_VAL}
+	</select>
+	
+	<update id="UpdateProcedureVer" parameterType="java.util.HashMap">
+		UPDATE GE_MP_PRCDOC_M
+		   SET PRCDOC_RVSN_NO 	 = #{PRCDOC_RVSN_NO},
+		       FRM_UNQ_KY_VAL 	 = #{FRM_UNQ_KY_VAL}
+		 WHERE PRCDOC_UNQ_KY_VAL = #{PRCDOC_UNQ_KY_VAL}
+	</update>
+	
+	<insert id="InsertFrmJson" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_FRM1_M
+		(
+			FRM_UNQ_KY_VAL,
+			FRM_OVER_JSON,
+			FRM_CONS_JSON
+		)
+		VALUES
+		(
+			#{FRM_UNQ_KY_VAL},
+			#{FRM_OVER_JSON,jdbcType=CLOB},
+			#{FRM_CONS_JSON,jdbcType=CLOB}
+		)
+	</insert>
+	
+	<update id="DeleteFrmJson" parameterType="java.util.HashMap">
+		DELETE GE_MP_FRM1_M
+		 WHERE FRM_UNQ_KY_VAL = #{FRM_UNQ_KY_VAL}
+	</update>
+	
+	<select id="ProcedureList_Excel" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT 
+			PRCDOC_NO AS "절차서번호",
+			PRCDOC_NM AS "절차서명",
+		<if test='PRCDOC_CFY == "M"'>
+			ATCT_NM AS "점검지명",
+		</if>
+			FNCLC_ID||' ' AS  "절차서기능위치",
+			PRCDOC_RVSN_NO "LDM최종버젼",
+			PRCDOC_RVSN_NO "서식최종버젼",
+			TO_CHAR(RG_DT, 'YYYY-MM-DD') AS "등록일",
+			NVL(REGPR_NM, '없음') AS "등록자",
+		<if test='PRCDOC_CFY == "P"'>
+            (SELECT count(*) FROM GE_MP_FRMID_M WHERE FRM_UNQ_KY_VAL = A.FRM_UNQ_KY_VAL) AS "DB갯수"
+		</if>
+		<if test='PRCDOC_CFY == "M"'>
+            (SELECT count(*) FROM GE_MP_QR_M WHERE PRCDOC_UNQ_KY_VAL = A.PRCDOC_UNQ_KY_VAL) AS "QR갯수"
+		</if>
+		FROM GE_MP_PRCDOC_M A
+		WHERE DLT_YN = 'N'
+		<if test='PPCD != ""'>
+		   AND A.PPCD = #{PPCD}
+		</if>
+		<if test='PRCDOC_CFY != ""'>
+		   AND A.PRCDOC_CFY = #{PRCDOC_CFY}
+		</if>
+		<if test='PRCDOC_NO != ""'>
+		   AND A.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+		</if>
+		<if test='PRCDOC_NM != ""'>
+		   AND A.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+		</if>
+		ORDER BY RG_DT DESC
+	</select>
+	
+		
+</mapper>

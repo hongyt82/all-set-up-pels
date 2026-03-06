@@ -1,0 +1,65 @@
+/* Etc Style */
+.LeftButtonArea{width:20%;}
+.RightButtonArea{width:20%;text-align:right;}
+.PagingArea{}
+
+/* Paging Style */
+.Paging{padding:8px 0px 6px 0px;text-align:center;width:100%;z-index:1;background-color:white;}
+.Paging .Text{text-align:center;}
+.Paging a{cursor:pointer;display:inline-block;overflow:hidden;vertical-align:top;text-decoration:none;}
+.Paging a .ArrowPrev{background:white url('../Image/pagingArrow_prev.gif') no-repeat center;width:19px;height:19px;display:inline-block;}
+.Paging a .ArrowPrev_disable{background:white url('../Image/pagingArrow_prev_disable.gif') no-repeat center;width:19px;height:19px;display:inline-block;}
+.Paging a .ArrowNext{background:white url('../Image/pagingArrow_next.gif') no-repeat center;width:19px;height:19px;display:inline-block;}
+.Paging a .ArrowNext_disable{background:white url('../Image/pagingArrow_next_disable.gif') no-repeat center;width:19px;height:19px;display:inline-block;}
+.Paging a .ArrowFirst{background:white url('../Image/pagingArrow_first.gif') no-repeat center;width:19px;height:19px;display:inline-block;}
+.Paging a .ArrowFirst_disable{background:white url('../Image/pagingArrow_first_disable.gif') no-repeat center;width:19px;height:19px;display:inline-block;}
+.Paging a .ArrowLast{background:white url('../Image/pagingArrow_last.gif') no-repeat center;width:19px;height:19px;display:inline-block;}
+.Paging a .ArrowLast_disable{background:white url('../Image/pagingArrow_last_disable.gif') no-repeat center;width:19px;height:19px;display:inline-block;}
+
+.Paging a .TextButton{width:0px;display:none;overflow:hidden;background:black;}
+
+.Paging .Space{display:inline-block;width:3px;height:1px;overflow:hidden;}
+.Paging .Number{padding:0px 10px 0px 10px;text-align:center;vertical-align:top;font-family:Tahoma;}
+.Paging .Number a.link{color:#2c3643;text-decoration:none;display:inline-block;width:16px;line-height:16px;text-align:center;border:1px solid white;}
+.Paging .Number a:hover{color:#006eff;}
+.Paging .Number .Label{color:#0065e0;text-decoration:none;display:inline-block;width:16px;line-height:16px;text-align:center;border:1px solid white;padding:0;font-weight:bold}
+.Paging .Number .Space{width:5px;overflow:hidden;}
+
+.Paging .SideButton{position:relative;top:0px;right:0px;z-index:2;width:100%;text-align:right;}
+
+/* Legend Style */
+.Legend{padding:0px;width:100%;white-space:nowrap;}
+.Legend .Outline{width:100%;border:0px;}
+
+.Legend .CountArea{padding:0px 0px;vertical-align:middle;}
+.Legend .CountArea .Wrap{}
+.Legend .CountArea .Innerwrap{}
+.Legend .CountArea .Text{color:#6172AF;vertical-align:middle;}
+.Legend .CountArea .Number{color:#ef872b;font-weight:bold;} 
+
+.Legend .LegendArea{text-align:right;vertical-align:bottom;padding:0px;}
+.Legend .LegendArea ul{float:right;display:inline-block;margin:0;padding:0;white-space:nowrap;height:22px;}
+.Legend .LegendArea li{list-style-image:none;list-style-position:outside;list-style-type:none;float:left;display:inline-block;padding:4px 0px 0px 5px;color:#65748e;}
+.Legend .LegendArea li .Image{vertical-align:middle;}
+.Legend .LegendArea li .Text{vertical-align:middle;display:inline-block;padding:0px 3px;color:#808080;}
+
+/* Grid Input Style */ 
+table tr.Header .Inputbox{text-align:center;padding:0px 3px;} 
+.Inputbox table td{border:0}
+table tr td.Inputbox{text-align:center;padding:0px 3px;} 
+table tr td.ButtonArea{padding:0px 0px 0px 3px;white-space:nowrap;}
+table tr td.InputArea{padding:0px 3px 0px 0px;white-space:nowrap;} 
+ 
+.GridView .iframe{width:100%;}
+.GridWrite .iframe{border:1px solid #d6d6d6;width:100%;}
+ 
+.Grid input.TextBox,
+.GridView input.TextBox,
+.GridWrite .TextBox{}
+.ItemInput input.TextBox{border:1px solid #5ba4ef;}
+
+/*rad calendar*/
+.GridWrite .inputCell .TextBox{border:1px solid #d6d6d6;color:#3c6fc2;width:100%;}
+
+
+

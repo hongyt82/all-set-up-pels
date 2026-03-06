@@ -1,0 +1,693 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.exam.exam">
+	<select id="ExamList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (
+			<if test='SH_SORT == "CHCK_STRT_DT"'>
+			SELECT ROW_NUMBER() OVER (ORDER BY A.CHCK_STRT_DT DESC, A.RG_DT DESC) AS LISTNUM,
+			</if>
+			<if test='SH_SORT == "RG_DT"'>
+			SELECT ROW_NUMBER() OVER (ORDER BY A.RG_DT DESC, A.CHCK_STRT_DT DESC) AS LISTNUM,
+			</if>
+				A.TST_UNQ_KY_VAL,
+				A.FRM_UNQ_KY_VAL,
+				A.CHCK_STRT_DT,
+				A.CHCK_END_DT,
+				REGEXP_REPLACE(CHCK_STRT_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') || ' ~ ' || REGEXP_REPLACE(CHCK_END_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') AS CHCK_DT,
+				C.PRCDOC_UNQ_KY_VAL,
+				C.PRCDOC_NO,
+				C.PRCDOC_NM,
+				C.DOC_TYP,
+				C.DOC_PART_NO,
+				C.PRCDOC_RVSN_NO,
+				C.PRCDOC_CFY,
+				CASE WHEN C.PRCDOC_CFY = 'P' THEN '정주기'
+				     WHEN C.PRCDOC_CFY = 'M' THEN '점검지'
+				     ELSE ''
+				END AS PRCDOC_CFY_NM,			
+				C.ATCT_NM,
+				C.MNTRG_YN,
+				B.ATCT_CFY,
+				A.TITL_NM,
+				A.CHKPR_ID,
+				A.CHKPR_FNM,
+				A.CNMR_ID,
+				A.CNMR_FNM,
+				A.ATWT_ID,
+				A.ATWT_FNM,
+				A.WRKOR_NO,
+				A.ATWT_PPL_CNT,
+				A.ATWT_RQST_YN,
+				A.PRSTS_CFY,
+				CASE WHEN A.PRSTS_CFY = 'R' THEN '준비'
+				     WHEN A.PRSTS_CFY = 'A' THEN '허가'
+				     WHEN A.PRSTS_CFY = 'F' THEN '수행'
+				     WHEN A.PRSTS_CFY = 'S' THEN '정지'
+				     WHEN A.PRSTS_CFY = 'C' THEN '완료'
+				     ELSE ''
+				END AS PRSTS_CFY_NM,
+				A.REGPR_ID,
+				A.REGPR_NM,
+				A.RG_DT,
+				TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT,
+	            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_PL_CHECK_S' AND UNQ_NO = A.TST_UNQ_KY_VAL AND ATFL_ID = '1') PDF_PATH,
+	            C.APRV_YN_CFY,
+	            (SELECT count(*) FROM GE_MP_APLPR_S WHERE TST_UNQ_KY_VAL =  A.TST_UNQ_KY_VAL) APRV_CNT,
+	            (SELECT count(*) FROM GE_MP_APLPR_S WHERE TST_UNQ_KY_VAL =  A.TST_UNQ_KY_VAL AND APRV_YN = 'Y' AND APRV_TYP = 'Y') APRV_LAST
+			FROM GE_MP_CHECK_S A
+			JOIN GE_MP_FRM_M B
+			ON A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+			JOIN GE_MP_PRCDOC_M C
+			ON B.PRCDOC_UNQ_KY_VAL = C.PRCDOC_UNQ_KY_VAL
+			<if test='PRCDOC_CFY != ""'>
+			   AND C.PRCDOC_CFY = #{PRCDOC_CFY}
+			</if>
+			<if test='PRCDOC_NO != ""'>
+			   AND C.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+			</if>
+			<if test='PRCDOC_NM != ""'>
+			   AND C.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+			</if>
+			WHERE A.DLT_YN = 'N'
+			<if test='FRM_UNQ_KY_VAL != ""'>
+			   AND A.FRM_UNQ_KY_VAL = #{FRM_UNQ_KY_VAL}
+			</if>
+			<if test='CHCK_STRT_DT != ""'>
+			   AND A.CHCK_STRT_DT >= #{CHCK_STRT_DT}
+			</if>
+			<if test='CHCK_END_DT != ""'>
+			   AND A.CHCK_END_DT <![CDATA[<=]]> #{CHCK_END_DT}
+			</if>
+			<if test='PRSTS_CFY != ""'>
+			   AND A.PRSTS_CFY = #{PRSTS_CFY}
+			</if>
+			<if test='TITL_NM != ""'>
+			   AND A.TITL_NM LIKE '%'||#{TITL_NM}||'%'
+			</if>
+		)
+		WHERE LISTNUM BETWEEN #{DISPSTART} AND #{DISPEND}			
+	</select>
+	
+	<select id="ExamCount" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*)
+		FROM GE_MP_CHECK_S A
+		JOIN GE_MP_FRM_M B
+		ON A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+		JOIN GE_MP_PRCDOC_M C
+		ON B.PRCDOC_UNQ_KY_VAL = C.PRCDOC_UNQ_KY_VAL
+		<if test='PRCDOC_CFY != ""'>
+		   AND C.PRCDOC_CFY = #{PRCDOC_CFY}
+		</if>
+		<if test='PRCDOC_NO != ""'>
+		   AND C.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+		</if>
+		<if test='PRCDOC_NM != ""'>
+		   AND C.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+		</if>
+		WHERE A.DLT_YN = 'N'
+		<if test='FRM_UNQ_KY_VAL != ""'>
+		   AND A.FRM_UNQ_KY_VAL = #{FRM_UNQ_KY_VAL}
+		</if>
+		<if test='CHCK_STRT_DT != ""'>
+		   AND A.CHCK_STRT_DT >= #{CHCK_STRT_DT}
+		</if>
+		<if test='CHCK_END_DT != ""'>
+		   AND A.CHCK_END_DT <![CDATA[<=]]> #{CHCK_END_DT}
+		</if>
+		<if test='PRSTS_CFY != ""'>
+		   AND A.PRSTS_CFY = #{PRSTS_CFY}
+		</if>
+		<if test='TITL_NM != ""'>
+		   AND A.TITL_NM LIKE '%'||#{TITL_NM}||'%'
+		</if>
+	</select>
+	
+	<select id="ExamReadyList" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (
+			<if test='SH_SORT == "CHCK_STRT_DT"'>
+			SELECT ROW_NUMBER() OVER (ORDER BY A.CHCK_STRT_DT DESC, A.RG_DT DESC) AS LISTNUM,
+			</if>
+			<if test='SH_SORT == "RG_DT"'>
+			SELECT ROW_NUMBER() OVER (ORDER BY A.RG_DT DESC, A.CHCK_STRT_DT DESC) AS LISTNUM,
+			</if>
+				A.TST_UNQ_KY_VAL,
+				A.FRM_UNQ_KY_VAL,
+				A.CHCK_STRT_DT,
+				A.CHCK_END_DT,
+				REGEXP_REPLACE(CHCK_STRT_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') || ' ~ ' || REGEXP_REPLACE(CHCK_END_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') AS CHCK_DT,
+				C.PRCDOC_NO,
+				C.PRCDOC_RVSN_NO,
+				C.PRCDOC_NM,
+				C.DOC_TYP,
+				C.DOC_PART_NO,
+				C.PRCDOC_CFY,
+				CASE WHEN C.PRCDOC_CFY = 'P' THEN '정주기'
+				     WHEN C.PRCDOC_CFY = 'M' THEN '점검지'
+				     ELSE ''
+				END AS PRCDOC_CFY_NM,			
+				C.ATCT_NM,
+				C.MNTRG_YN,
+				B.ATCT_CFY,
+				A.TITL_NM,
+				A.CHKPR_ID,
+				A.CHKPR_FNM,
+				A.CNMR_ID,
+				A.CNMR_FNM,
+				A.ATWT_ID,
+				A.ATWT_FNM,
+				A.WRKOR_NO,
+				A.ATWT_PPL_CNT,
+				A.ATWT_RQST_YN,
+				A.PRSTS_CFY,
+				CASE WHEN A.PRSTS_CFY = 'R' THEN '준비'
+				     WHEN A.PRSTS_CFY = 'F' THEN '수행'
+				     WHEN A.PRSTS_CFY = 'S' THEN '정지'
+				     WHEN A.PRSTS_CFY = 'C' THEN '완료'
+				     WHEN A.PRSTS_CFY = 'A' THEN '허가'
+				     ELSE ''
+				END AS PRSTS_CFY_NM,
+				A.REGPR_ID,
+				A.REGPR_NM,
+				A.RG_DT,
+				TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT,
+	            (SELECT UNQ_KY_VAL FROM GE_MP_JOB_S T1 WHERE T1.TST_UNQ_KY_VAL = A.TST_UNQ_KY_VAL) UNQ_KY_VAL,
+	            (SELECT T2.ATFL_GRUP_NM ||  '/' || T2.ATFL_PHCL_NM || '.' || T2.ATFL_FEXT_NM FROM GE_MP_JOB_S T1, GE_MP_FILE_S T2 WHERE T1.FRM_UNQ_KY_VAL  = T2.UNQ_NO AND T2.ATFL_GRUP_NM ='GE_MP_ETCFRM_M' AND  T1.TST_UNQ_KY_VAL = A.TST_UNQ_KY_VAL AND T2.ATFL_ID = '1') JOB_OZR,
+	            (SELECT T2.ATFL_GRUP_NM ||  '/' || T2.ATFL_PHCL_NM || '.' || T2.ATFL_FEXT_NM FROM GE_MP_JOB_S T1, GE_MP_FILE_S T2 WHERE T1.UNQ_KY_VAL  = T2.UNQ_NO AND T2.ATFL_GRUP_NM ='GE_MP_JOB_S' AND  T1.TST_UNQ_KY_VAL = A.TST_UNQ_KY_VAL AND T2.ATFL_ID = '1') JOB_FNAME1,
+	            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_CHECK_S' AND UNQ_NO = A.TST_UNQ_KY_VAL AND ATFL_ID = '1') OZD_FNAME1,
+	            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '1') FNAME1,
+	            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '2') FNAME2,
+	            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '3') FNAME3,
+	            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '4') FNAME4,
+	            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '5') FNAME5
+			FROM GE_MP_CHECK_S A
+			JOIN GE_MP_FRM_M B
+			ON A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+			JOIN GE_MP_PRCDOC_M C
+			ON B.PRCDOC_UNQ_KY_VAL = C.PRCDOC_UNQ_KY_VAL
+			<if test='PRCDOC_CFY != ""'>
+			   AND C.PRCDOC_CFY = #{PRCDOC_CFY}
+			</if>
+			<if test='PRCDOC_NO != ""'>
+			   AND C.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+			</if>
+			<if test='PRCDOC_NM != ""'>
+			   AND C.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+			</if>
+			WHERE A.DLT_YN = 'N'
+			<if test='FRM_UNQ_KY_VAL != ""'>
+			   AND A.FRM_UNQ_KY_VAL = #{FRM_UNQ_KY_VAL}
+			</if>
+			<if test='CHCK_STRT_DT != ""'>
+			   AND A.CHCK_STRT_DT <![CDATA[<=]]> #{CHCK_STRT_DT}
+			</if>
+			<if test='CHCK_END_DT != ""'>
+			   AND A.CHCK_END_DT >= #{CHCK_END_DT}
+			</if>
+			<if test='PRSTS_CFY != ""'>
+			   AND A.PRSTS_CFY = #{PRSTS_CFY}
+			</if>
+			<if test='PRSTS_CFY_M != ""'>
+			   AND A.PRSTS_CFY IN (${PRSTS_CFY_M})
+			</if>
+			<if test='ATCT_NM != ""'>
+			   AND A.TITL_NM LIKE '%'||#{TITL_NM}||'%'
+			</if>
+		)
+		WHERE LISTNUM BETWEEN #{DISPSTART} AND #{DISPEND}		
+		
+	</select>
+	
+	<select id="ExamReadyCount" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*)
+		FROM GE_MP_CHECK_S A
+		JOIN GE_MP_FRM_M B
+		ON A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+		JOIN GE_MP_PRCDOC_M C
+		ON B.PRCDOC_UNQ_KY_VAL = C.PRCDOC_UNQ_KY_VAL
+		<if test='PRCDOC_CFY != ""'>
+		   AND C.PRCDOC_CFY = #{PRCDOC_CFY}
+		</if>
+		<if test='PRCDOC_NO != ""'>
+		   AND C.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+		</if>
+		<if test='PRCDOC_NM != ""'>
+		   AND C.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+		</if>
+		WHERE A.DLT_YN = 'N'
+		<if test='FRM_UNQ_KY_VAL != ""'>
+		   AND A.FRM_UNQ_KY_VAL = #{FRM_UNQ_KY_VAL}
+		</if>
+		<if test='CHCK_STRT_DT != ""'>
+		   AND A.CHCK_STRT_DT <![CDATA[<=]]> #{CHCK_STRT_DT}
+		</if>
+		<if test='CHCK_END_DT != ""'>
+		   AND A.CHCK_END_DT >= #{CHCK_END_DT}
+		</if>
+		<if test='PRSTS_CFY != ""'>
+		   AND A.PRSTS_CFY = #{PRSTS_CFY}
+		</if>
+		<if test='PRSTS_CFY_M != ""'>
+		   AND A.PRSTS_CFY IN (${PRSTS_CFY_M})
+		</if>
+		<if test='ATCT_NM != ""'>
+		   AND A.TITL_NM LIKE '%'||#{TITL_NM}||'%'
+		</if>
+		ORDER BY A.RG_DT DESC
+	</select>	
+	
+	<select id="ExamMaxData" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT ROW_NUMBER() OVER (ORDER BY A.RG_DT DESC) AS LISTNUM,
+			A.TST_UNQ_KY_VAL,
+			A.FRM_UNQ_KY_VAL,
+			A.CHCK_STRT_DT,
+			A.CHCK_END_DT,
+			REGEXP_REPLACE(CHCK_STRT_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') || ' ~ ' || REGEXP_REPLACE(CHCK_END_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') AS CHCK_DT,
+			C.PRCDOC_NO,
+			C.PRCDOC_RVSN_NO,
+			C.PRCDOC_NM,
+			C.DOC_TYP,
+			C.DOC_PART_NO,
+			C.PRCDOC_CFY,
+			CASE WHEN C.PRCDOC_CFY = 'P' THEN '정주기'
+			     WHEN C.PRCDOC_CFY = 'M' THEN '점검지'
+			     ELSE ''
+			END AS PRCDOC_CFY_NM,			
+			C.ATCT_NM,
+			C.MNTRG_YN,
+			B.ATCT_CFY,
+			A.TITL_NM,
+			A.CHKPR_ID,
+			A.CHKPR_FNM,
+			A.CNMR_ID,
+			A.CNMR_FNM,
+			A.ATWT_ID,
+			A.ATWT_FNM,
+			A.WRKOR_NO,
+			A.ATWT_PPL_CNT,
+			A.ATWT_RQST_YN,
+			A.PRSTS_CFY,
+			CASE WHEN A.PRSTS_CFY = 'R' THEN '준비'
+			     WHEN A.PRSTS_CFY = 'F' THEN '수행'
+			     WHEN A.PRSTS_CFY = 'S' THEN '정지'
+			     WHEN A.PRSTS_CFY = 'C' THEN '완료'
+			     WHEN A.PRSTS_CFY = 'A' THEN '허가'
+			     ELSE ''
+			END AS PRSTS_CFY_NM,
+			A.REGPR_ID,
+			A.REGPR_NM,
+			A.RG_DT,
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT,
+            (SELECT UNQ_KY_VAL FROM GE_MP_JOB_S T1 WHERE T1.TST_UNQ_KY_VAL = A.TST_UNQ_KY_VAL) UNQ_KY_VAL,
+            (SELECT T2.ATFL_GRUP_NM ||  '/' || T2.ATFL_PHCL_NM || '.' || T2.ATFL_FEXT_NM FROM GE_MP_JOB_S T1, GE_MP_FILE_S T2 WHERE T1.FRM_UNQ_KY_VAL  = T2.UNQ_NO AND T2.ATFL_GRUP_NM ='GE_MP_ETCFRM_M' AND  T1.TST_UNQ_KY_VAL = A.TST_UNQ_KY_VAL AND T2.ATFL_ID = '1') JOB_OZR,
+            (SELECT T2.ATFL_GRUP_NM ||  '/' || T2.ATFL_PHCL_NM || '.' || T2.ATFL_FEXT_NM FROM GE_MP_JOB_S T1, GE_MP_FILE_S T2 WHERE T1.UNQ_KY_VAL  = T2.UNQ_NO AND T2.ATFL_GRUP_NM ='GE_MP_JOB_S' AND  T1.TST_UNQ_KY_VAL = A.TST_UNQ_KY_VAL AND T2.ATFL_ID = '1') JOB_FNAME1,
+            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_CHECK_S' AND UNQ_NO = A.TST_UNQ_KY_VAL AND ATFL_ID = '1') OZD_FNAME1,
+            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '1') FNAME1,
+            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '2') FNAME2,
+            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '3') FNAME3,
+            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '4') FNAME4,
+            (SELECT ATFL_GRUP_NM ||  '/' || ATFL_PHCL_NM || '.' || ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_MP_FRM_M' AND UNQ_NO = B.FRM_UNQ_KY_VAL AND ATFL_ID = '5') FNAME5
+		FROM GE_MP_CHECK_S A
+		JOIN GE_MP_FRM_M B
+		ON A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+		JOIN GE_MP_PRCDOC_M C
+		ON B.PRCDOC_UNQ_KY_VAL = C.PRCDOC_UNQ_KY_VAL
+		WHERE A.DLT_YN = 'N'
+		  AND TST_UNQ_KY_VAL = (SELECT NVL(MAX(TST_UNQ_KY_VAL), 0) FROM GE_MP_CHECK_S)
+	</select>
+	
+	<select id="ExamLastUnqNo" resultType="string">
+		SELECT NVL(MAX(TST_UNQ_KY_VAL), 0) +1 FROM GE_MP_CHECK_S
+	</select>
+	
+	<insert id="InsertExam" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_CHECK_S
+		(
+			TST_UNQ_KY_VAL,
+			FRM_UNQ_KY_VAL,
+			CHCK_STRT_DT,
+			CHCK_END_DT,
+			TITL_NM,
+			CHKPR_ID,
+			CHKPR_FNM,
+			CNMR_ID,
+			CNMR_FNM,
+			ATWT_ID,
+			ATWT_FNM,
+			WRKOR_NO,
+			ATWT_PPL_CNT,
+			ATWT_RQST_YN,
+			PRSTS_CFY,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			DLT_YN
+		)
+		VALUES
+		(
+			#{TST_UNQ_KY_VAL},
+			#{FRM_UNQ_KY_VAL},
+			#{CHCK_STRT_DT},
+			#{CHCK_END_DT},
+			#{TITL_NM},
+			#{CHKPR_ID},
+			#{CHKPR_FNM},
+			#{CNMR_ID},
+			#{CNMR_FNM},
+			#{ATWT_ID},
+			#{ATWT_FNM},
+			#{WRKOR_NO},
+			#{ATWT_PPL_CNT},
+			#{ATWT_RQST_YN},
+			#{PRSTS_CFY},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE,
+			'N'
+		)
+	</insert>
+	
+	<insert id="InsertExamFrmmnt" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_FRMMNT_S
+		(
+			UNQ_KY_VAL,
+			TST_UNQ_KY_VAL,
+			UNQ_ID,
+			CHCK_YN,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			RMK_NM,
+			TH1_ITM_NM
+		)
+		SELECT (SELECT NVL(MAX(UNQ_KY_VAL), 0) FROM GE_MP_FRMMNT_S)+ROWNUM,
+			#{TST_UNQ_KY_VAL},
+			UNQ_ID,
+			'',
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE,
+			'',
+			TH1_ITM_NM
+			FROM GE_MP_FRMMNT_M			
+			WHERE FRM_UNQ_KY_VAL = #{FRM_UNQ_KY_VAL}
+	</insert>
+	
+	<update id="UpdateExam" parameterType="java.util.HashMap">
+		UPDATE GE_MP_CHECK_S
+		   SET CHCK_STRT_DT = #{CHCK_STRT_DT},
+			   CHCK_END_DT  = #{CHCK_END_DT},
+			   TITL_NM 		= #{TITL_NM},
+			   CHKPR_ID 	= #{CHKPR_ID},
+			   CHKPR_FNM 	= #{CHKPR_FNM},
+			   CNMR_ID 		= #{CNMR_ID},
+			   CNMR_FNM 	= #{CNMR_FNM},
+			   ATWT_ID 		= #{ATWT_ID},
+			   ATWT_FNM 	= #{ATWT_FNM},
+			   WRKOR_NO 	= #{WRKOR_NO},
+			   <!-- ATWT_PPL_CNT = #{ATWT_PPL_CNT}, -->
+			   ATWT_RQST_YN = #{ATWT_RQST_YN},
+			   REGPR_ID 	= #{REGPR_ID},
+			   REGPR_NM 	= #{REGPR_NM},
+			   RG_DT 		= SYSDATE
+		 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	</update>
+	
+	<update id="UpdateCheck" parameterType="java.util.HashMap">
+		UPDATE GE_MP_CHECK_S
+		   SET REGPR_ID 	= #{REGPR_ID},
+			   REGPR_NM 	= #{REGPR_NM},
+			   RG_DT 		= SYSDATE
+		 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	</update>
+	
+	<update id="UpdateCheck_CFY" parameterType="java.util.HashMap">
+		UPDATE GE_MP_CHECK_S
+		   SET PRSTS_CFY 	= #{PRSTS_CFY}
+		 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	</update>	
+	
+	<update id="DeleteExam" parameterType="java.util.HashMap">
+		UPDATE GE_MP_CHECK_S
+		   SET DLT_YN 	= 'Y',
+		       REGPR_ID = #{REGPR_ID},
+		       REGPR_NM 	= #{REGPR_NM},
+		       RG_DT 		= SYSDATE
+		 WHERE TST_UNQ_KY_VAL IN (${CHK_ITEMS})
+	</update>	
+
+	<!-- 
+	<delete id="DeleteExam" parameterType="java.util.HashMap">
+		DELETE FROM GE_MP_CHECK_S
+		 WHERE TST_UNQ_KY_VAL IN (${CHK_ITEMS})
+	</delete>
+	-->
+	<select id="ExamSchedulerCount" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*)
+		FROM GE_MP_CHECK_S A
+		 WHERE FRM_UNQ_KY_VAL = #{FRM_UNQ_KY_VAL}
+		   AND CHCK_STRT_DT = #{CHCK_STRT_DT}
+	</select>
+	
+	<delete id="DeleteExamScheduler" parameterType="java.util.HashMap">
+		DELETE FROM GE_MP_CHECK_S
+		 WHERE FRM_UNQ_KY_VAL = #{FRM_UNQ_KY_VAL}
+		   AND CHCK_STRT_DT = #{CHCK_STRT_DT}
+	</delete>
+	
+	<select id="ExamDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			A.TST_UNQ_KY_VAL,
+			A.FRM_UNQ_KY_VAL,
+			A.CHCK_STRT_DT,
+			REGEXP_REPLACE(CHCK_STRT_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') AS FM_CHCK_STRT_DT,
+			A.CHCK_END_DT,
+			REGEXP_REPLACE(CHCK_END_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') AS FM_CHCK_END_DT,
+			REGEXP_REPLACE(CHCK_STRT_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') || ' ~ ' || REGEXP_REPLACE(CHCK_END_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') AS CHCK_DT,
+			C.PRCDOC_NO,
+			C.PRCDOC_NM,
+			C.DOC_TYP,
+			B.PRCDOC_RVSN_NO,
+			C.PRCDOC_CFY,
+			C.ATCT_NM,
+			A.TITL_NM,
+			A.CHKPR_ID,
+			A.CHKPR_FNM,
+			A.CNMR_ID,
+			A.CNMR_FNM,
+			A.ATWT_ID,
+			A.ATWT_FNM,
+			A.WRKOR_NO,
+			A.ATWT_PPL_CNT,
+			A.ATWT_RQST_YN,
+			A.PRSTS_CFY,
+			CASE WHEN A.PRSTS_CFY = 'R' THEN '준비'
+			     WHEN A.PRSTS_CFY = 'F' THEN '수행'
+			     WHEN A.PRSTS_CFY = 'S' THEN '정지'
+			     WHEN A.PRSTS_CFY = 'C' THEN '완료'
+			     WHEN A.PRSTS_CFY = 'A' THEN '허가'
+			     ELSE ''
+			END AS PRSTS_CFY_NM,
+			A.REGPR_ID,
+			A.REGPR_NM,
+			A.RG_DT,
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT,
+			(SELECT ATFL_GRUP_NM||'/'||ATFL_PHCL_NM||'.'||ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_PL_CHECK_S' AND UNQ_NO = A.TST_UNQ_KY_VAL AND ATFL_ID = '1') ATFL_PHCL_NM1,
+            (SELECT ATFL_TITL_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_PL_CHECK_S' AND UNQ_NO = A.TST_UNQ_KY_VAL AND ATFL_ID = '1') ATFL_TITL_NM1, 
+       	    (SELECT ATFL_ORSRC_NM||'.'||ATFL_FEXT_NM FROM GE_MP_FILE_S WHERE ATFL_GRUP_NM ='GE_PL_CHECK_S' AND UNQ_NO = A.TST_UNQ_KY_VAL AND ATFL_ID = '1') ATFL_ORSRC_NM 
+		FROM GE_MP_CHECK_S A
+		JOIN GE_MP_FRM_M B
+		ON A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+		JOIN GE_MP_PRCDOC_M C
+		ON B.PRCDOC_UNQ_KY_VAL = C.PRCDOC_UNQ_KY_VAL
+		WHERE A.TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	</select>
+	
+	<insert id="InsertExamFormidResult" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_FRMID_S
+		(
+			TST_UNQ_KY_VAL,
+			FRM_ID,
+			AGMST_VAL,
+			PAGE_NO,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT,
+			MSNT_DT
+		)
+		VALUES
+		(
+			#{TST_UNQ_KY_VAL},
+			#{FRM_ID},
+			#{AGMST_VAL},
+			#{PAGE_NO},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE,
+			TO_DATE(#{MSNT_DT}, 'YYYY-MM-DD HH24:MI:SS')
+		)
+	</insert>
+	
+	<delete id="DeleteExamFormidResult" parameterType="java.util.HashMap">
+		DELETE FROM GE_MP_FRMID_S
+		 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+		   AND FRM_ID =  #{FRM_ID}
+	</delete>
+	
+	<insert id="InsertPrsts" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_PRSTS_S
+		(
+			TST_UNQ_KY_VAL,
+			PRSTS_CFY,
+			FRM_PAGE_NO,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT
+		)
+		VALUES
+		(
+			#{TST_UNQ_KY_VAL},
+			#{PRSTS_CFY},
+			#{FRM_PAGE_NO},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE
+		)
+	</insert>
+	
+	<delete id="DeletePrsts" parameterType="java.util.HashMap">
+		DELETE FROM GE_MP_PRSTS_S
+		 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	</delete>
+	
+	
+	<select id="ExamList_Excel" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+		SELECT
+			REGEXP_REPLACE(CHCK_STRT_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') || ' ~ ' || REGEXP_REPLACE(CHCK_END_DT, '(.{4})(.{2})(.{2})','\1-\2-\3') AS "시험기간",
+			C.PRCDOC_NO AS "절차서번호",
+			C.PRCDOC_NM AS "절차서명",
+			
+		<if test='PRCDOC_CFY == "P"'>
+			A.TITL_NM AS "시험명",
+			A.CHKPR_FNM AS "점검자",
+			CASE WHEN A.PRSTS_CFY = 'R' THEN '준비'
+			     WHEN A.PRSTS_CFY = 'A' THEN '허가'
+			     WHEN A.PRSTS_CFY = 'F' THEN '수행'
+			     WHEN A.PRSTS_CFY = 'S' THEN '정지'
+			     WHEN A.PRSTS_CFY = 'C' THEN '완료'
+			     ELSE ''
+			END AS "상태",
+			A.REGPR_NM AS "등록자",
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS "등록일"
+		</if>
+		<if test='PRCDOC_CFY == "M"'>
+			C.ATCT_NM AS "점검지명",
+			A.TITL_NM AS "점검명",
+			A.CHKPR_FNM AS "점검자",
+			A.REGPR_NM AS "등록자",
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS "등록일"
+		</if>
+		FROM GE_MP_CHECK_S A
+		JOIN GE_MP_FRM_M B
+		ON A.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL
+		JOIN GE_MP_PRCDOC_M C
+		ON B.PRCDOC_UNQ_KY_VAL = C.PRCDOC_UNQ_KY_VAL
+		<if test='PRCDOC_CFY != ""'>
+		   AND C.PRCDOC_CFY = #{PRCDOC_CFY}
+		</if>
+		<if test='PRCDOC_NO != ""'>
+		   AND C.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+		</if>
+		<if test='PRCDOC_NM != ""'>
+		   AND C.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+		</if>
+		WHERE A.DLT_YN = 'N'
+		<if test='CHCK_STRT_DT != ""'>
+		   AND A.CHCK_STRT_DT >= #{CHCK_STRT_DT}
+		</if>
+		<if test='CHCK_END_DT != ""'>
+		   AND A.CHCK_END_DT <![CDATA[<=]]> #{CHCK_END_DT}
+		</if>
+		<if test='PRSTS_CFY != ""'>
+		   AND A.PRSTS_CFY = #{PRSTS_CFY}
+		</if>
+		<if test='PRSTS_CFY_M != ""'>
+		   AND A.PRSTS_CFY IN (${PRSTS_CFY_M})
+		</if>
+		<if test='TITL_NM != ""'>
+		   AND A.TITL_NM LIKE '%'||#{TITL_NM}||'%'
+		</if>
+		<if test='SH_SORT == "CHCK_STRT_DT"'>
+		ORDER BY A.CHCK_STRT_DT DESC, A.RG_DT DESC
+		</if>
+		<if test='SH_SORT == "RG_DT"'>
+		ORDER BY A.RG_DT DESC, A.CHCK_STRT_DT DESC
+		</if>
+	</select>
+	
+	<select id="Exam_DownLoads" resultType="java.util.LinkedHashMap" parameterType="java.util.HashMap">
+	    SELECT ATFL_GRUP_NM, ATFL_PTH_NM, ATFL_FEXT_NM, ATFL_ORSRC_NM, ATFL_PHCL_NM,
+	           (SELECT TITL_NM FROM GE_MP_CHECK_S WHERE TST_UNQ_KY_VAL = A.UNQ_NO) TITL_NM
+		  FROM GE_MP_FILE_S A
+		 WHERE ATFL_GRUP_NM = 'GE_MP_CHECK_S' 
+		   AND UNQ_NO IN (${CHK_ITEMS})
+	</select>	
+	
+	<select id="ExamJsonDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT 
+			A.TST_UNQ_KY_VAL,
+			A.ATFL_PHCL_NM,
+			A.FRM_OVER_JSON,
+			A.FRM_CONS_JSON,
+			A.REGPR_ID,
+			A.REGPR_NM,
+			A.RG_DT,
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
+		FROM GE_MP_CHECK1_S A
+		WHERE A.TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	</select>	
+	
+	<insert id="InsertCheckJson" parameterType="java.util.HashMap">
+		INSERT INTO GE_MP_CHECK1_S
+		(
+			TST_UNQ_KY_VAL,
+			ATFL_PHCL_NM,
+			FRM_OVER_JSON,
+			FRM_CONS_JSON,
+			REGPR_ID,
+			REGPR_NM,
+			RG_DT
+		)
+		VALUES
+		(
+			#{TST_UNQ_KY_VAL},
+			#{ATFL_PHCL_NM},
+			#{FRM_OVER_JSON,jdbcType=CLOB},
+			#{FRM_CONS_JSON,jdbcType=CLOB},
+			#{REGPR_ID},
+			#{REGPR_NM},
+			SYSDATE
+		)
+	</insert>
+	
+	<update id="UpdateExamJson" parameterType="java.util.HashMap">
+		UPDATE GE_MP_CHECK1_S
+		   SET FRM_OVER_JSON = #{FRM_OVER_JSON},
+			   REGPR_ID 	= #{REGPR_ID},
+			   REGPR_NM 	= #{REGPR_NM},
+			   RG_DT 		= SYSDATE
+		 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	</update>
+
+	<delete id="DeleteCheckJson" parameterType="java.util.HashMap">
+		DELETE GE_MP_CHECK1_S
+		 WHERE TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+	</delete>
+	
+	<select id="CheckLastUnqNo" resultType="string">
+		SELECT NVL(MAX(TST_UNQ_KY_VAL), 0) +1 FROM GE_MP_CHECK_S
+	</select>	
+</mapper>

@@ -1,0 +1,59 @@
+﻿/* Separate Style */
+.Separate_Small{height:8px;overflow:hidden;margin:0px;clear:both;display:block;}
+.Separate_Middle{height:16px;overflow:hidden;margin:0px;clear:both;display:block;}
+.Separate_Large{height:24px;overflow:hidden;margin:0px;clear:both;display:block;}
+
+.NormalLine{height:1px;background:#e3e7ef;overflow:hidden;margin:0px;clear:both;}
+.SeparateLine{height:5px;border-top:1px solid #c2cde2;overflow:hidden;margin:0px;clear:both;}
+.TitleLine{height:3px;border-top:1px solid #bdd6fa;overflow:hidden;margin:0px;clear:both;display:none;}
+.SeparateVLine{height:1px;background:url('../Image/Common/SeparateHLine.gif') repeat-y center;overflow:hidden;display:block;}
+ 
+/* Input Style */
+input[type=color], input[type=date], input[type=datetime-local], input[type=datetime], input[type=email], input[type=month], input[type=number], input[type=password], input[type=search], input[type=tel], input[type=text], input[type=time], input[type=url], input[type=week], textarea {
+font-size:12px}
+.SelectBox,
+select{color:#595959;height:19px;margin:0px 0px;vertical-align:middle;height:26px;}
+input.TextBox{border:1px solid #d6d6d6;color:#3c6fc2;width:100%;padding:3px 0;margin:0px 0px;vertical-align:middle;min-height:18px;text-indent:8px;}
+textarea.TextBox{border:1px solid #d6d6d6;color:#3c6fc2;width:100%;padding:3px 0px;margin:0px;line-height:16px;text-indent:8px;}
+input.TextBox_readonly,
+textarea.TextBox_readonly{border:1px solid #fff;width:100%;background:transparent;padding:3px 0px;margin:0px 0px;line-height:16px;}
+input.TextBox_disable,
+textarea.TextBox_disable{border:1px solid #d4d4d4;background:#d4d4d4;width:100%;padding:3px 0px;margin:0px 0px;line-height:16px;}
+input.TextBox_highlight,
+textarea.TextBox_highlight{border:1px solid #fffe9d;background:#fffe9d;width:100%;padding:2px 0px;margin:0px 0px;}
+input.TextBox_hidden,
+textarea.TextBox_hidden{border:0px solid #dbd4bc;width:0px;overflow:hidden;}
+input.file{border:1px solid #d6d6d6;background:#fff;width:100%;padding:3px 0px;margin:0px 0px;}
+input[type=checkbox], input[type=radio]{margin:0 4px;vertical-align:middle}
+
+/* Input label Style */
+input[type=checkbox]+label, input[type=radio]+label{padding :2px 10px 0px 0px;display:inline-block;font-size:inherit;vertical-align:middle}
+
+input[type=text]:focus.TextBox,
+textarea:focus.TextBox{border:1px solid #58a3ff;} /*ie8이상8*/
+
+/* Input Comment */
+.InputError{color:red;line-height:18px;display:block;}
+.InputHint{color:#666;line-height:12px;vertical-align:middle;}
+.InputWarning{color:#ff6600;line-height:16px;}
+
+/* Essentiality */
+.Req{background:url('../Image/ReqImage.gif') no-repeat 0px center;padding-left:8px;}
+.ControlArea .Req{font-size:11px;}
+
+/* Comment Style */
+.Comment{color:#666;padding:4px 0px 3px 0px;display:inline-block;vertical-align:middle;}
+
+/* CommentNodata Style */ 
+.CommentNodata{font-weight:normal;color:#595959;text-align:center;padding:0px;line-height:20px;}
+ 
+.Grid .CommentNodata{border-bottom:1px solid #c5ccd6;font-weight:bold;} 
+.StatusGrid .CommentNodata{border-bottom:1px solid #c5ccd6;border-top:0px;font-weight:bold;} 
+.SubGrid .CommentNodata{border-left:1px solid #cbd0d8;border-bottom:1px solid #cbd0d8;border-right:1px solid #cbd0d8;font-weight:bold;} 
+.GridView .CommentNodata,
+.GridWrite .CommentNodata{text-align:left;}
+
+
+
+
+

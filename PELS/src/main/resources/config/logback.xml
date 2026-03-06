@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration scan="true" scanPeriod="3 seconds">
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+    
+    <property name="LOG_DIR" value="/home/pels/logs" />
+    <property name="SERVER_NAME" value="WMSS"/>
+    <property name="LOG_PATH_NAME" value="${LOG_DIR}/${SERVER_NAME}" />
+    <property name="FILE_NAME" value="PELS" />
+    
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <!-- [2018-08-17] [15:24:21.355] [log level] [logName]      [class.java line]       [message] -->
+            <!--     날짜           시간       로그레벨    로거이름   로그인클래스.java 몇번째줄    로그메세지 -->
+            <!-- <pattern>[%d{yyyy-MM-dd}] [%d{HH:mm:ss.SSS}] [%p] [%c{1}] [%F:%L [%m]%n</pattern> -->
+            <pattern>[%d{yyyy-MM-dd}] [%d{HH:mm:ss.SSS}] [%p] [%F:%L [%m]%n</pattern>
+        </layout>
+    </appender>
+	
+	<!-- FILE Appender -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH_NAME}/${FILE_NAME}.log</file>       
+         <prudent>true</prudent>
+		 <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5p] [%F]%M\(%L\) : %m%n</pattern>
+        </encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH_NAME}/${FILE_NAME}_%d{yyyyMMdd}.log</fileNamePattern>            
+            <maxHistory>30</maxHistory>
+			<prudent>true</prudent>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+		</rollingPolicy>       
+    </appender>
+	
+	<logger name="com.khnp.smart.drawing" level="DEBUG" />
+	<logger name="org.springframework" level="DEBUG" />
+    <logger name="org.springframework.web.bind.annotation.support.HandlerMethodInvoker" level="DEBUG" />
+    <logger name="org.springframework.web.servlet.DispatcherServlet" level="DEBUG" />
+
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>

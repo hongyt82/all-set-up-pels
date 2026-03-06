@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.system.message">
+	<select id="MessageList2" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY A.RG_DT DESC) AS LISTNUM,
+				A.RELTN_SCTN_NM, 
+				A.MSG_CTT, 
+				A.REGPR_ID, 
+				A.REGPR_NM, 
+				A.RG_DT,
+          		B.CHCK_STRT_DT, 
+          		B.CHCK_END_DT, 
+          		B.TITL_NM,
+          		(SELECT T2.PRCDOC_NM FROM GE_MP_FRM_M T1, GE_MP_PRCDOC_M T2 WHERE T1.PRCDOC_UNQ_KY_VAL = T2.PRCDOC_UNQ_KY_VAL AND  T1.FRM_UNQ_KY_VAL = B.FRM_UNQ_KY_VAL) PRCDOC_NM,
+				TO_CHAR(A.RG_DT, 'YYYY-MM-DD HH24:MI:SS') AS FM_RG_DT
+			FROM GE_MP_MSGE_S A, GE_MP_CHECK_S B
+			WHERE A.TST_UNQ_KY_VAL = B.TST_UNQ_KY_VAL
+			<if test='TST_UNQ_KY_VAL != ""'>
+			   AND B.TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+			</if>
+			<if test='SH_TITL_NM != ""'>
+			   AND B.TITL_NM LIKE '%'||#{SH_TITL_NM}||'%'
+			</if>
+			ORDER BY A.RG_DT DESC
+		)
+		WHERE LISTNUM BETWEEN #{DISPSTART} AND #{DISPEND}		
+	</select>
+	
+	<select id="MessageCount2" resultType="int" parameterType="java.util.HashMap">
+		SELECT 
+			COUNT(*) 
+		FROM GE_MP_MSGE_S A, GE_MP_CHECK_S B
+		WHERE A.TST_UNQ_KY_VAL = B.TST_UNQ_KY_VAL
+		<if test='TST_UNQ_KY_VAL != ""'>
+		   AND B.TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL}
+		</if>
+		<if test='SH_TITL_NM != ""'>
+		   AND B.TITL_NM LIKE '%'||#{SH_TITL_NM}||'%'
+		</if>	
+	</select>
+	
+</mapper>

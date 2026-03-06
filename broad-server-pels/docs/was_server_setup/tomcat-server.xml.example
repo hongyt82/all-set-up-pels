@@ -1,0 +1,47 @@
+# ============================================
+# Apache HTTP Server — WebSocket/Health 프록시 예시
+# ============================================
+# 이 프로젝트(sync-server) 기준입니다.
+# Node: WebSocket 8700, Health 8701(HTTP). Windows 등에서 Apache + PM2 사용 시 참고.
+#
+# .env.production과 맞출 것: INTERNAL_PORT=8700, Health는 8701
+# 필요 모듈: mod_proxy, mod_proxy_http, mod_proxy_wstunnel, mod_rewrite
+# ============================================
+
+# LoadModule proxy_module modules/mod_proxy.so
+# LoadModule proxy_http_module modules/mod_proxy_http.so
+# LoadModule proxy_wstunnel_module modules/mod_proxy_wstunnel.so
+# LoadModule rewrite_module modules/mod_rewrite.so
+
+# --- HTTPS (443) — Node는 SSL 미사용이므로 백엔드는 ws://, http:// ---
+<VirtualHost *:443>
+    ServerName your-domain.com
+
+    SSLEngine on
+    SSLCertificateFile     /path/to/cert.pem
+    SSLCertificateKeyFile  /path/to/key.pem
+
+    ProxyPass /ws ws://127.0.0.1:8700/ws
+    ProxyPassReverse /ws ws://127.0.0.1:8700/ws
+
+    ProxyPass /health http://127.0.0.1:8701/health
+    ProxyPassReverse /health http://127.0.0.1:8701/health
+
+    RewriteEngine on
+    RewriteCond %{HTTP:Upgrade} websocket [NC]
+    RewriteCond %{HTTP:Connection} upgrade [NC]
+    RewriteRule ^/ws(.*)$ ws://127.0.0.1:8700/ws$1 [P,L]
+</VirtualHost>
+
+# --- HTTP (80) — 필요 시 ---
+# <VirtualHost *:80>
+#     ServerName your-domain.com
+#     ProxyPass /ws ws://127.0.0.1:8700/ws
+#     ProxyPassReverse /ws ws://127.0.0.1:8700/ws
+#     ProxyPass /health http://127.0.0.1:8701/health
+#     ProxyPassReverse /health http://127.0.0.1:8701/health
+#     RewriteEngine on
+#     RewriteCond %{HTTP:Upgrade} websocket [NC]
+#     RewriteCond %{HTTP:Connection} upgrade [NC]
+#     RewriteRule ^/ws(.*)$ ws://127.0.0.1:8700/ws$1 [P,L]
+# </VirtualHost>
