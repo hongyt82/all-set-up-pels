@@ -1,18 +1,26 @@
 package com.khnp.pels.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.khnp.pels.common.validation.EventType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.*;
+import java.math.BigDecimal;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TstDeleteStrokeMeta {
+@JsonIgnoreProperties({"STROKE_SEQ","STROKE_COLOR","STROKE_WIDTH"})
+public class TstEventPageMeta {
+
+    @JsonProperty("EVENT_TYP")
+    @NotNull
+    private EventType EVENT_TYP;
 
     @JsonProperty("TST_UNQ_KY_VAL")
     @NotNull
@@ -24,17 +32,19 @@ public class TstDeleteStrokeMeta {
     @Min(1) @Max(99999)
     private Integer PAGE_NO;
 
-    @JsonProperty("STROKE_SEQ")
+    @JsonProperty("PDF_PAGE_NO")
     @NotNull
     @Min(1) @Max(99999)
-    private Integer STROKE_SEQ;
+    private Integer PDF_PAGE_NO;
 
-    @JsonProperty("DLTPR_ID")
+    @JsonProperty("USER_ID")
+    @NotBlank
     @Size(max=20)
-    private String DLTPR_ID;
+    private String USER_ID;
 
-    @JsonProperty("DLT_DT")
+    @JsonProperty("EVENT_DT")
+    @NotNull
     @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$", message = "yyyy-MM-dd'T'HH:mm:ss.SSS와 일치해야 합니다")
-    private String DLT_DT;
+    private String EVENT_DT;
 
 }

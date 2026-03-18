@@ -17,11 +17,8 @@ public class MultipartMixedWriter {
         resp.setCharacterEncoding("UTF-8");
     }
 
-    public static void writeJsonPart(OutputStream os, String boundary, String name, String filename, String json) throws Exception {
+    public static void writeJsonPart(OutputStream os, String boundary, String json) throws Exception {
         os.write(("--" + boundary).getBytes(StandardCharsets.UTF_8));
-        os.write(CRLF);
-        os.write(("Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"")
-                .getBytes(StandardCharsets.UTF_8));
         os.write(CRLF);
         os.write(("Content-Type: application/json; charset=utf-8").getBytes(StandardCharsets.UTF_8));
         os.write(CRLF);
@@ -30,10 +27,10 @@ public class MultipartMixedWriter {
         os.write(CRLF);
     }
 
-    public static void writeBinaryPart(OutputStream os, String boundary, String name, String filename, byte[] bytes) throws Exception {
+    public static void writeBinaryPart(OutputStream os, String boundary, String filename, byte[] bytes) throws Exception {
         os.write(("--" + boundary).getBytes(StandardCharsets.UTF_8));
         os.write(CRLF);
-        os.write(("Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"")
+        os.write(("Content-Disposition: attachment; filename=\"" + filename + "\"")
                 .getBytes(StandardCharsets.UTF_8));
         os.write(CRLF);
         os.write(("Content-Type: application/octet-stream").getBytes(StandardCharsets.UTF_8));

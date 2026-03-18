@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.khnp.pels.api">
+
+    <!-- 수행기록 이벤트 목록 조회 -->
+    <select id="TstEventSelectList" parameterType="long" resultType="com.khnp.pels.api.dto.TstEventStrokeEntity">
+        /** com.khnp.pels.api.TstEventSelectList */
+        SELECT T1.EVENT_TYP,
+               T1.TST_UNQ_KY_VAL,
+               T1.PAGE_NO,
+               T1.PDF_PAGE_NO,
+               T1.STROKE_SEQ,
+               T2.STROKE_COLOR,
+               T2.STROKE_WIDTH,
+               T1.USER_ID,
+               TO_CHAR(T1.EVENT_DT, 'YYYY-MM-DD"T"HH24:MI:SS.FF3') AS EVENT_DT
+          FROM GE_MP_CHECK_EVENT_M T1
+          JOIN GE_MP_CHECK_EVENT_STRK_S T2
+            ON T1.EVENT_SEQ = T2.EVENT_SEQ
+         WHERE T1.TST_UNQ_KY_VAL = #{value}
+         ORDER
+            BY T1.EVENT_DT
+             , T1.EVENT_SEQ
+    </select>
+
+    <resultMap id="tstEventStrokeResultMap" type="com.khnp.pels.api.dto.TstEventStrokeEntity">
+        <result property="POINT_PATH" column="POINT_PATH"
+                jdbcType="BLOB" javaType="byte[]" typeHandler="org.apache.ibatis.type.BlobTypeHandler"/>
+    </resultMap>
+
+    <!-- 수행기록 이벤트 페이지별 스트로크 목록 조회 -->
+    <select id="TstEventStrokeByPageList" parameterType="com.khnp.pels.api.dto.TstEventStrokeEntity" resultMap="tstEventStrokeResultMap">
+        /** com.khnp.pels.api.TstEventStrokeByPageList */
+        SELECT T2.POINT_PATH
+          FROM GE_MP_CHECK_EVENT_M T1
+          JOIN GE_MP_CHECK_EVENT_STRK_S T2
+            ON T1.EVENT_SEQ = T2.EVENT_SEQ
+         WHERE T1.TST_UNQ_KY_VAL = #{TST_UNQ_KY_VAL, jdbcType=BIGINT}
+               T1.PAGE_NO = #{PAGE_NO, jdbcType=INTEGER}
+               T1.EVENT_TYP = #{EVENT_TYP, jdbcType=INTEGER}
+         ORDER
+            BY T1.STROKE_SEQ
+    </select>
+
+    <!-- 수행기록 이벤트 시퀀스 조회 -->
+    <select id="TstEventSeqSelectList" parameterType="int" resultType="long">
+        SELECT GE_PL_CHECK_EVENT_SEQ.NEXTVAL
+          FROM DUAL
+        CONNECT BY LEVEL &lt;= #{value, jdbcType=INTEGER}
+    </select>
+
+    <!-- 수행기록 이벤트 Batch 입력 -->
+    <insert id="TstEventBatchInsert" parameterType="com.khnp.pels.api.dto.TstEventStrokeEntity">
+        /** com.khnp.pels.api.TstEventBatchInsert */
+        INSERT
+          INTO GE_MP_CHECK_EVENT_M
+             ( EVENT_SEQ
+             , EVENT_TYP
+             , TST_UNQ_KY_VAL
+             , PAGE_NO
+             , PDF_PAGE_NO
+             , STROKE_SEQ
+             , USER_ID
+             , EVENT_DT
+             )
+        VALUES
+             ( #{EVENT_SEQ, jdbcType=BIGINT}
+             , #{EVENT_TYP, jdbcType=INTEGER}
+             , #{TST_UNQ_KY_VAL, jdbcType=BIGINT}
+             , #{PAGE_NO, jdbcType=INTEGER}
+             , #{PDF_PAGE_NO, jdbcType=INTEGER}
+             , #{STROKE_SEQ, jdbcType=INTEGER}
+             , #{USER_ID, jdbcType=VARCHAR}
+             , TO_TIMESTAMP(#{EVENT_DT, jdbcType=VARCHAR},'YYYY-MM-DD"T"HH24:MI:SS.FF3')
+             )
+    </insert>
+
+    <!-- 수행기록 이벤트 입력 -->
+    <insert id="TstEventInsert" parameterType="com.khnp.pels.api.dto.TstEventStrokeEntity">
+        /** com.khnp.pels.api.TstEventInsert */
+        <selectKey keyProperty="EVENT_SEQ" resultType="long" order="BEFORE">
+            SELECT GE_PL_CHECK_EVENT_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT
+          INTO GE_MP_CHECK_EVENT_M
+             ( EVENT_SEQ
+             , EVENT_TYP
+             , TST_UNQ_KY_VAL
+             , PAGE_NO
+             , PDF_PAGE_NO
+             , STROKE_SEQ
+             , USER_ID
+             , EVENT_DT
+             )
+        VALUES
+             ( #{EVENT_SEQ, jdbcType=BIGINT}
+             , #{EVENT_TYP, jdbcType=INTEGER}
+             , #{TST_UNQ_KY_VAL, jdbcType=BIGINT}
+             , #{PAGE_NO, jdbcType=INTEGER}
+             , #{PDF_PAGE_NO, jdbcType=INTEGER}
+             , #{STROKE_SEQ, jdbcType=INTEGER}
+             , #{USER_ID, jdbcType=VARCHAR}
+             , TO_TIMESTAMP(#{EVENT_DT, jdbcType=VARCHAR},'YYYY-MM-DD"T"HH24:MI:SS.FF3')
+             )
+    </insert>
+
+    <!-- 수행기록 이벤트 스트로크 입력 -->
+    <insert id="TstEventStrokeInsert" parameterType="com.khnp.pels.api.dto.TstEventStrokeEntity">
+        /** com.khnp.pels.api.TstEventStrokeInsert */
+        INSERT
+          INTO GE_MP_CHECK_EVENT_STRK_S
+             ( EVENT_SEQ
+             , POINT_PATH
+             , STROKE_COLOR
+             , STROKE_WIDTH
+             )
+        VALUES
+             ( #{EVENT_SEQ, jdbcType=BIGINT}
+             , #{POINT_PATH, jdbcType=BLOB}
+             , #{STROKE_COLOR, jdbcType=BIGINT}
+             , #{STROKE_WIDTH, jdbcType=NUMERIC}
+             )
+    </insert>
+
+</mapper>
