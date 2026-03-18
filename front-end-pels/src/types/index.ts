@@ -1,3 +1,4 @@
+// src/types/index.ts
 /**
  * 타입 정의 통합 파일
  * 프로젝트 전체에서 사용되는 공통 타입 정의
@@ -437,6 +438,7 @@ export interface OverlayItem {
   uid: string;
   /** 페이지 내 요소 식별자 */
   id: string;
+  title?: string;
   type: OverlayType;
   /** draw 박스 기준 비율 좌표/크기 (0~1) */
   xPct: number;
@@ -507,6 +509,7 @@ export interface TemplatePage {
   isChange: 'Y' | 'N';
   components: TemplateComponent[];
   pdfPageNo?: number; // 실제 PDF 페이지 매핑(선택)
+  constraintPageNo?: number;
   attachments?: Attachment[]; // 가상 페이지 첨부(선택)
 }
 

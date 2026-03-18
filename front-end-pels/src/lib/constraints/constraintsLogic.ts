@@ -37,17 +37,18 @@ export function getStatusFromConstraints(
 // 특정 page/id 의 rule 찾기
 export function findComponentRule(
   constraintDoc: ConstraintDoc | null | undefined,
-  page: number,
+  constraintPageNo: number,
   id: string
 ): any | null {
   if (!constraintDoc) return null;
+
   const pageRule = constraintDoc.pages?.find(
-    (p: any) => Number(p.page) === Number(page)
+    p => Number(p.constraintPageNo) === Number(constraintPageNo)
   );
+
   if (!pageRule) return null;
-  return (
-    pageRule.components?.find(c => String((c as any).id) === String(id)) || null
-  );
+
+  return pageRule.components?.find(c => String(c.id) === String(id)) || null;
 }
 
 // status 에 따른 하이라이트
@@ -69,7 +70,7 @@ export function highlightOverlayStatus(id: string, status: string): void {
 // ---------------------------------------------------------------------------
 export function getCheckboxGroupIdsFull(
   doc: ConstraintDoc,
-  page: number,
+  constraintPageNo: number,
   checkboxId: string
 ): string[] {
   const ids = new Set<string>();
@@ -78,7 +79,7 @@ export function getCheckboxGroupIdsFull(
   ids.add(base);
 
   // 1) 내가 대표 rule인 경우
-  const directRule = findComponentRule(doc, page, base) as any;
+  const directRule = findComponentRule(doc, constraintPageNo, base) as any;
 
   if (directRule?.groupby?.length) {
     ids.add(String(directRule.id));
@@ -89,14 +90,16 @@ export function getCheckboxGroupIdsFull(
   }
 
   // 2) 내가 groupby에 포함된 경우
-  const pageRule = doc.pages?.find(p => String(p.page) === String(page));
+  const pageRule = doc.pages?.find(
+    p => Number(p.constraintPageNo) === Number(constraintPageNo)
+  );
 
   if (!pageRule?.components) return Array.from(ids);
 
-  for (const comp of pageRule.components as any[]) {
+  for (const comp of pageRule.components) {
     const list = [
       String(comp.id),
-      ...(comp.groupby ?? []).map((g: any) => String(g.id)),
+      ...(comp.groupby ?? []).map(g => String(g.id)),
     ];
 
     if (list.includes(base)) {

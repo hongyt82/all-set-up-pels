@@ -98,6 +98,10 @@ interface EditorHeaderProps {
   onRedo?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
+
+  sourceMode?: 'db' | 'local';
+  docKey?: string;
+  onChangeDocKey?: (next: string) => void;
 }
 
 export function EditorHeader({
@@ -141,10 +145,12 @@ export function EditorHeader({
   canUndo = false,
   canRedo = false,
   hasPdfLoaded = false,
+  sourceMode = 'local',
+  docKey = 'DOC0001',
+  onChangeDocKey,
 }: EditorHeaderProps) {
   // PDF 한 번이라도 불러와야 JSON 관련 버튼/기능 활성화
   // const [hasPdfLoaded, setHasPdfLoaded] = useState(false);
-  const [docKey, setDocKey] = useState<string>('DOC-0001');
 
   const [showCopyPanel, setShowCopyPanel] = useState(false);
   const [copyStart, setCopyStart] = useState(1);
@@ -253,7 +259,7 @@ export function EditorHeader({
   const handleSetDocKey = () => {
     const next = window.prompt('문서 키를 입력하세요.', docKey);
     if (next && next.trim()) {
-      setDocKey(next.trim());
+      onChangeDocKey?.(next.trim());
       console.log('🔑 [EditorHeader] 문서키 변경:', next.trim());
     }
   };
@@ -342,7 +348,7 @@ export function EditorHeader({
       <div className="flex items-center justify-between gap-3">
         {/* 파일 관련 그룹 */}
         <div className="flex items-center space-x-2 bg-white/5 rounded-xl px-2 py-1">
-          {!onImportPdf && (
+          {sourceMode === 'db' && (
             <Button
               variant="ghost"
               size="sm"
@@ -358,7 +364,7 @@ export function EditorHeader({
               서식 생성
             </Button>
           )}
-          {onImportPdf && (
+          {sourceMode === 'local' && (
             <>
               <Button
                 variant="ghost"
@@ -370,15 +376,17 @@ export function EditorHeader({
                 PDF 불러오기
               </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className="px-3 py-1 text-xs rounded-lg hover:bg-white/10"
-                onClick={handleSetDocKey}
-                title="문서 키 설정"
-              >
-                문서키: {docKey}
-              </Button>
+              {sourceMode === 'local' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="px-3 py-1 text-xs rounded-lg hover:bg-white/10"
+                  onClick={handleSetDocKey}
+                  title="문서 키 설정"
+                >
+                  문서키: {docKey}
+                </Button>
+              )}
 
               <Button
                 variant="ghost"

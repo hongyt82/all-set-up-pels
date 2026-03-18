@@ -115,6 +115,7 @@ export interface PageItem {
   pageId: string;
   logicalPageIndex: number; // 내부 순서 (ID/채번 기준)
   pdfPageNo: number; // -1 가능
+  constraintPageNo: number; // rule 매칭용 고유키
   width: number;
   height: number;
 
@@ -128,16 +129,6 @@ const FIXED_H = BASE_PAGE_HEIGHT;
 
 const isSquareType = (t: OverlayType) =>
   t === 'circleslash' || t === 'checkbox';
-
-// const getMajorType = (type: OverlayType) => {
-//   if (type.startsWith('textbox')) return 'textbox';
-//   if (type.startsWith('checkbox')) return 'checkbox';
-//   if (type.startsWith('calendar')) return 'calendar';
-//   if (type.startsWith('signature')) return 'signature';
-//   if (type.startsWith('button')) return 'button';
-//   if (type === 'circleslash') return 'circleslash';
-//   return 'textbox'; // fallback
-// };
 
 const OVERLAY_PREVIEW: Partial<
   Record<OverlayType, { label?: string; icon?: string; multiline?: boolean }>
@@ -174,6 +165,11 @@ function getPageFit(
   return { s, drawW, drawH };
 }
 
+function getNextConstraintPageNo(items: PageItem[]) {
+  if (items.length === 0) return 1;
+  return Math.max(...items.map(p => Number(p.constraintPageNo) || 0)) + 1;
+}
+
 // -----------------------------------------------------------------------------
 // 에디터 전용 Props / Handle
 // -----------------------------------------------------------------------------
@@ -187,9 +183,13 @@ export interface EditorWorkspaceProps {
   isOverlayVisible?: boolean;
   scale?: number;
 
-  // � 우클릭 시 constraint 편집 패널 열기용 콜백
+  sourceMode?: string;
+  docKey?: string;
+  onChangeDocKey?: (next: string) => void;
+
+  // 우클릭 시 constraint 편집 패널 열기용 콜백
   onOpenConstraintEditor?: (payload: {
-    page: number;
+    constraintPageNo: number;
     overlays: OverlayItem[];
     rightClickedUid: string;
   }) => void;
@@ -201,8 +201,8 @@ export interface EditorWorkspaceProps {
   onPdfLoadedChange?: (loaded: boolean) => void;
 
   onCopyPageResult?: (info: {
-    fromPage: number;
-    toPage: number;
+    fromConstraintPageNo: number;
+    toConstraintPageNo: number;
     idMap: Record<string, string>;
   }) => void;
 }
@@ -250,7 +250,8 @@ export interface EditorWorkspaceHandle {
   goToPage: (page: number) => void;
   getPageInfo: () => { currentPage: number; totalPages: number };
   copyCurrentPage: () => void;
-  deleteCurrentPage: () => { deletedPage: number } | null;
+  // deleteCurrentPage: () => { deletedPage: number } | null;
+  deleteCurrentPage: () => { deletedConstraintPageNo: number } | null;
   exportToJsonString: () => string;
   restoreFromJsonString: (json: string) => void;
   // 선택된 컴포넌트 ID
@@ -282,8 +283,8 @@ export interface EditorWorkspaceHandle {
     insertAfter: number;
   }):
     | {
-        fromPage: number;
-        toPage: number;
+        fromConstraintPageNo: number;
+        toConstraintPageNo: number;
         idMap: Record<string, string>;
       }[]
     | void;
@@ -301,11 +302,15 @@ export const EditorWorkspace = forwardRef<
     constraints,
     onPageInfoChange,
     docId,
+    docKey = 'DOC0001',
+    onChangeDocKey,
     isOverlayVisible = true,
     scale = 1,
     onOpenConstraintEditor,
     onCopyPageResult,
   } = props;
+
+  console.log('[EditorWorkspace] docKey:', docKey);
 
   // ===== PDF 상태 & 렌더링 =====
   // - PDF 파일/문서 상태, 현재 페이지, 캔버스, 페이지 박스 사이즈 등
@@ -329,7 +334,7 @@ export const EditorWorkspace = forwardRef<
   // - 문서 메타, ID 채번, 오버레이 배열, 선택 상태 등
 
   // 문서 메타 / ID 채번
-  const [docKey, setDocKey] = useState('2345A');
+  // const [docKey, setDocKey] = useState('2345A');
   const seqRef = useRef({
     circleslash: 1000,
     textbox: 2000,
@@ -460,6 +465,7 @@ export const EditorWorkspace = forwardRef<
       pageId: safeUUID(),
       logicalPageIndex: maxLogicalIndex + 1,
       pdfPageNo: srcPage.pdfPageNo,
+      constraintPageNo: getNextConstraintPageNo(pages),
       width: srcPage.width,
       height: srcPage.height,
     };
@@ -485,12 +491,13 @@ export const EditorWorkspace = forwardRef<
             };
           }),
       ];
-      // overlays 복사가 끝난 시점에 rule 복사 통지
+
       onCopyPageResult?.({
-        fromPage: srcPage.logicalPageIndex,
-        toPage: newPage.logicalPageIndex,
+        fromConstraintPageNo: srcPage.constraintPageNo,
+        toConstraintPageNo: newPage.constraintPageNo,
         idMap,
       });
+
       return next;
     });
 
@@ -504,31 +511,27 @@ export const EditorWorkspace = forwardRef<
     const target = pages.find(p => p.pageId === currentPageId);
     if (!target) return null;
 
-    const deletedPage = target.logicalPageIndex;
+    const deletedLogicalPageIndex = target.logicalPageIndex;
+    const deletedConstraintPageNo = target.constraintPageNo;
 
-    // 1. 페이지 제거 + page 재정렬
     const nextPages = pages
       .filter(p => p.pageId !== currentPageId)
       .map(p =>
-        p.logicalPageIndex > deletedPage
+        p.logicalPageIndex > deletedLogicalPageIndex
           ? { ...p, logicalPageIndex: p.logicalPageIndex - 1 }
           : p
       );
 
-    // 2. overlays 제거
     setOverlays(prev => prev.filter(o => o.pageId !== currentPageId));
-
-    // 3. pages 반영
     setPages(nextPages);
 
-    // 4. 현재 페이지 이동
     const next =
-      nextPages.find(p => p.logicalPageIndex === deletedPage) ??
-      nextPages.find(p => p.logicalPageIndex === deletedPage - 1);
+      nextPages.find(p => p.logicalPageIndex === deletedLogicalPageIndex) ??
+      nextPages.find(p => p.logicalPageIndex === deletedLogicalPageIndex - 1);
 
     setCurrentPageId(next?.pageId ?? null);
 
-    return { deletedPage };
+    return { deletedConstraintPageNo };
   };
 
   //
@@ -542,6 +545,7 @@ export const EditorWorkspace = forwardRef<
     insertAfter: number;
   }) => {
     if (fromStart > fromEnd) return;
+
     const sourcePages = pages
       .filter(
         p => p.logicalPageIndex >= fromStart && p.logicalPageIndex <= fromEnd
@@ -554,24 +558,36 @@ export const EditorWorkspace = forwardRef<
       p => p.logicalPageIndex === insertAfter
     );
     if (insertIndex === -1) return;
+
     const results: {
-      fromPage: number;
-      toPage: number;
+      fromConstraintPageNo: number;
+      toConstraintPageNo: number;
       idMap: Record<string, string>;
     }[] = [];
+
     const newPages: PageItem[] = [];
     const newOverlays: OverlayItem[] = [];
     let logicalOffset = insertAfter;
+
     sourcePages.forEach(srcPage => {
       const newPageId = safeUUID();
       logicalOffset++;
+
       const idMap: Record<string, string> = {};
+      const newConstraintPageNo = getNextConstraintPageNo([
+        ...pages,
+        ...newPages,
+      ]);
+
       const newPage: PageItem = {
         ...srcPage,
         pageId: newPageId,
         logicalPageIndex: logicalOffset,
+        constraintPageNo: newConstraintPageNo,
       };
+
       newPages.push(newPage);
+
       overlays
         .filter(o => o.pageId === srcPage.pageId)
         .forEach(o => {
@@ -585,12 +601,14 @@ export const EditorWorkspace = forwardRef<
             pageId: newPageId,
           });
         });
+
       results.push({
-        fromPage: srcPage.logicalPageIndex,
-        toPage: logicalOffset,
+        fromConstraintPageNo: srcPage.constraintPageNo,
+        toConstraintPageNo: newConstraintPageNo,
         idMap,
       });
     });
+
     const updatedPages = pages.map(p =>
       p.logicalPageIndex > insertAfter
         ? {
@@ -599,13 +617,16 @@ export const EditorWorkspace = forwardRef<
           }
         : p
     );
+
     setPages([
       ...updatedPages.slice(0, insertIndex + 1),
       ...newPages,
       ...updatedPages.slice(insertIndex + 1),
     ]);
+
     setOverlays(prev => [...prev, ...newOverlays]);
     setCurrentPageId(newPages[0].pageId);
+
     return results;
   };
 
@@ -613,10 +634,11 @@ export const EditorWorkspace = forwardRef<
     const major = getMajorType(type);
     const cur = ++(seqRef.current as any)[major];
 
+    const safeDocKey = String(docKey).replace(/[^A-Za-z0-9]/g, '');
     const p = String(page).padStart(3, '0');
     const c = String(cur).padStart(4, '0');
 
-    return `${docKey}${p}${c}`.slice(0, 12);
+    return `${safeDocKey}${p}${c}`;
   };
 
   const selectedInPage = () =>
@@ -724,6 +746,7 @@ export const EditorWorkspace = forwardRef<
             pageId: safeUUID(),
             logicalPageIndex: i + 1,
             pdfPageNo: i + 1,
+            constraintPageNo: i + 1,
             width: FIXED_W,
             height: FIXED_H,
           })
@@ -1030,6 +1053,7 @@ export const EditorWorkspace = forwardRef<
       out.pages.push({
         page: pg.logicalPageIndex,
         pdfPageNo: pg.pdfPageNo,
+        constraintPageNo: pg.constraintPageNo,
         width: pg.width,
         height: pg.height,
         isChange: items.length > 0 ? 'Y' : 'N',
@@ -1106,6 +1130,7 @@ export const EditorWorkspace = forwardRef<
       out.pages.push({
         page: pg.logicalPageIndex,
         pdfPageNo: pg.pdfPageNo,
+        constraintPageNo: pg.constraintPageNo,
         width: pg.width,
         height: pg.height,
         isChange: items.length > 0 ? 'Y' : 'N',
@@ -1255,7 +1280,7 @@ export const EditorWorkspace = forwardRef<
       pushUndoSnapshot();
 
       const restored: OverlayItem[] = [];
-      const pbp: Record<number, { w: number; h: number }> = {};
+      const pbp: Record<string, { w: number; h: number }> = {};
       const usedIds = new Set<string>(); // ★ 추가: 중복 ID 방지
       const MIN_PCT = 0.0025;
 
@@ -1263,6 +1288,7 @@ export const EditorWorkspace = forwardRef<
         pageId: safeUUID(),
         logicalPageIndex: Number(pg.page) || index + 1,
         pdfPageNo: pg.pdfPageNo ?? index + 1,
+        constraintPageNo: Number(pg.constraintPageNo) || index + 1,
         width: pg.width || FIXED_W,
         height: pg.height || FIXED_H,
       }));
@@ -1273,7 +1299,10 @@ export const EditorWorkspace = forwardRef<
         const pageNo: number = Number(pg.page) || 1;
         const W: number = pg.width || FIXED_W;
         const H: number = pg.height || FIXED_H;
-        pbp[pageNo] = { w: W, h: H };
+        const pageId = newPages[pageNo - 1]?.pageId;
+        if (pageId) {
+          pbp[pageId] = { w: W, h: H };
+        }
 
         (pg.components || []).forEach((c: any) => {
           if (c.type === 'satisfactionbox') return;
@@ -1288,7 +1317,6 @@ export const EditorWorkspace = forwardRef<
           // ★ 이미 사용된 ID면 새로 생성
           if (usedIds.has(id)) {
             id = nextId(c.type as OverlayType, pageNo);
-            return;
           }
           usedIds.add(id);
 
@@ -1313,7 +1341,9 @@ export const EditorWorkspace = forwardRef<
       setCurrentPageId(newPages[0]?.pageId ?? null);
       setSelected([]);
       setPageBoxByPage(pbp);
-      if (pbp[1]) setPageBox(pbp[1]);
+      if (newPages[0]?.pageId && pbp[newPages[0].pageId]) {
+        setPageBox(pbp[newPages[0].pageId]);
+      }
     } catch (err) {
       console.error(err);
       alert('JSON 로드 중 오류가 발생했습니다.');
@@ -2067,12 +2097,10 @@ export const EditorWorkspace = forwardRef<
   // ===== 문서키 변경 =====
 
   const changeDocKey = () => {
-    const key = prompt('문서키(4~5자리 영숫자):', docKey) || docKey;
-    const v = (key.match(/[A-Za-z0-9]+/g)?.join('') || docKey).slice(0, 5);
-
-    setDocKey(v);
+    const key = prompt('문서키(4~6자리 영숫자):', docKey) || docKey;
+    const v = (key.match(/[A-Za-z0-9]+/g)?.join('') || docKey).slice(0, 6);
+    onChangeDocKey?.(v);
     resetSeqRef();
-
     alert(`문서키=${v} / 채번 초기화됨`);
   };
 
@@ -2422,7 +2450,7 @@ export const EditorWorkspace = forwardRef<
 
                           const pg = pages.find(p => p.pageId === ov.pageId);
                           onOpenConstraintEditor({
-                            page: pg?.logicalPageIndex ?? 1,
+                            constraintPageNo: pg?.constraintPageNo ?? 1,
                             overlays:
                               overlaysInPage.length > 0 ? overlaysInPage : [ov],
                             rightClickedUid: ov.uid,

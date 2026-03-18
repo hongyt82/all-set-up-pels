@@ -17,8 +17,9 @@ interface ConstraintEditorPanelProps {
   onRevert: () => void;
   onSave: () => void;
   onAppendSelectedIds: () => void;
-  // 🔹 새로 추가: 삭제 콜백 (rule 삭제/페이지 전체 삭제는 EditorPage에서 처리)
   onDelete?: () => void;
+  helperText?: string;
+  onChangeHelperText?: (value: string) => void;
 }
 
 export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
@@ -30,6 +31,8 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
   onSave,
   onAppendSelectedIds,
   onDelete,
+  helperText,
+  onChangeHelperText,
 }) => {
   const { page, primaryId, ids, mode = 'rule' } = selection;
 
@@ -170,41 +173,26 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
               </div>
             </div>
 
-            {mode === 'rule' && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px]"
-                  onClick={onAppendSelectedIds}
-                >
-                  선택 추가(groupby)
-                </button>
-              </div>
-            )}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px]"
+                onClick={onAppendSelectedIds}
+              >
+                {mode === 'page'
+                  ? '선택 추가(ID 임시영역)'
+                  : '선택 추가(groupby)'}
+              </button>
+            </div>
           </div>
 
           {/* JSON 편집 textarea */}
           <div className="flex-1 flex flex-col gap-1 overflow-hidden">
             <span className="text-[11px] text-slate-300">JSON 편집</span>
-            {/*{(() => {
-              try {
-                const obj = JSON.parse(text);
-                if (obj.groupType === 'circleslash') {
-                  return (
-                    <div className="text-[10px] text-rose-400 bg-rose-900/40 p-1 rounded mb-1">
-                      circleslash 그룹: 대표값이 <b>N/A</b>가 되면 그룹 전체가
-                      N/A 로 자동 설정됩니다.
-                    </div>
-                  );
-                }
-              } catch {}
-              return null;
-            })()}*/}
             <textarea
               className="flex-1 w-full text-xs font-mono bg-slate-950/60 text-slate-50 border border-slate-700 rounded-md p-2 resize-none leading-[1.4] overflow-auto"
               value={text}
               onChange={e => onChangeText(e.target.value)}
-              // 여기 중요: 키 이벤트 상위로 안 올라가게 막기 (에디터 단축키랑 충돌 방지)
               onKeyDown={e => {
                 e.stopPropagation();
               }}
@@ -213,6 +201,24 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
               }}
             />
           </div>
+          {mode === 'page' && (
+            <div className="flex flex-col gap-1 mb-2">
+              <span className="text-[11px] text-slate-300">
+                선택 ID 임시영역
+              </span>
+              <textarea
+                className="w-full h-24 text-xs font-mono bg-slate-950/60 text-slate-50 border border-slate-700 rounded-md p-2 resize-none leading-[1.4] overflow-auto"
+                value={helperText ?? ''}
+                onChange={e => onChangeHelperText?.(e.target.value)}
+                onKeyDown={e => {
+                  e.stopPropagation();
+                }}
+                onClick={e => {
+                  e.stopPropagation();
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </Rnd>
