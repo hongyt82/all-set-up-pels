@@ -23,11 +23,6 @@ import {
 
 import { BASE_PAGE_WIDTH, BASE_PAGE_HEIGHT } from '../../constants/pageSize';
 
-// export interface TemplatePathPoint {
-//   x: number;
-//   y: number;
-// }
-
 export interface TemplatePathData {
   points: number[];
   color?: number; // ARGB Int (ex: -65536)
@@ -51,6 +46,8 @@ export interface ViewerWorkspaceProps {
   constraints?: ConstraintDoc | null;
   onQrDetected?: (barcode?: string) => void;
   pathDataByPage?: Record<number, TemplatePathData[]>;
+
+  attachmentsByPage?: Record<number, any[]>;
 
   onPageInfoChange?: (info: {
     currentPage: number;
@@ -127,6 +124,7 @@ export const ViewerWorkspace = forwardRef<
     logicalPages,
     constraints: constraintDoc,
     pathDataByPage,
+    attachmentsByPage,
     onPageInfoChange,
     onOverlaysChange,
     currentPage: externalPage,
@@ -158,6 +156,26 @@ export const ViewerWorkspace = forwardRef<
   // treelist id → overlay id[] 매핑
   const treelistToOverlayIdsRef = useRef<Map<string, string[]>>(new Map());
   const childrenMapRef = useRef<Map<string, string[]>>(new Map());
+
+  const findLogicalPage = (page: number) => {
+    return logicalPages?.find(p => Number(p.page) === Number(page)) ?? null;
+  };
+
+  const getCurrentConstraintPageNo = (page = currentPage): number | null => {
+    const lp = findLogicalPage(page) as any;
+    if (!lp) return null;
+
+    const no = Number(lp.constraintPageNo);
+    return Number.isFinite(no) && no > 0 ? no : null;
+  };
+
+  const getConstraintPageNoByOverlay = (ov: OverlayItem): number | null => {
+    const lp = findLogicalPage(ov.page) as any;
+    if (!lp) return null;
+
+    const no = Number(lp.constraintPageNo);
+    return Number.isFinite(no) && no > 0 ? no : null;
+  };
 
   // ---------------------------------------------------------------------------
   // PDF 로드 공통 함수 (ref / prop 공용)
@@ -209,9 +227,9 @@ export const ViewerWorkspace = forwardRef<
   };
 
   /**
-   * ✅ (핵심) treelistId(rule.id) -> overlayId(o.id) 매핑 구축
-   * - circleslash만이 아니라, 하위가 textbox/checkbox여도 같이 전파될 수 있게 전체 overlay를 매핑
-   * - 여기서 rule.id가 안 나오면 findComponentRule()가 o.id 기준으로 rule을 못 찾는 상태
+   * treelist node id 와 overlay id 를 동일하게 쓰는 전제에서
+   * id -> [id] 형태의 lookup map 을 만든다.
+   * (향후 treelist id 와 overlay id 가 분리되면 여기 로직을 확장해야 함)
    */
   useEffect(() => {
     treelistToOverlayIdsRef.current.clear();
@@ -361,7 +379,9 @@ export const ViewerWorkspace = forwardRef<
 
       const hasLogical = Array.isArray(logicalPages) && logicalPages.length > 0;
 
-      const lp = hasLogical ? logicalPages![currentPage - 1] : undefined;
+      const lp = hasLogical
+        ? logicalPages!.find(p => Number(p.page) === Number(currentPage))
+        : undefined;
       const mappedNo =
         lp &&
         typeof (lp as any).pdfPageNo === 'number' &&
@@ -465,13 +485,9 @@ export const ViewerWorkspace = forwardRef<
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const paths = pathDataByPage?.[currentPage];
-    if (!Array.isArray(paths) || paths.length === 0) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      return;
-    }
-
     const dpr = window.devicePixelRatio || 1;
+
+    // 항상 캔버스 크기/스케일을 현재 pageBox 기준으로 맞춘 뒤 clear
     canvas.width = pageBox.w * dpr;
     canvas.height = pageBox.h * dpr;
     canvas.style.width = `${pageBox.w}px`;
@@ -480,6 +496,11 @@ export const ViewerWorkspace = forwardRef<
     ctx.resetTransform();
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, pageBox.w, pageBox.h);
+
+    const paths = pathDataByPage?.[currentPage];
+    if (!Array.isArray(paths) || paths.length === 0) {
+      return;
+    }
 
     const srcW = logicalPages?.[currentPage - 1]?.width ?? pageBox.w;
     const srcH = logicalPages?.[currentPage - 1]?.height ?? pageBox.h;
@@ -541,10 +562,9 @@ export const ViewerWorkspace = forwardRef<
       return;
     }
 
-    const lp = logicalPages[currentPage - 1];
-    const pdfPageNo = lp?.pdfPageNo;
+    const constraintPageNo = getCurrentConstraintPageNo();
 
-    if (!pdfPageNo) {
+    if (!constraintPageNo) {
       props.onDialogInfoChange?.({
         hasDialog: false,
         hasQrDialog: false,
@@ -552,13 +572,15 @@ export const ViewerWorkspace = forwardRef<
       return;
     }
 
-    const pageInfo = constraintDoc.pages?.find(p => p.page === pdfPageNo);
+    const pageInfo = constraintDoc.pages?.find(
+      p => p.constraintPageNo === constraintPageNo
+    );
 
     props.onDialogInfoChange?.({
       hasDialog: !!pageInfo?.dialoges?.length,
       hasQrDialog: !!pageInfo?.qr_dialoges?.length,
     });
-  }, [currentPage, constraintDoc, logicalPages]);
+  }, [currentPage, constraintDoc, logicalPages, props.onDialogInfoChange]);
 
   const applyRadioToCheckboxGroup = (
     page: number,
@@ -567,7 +589,14 @@ export const ViewerWorkspace = forwardRef<
   ) => {
     if (!constraintDoc) return;
 
-    const groupIds = getCheckboxGroupIdsFull(constraintDoc, page, controlId);
+    const constraintPageNo = getCurrentConstraintPageNo(page);
+    if (!constraintPageNo) return;
+
+    const groupIds = getCheckboxGroupIdsFull(
+      constraintDoc,
+      constraintPageNo,
+      controlId
+    );
 
     const selectedIndex = Number(radioValue);
 
@@ -592,7 +621,14 @@ export const ViewerWorkspace = forwardRef<
   ): string | null => {
     if (!constraintDoc) return null;
 
-    const groupIds = getCheckboxGroupIdsFull(constraintDoc, page, baseId);
+    const constraintPageNo = getCurrentConstraintPageNo(page);
+    if (!constraintPageNo) return null;
+
+    const groupIds = getCheckboxGroupIdsFull(
+      constraintDoc,
+      constraintPageNo,
+      baseId
+    );
 
     const pageItems = overlaysByPage?.[page] ?? [];
 
@@ -697,7 +733,10 @@ export const ViewerWorkspace = forwardRef<
     const ov = overlays.find(o => o.uid === uid);
     if (!ov) return;
 
-    const rule = findComponentRule(constraintDoc, ov.page, ov.id);
+    const constraintPageNo = getConstraintPageNoByOverlay(ov);
+    if (!constraintPageNo) return;
+
+    const rule = findComponentRule(constraintDoc, constraintPageNo, ov.id);
     if (!rule || !Array.isArray((rule as any).constraints)) return;
 
     const status = getStatusFromConstraints(
@@ -728,7 +767,12 @@ export const ViewerWorkspace = forwardRef<
         })
       );
 
-      const targetRule = findComponentRule(constraintDoc, ov.page, ev.targetId);
+      const targetRule = findComponentRule(
+        constraintDoc,
+        constraintPageNo,
+        ev.targetId
+      );
+
       if (targetRule && Array.isArray((targetRule as any).constraints)) {
         const targetStatus = getStatusFromConstraints(
           (targetRule as any).constraints,
@@ -786,17 +830,18 @@ export const ViewerWorkspace = forwardRef<
     const value = checked ? 'y' : 'n';
 
     updateOverlaysReadonly(prev => {
-      // 1) 내 값 변경
       let next = prev.map(o => (o.uid === uid ? { ...o, value } : o));
       const target = prev.find(o => o.uid === uid);
 
       if (!target || target.type !== 'checkbox' || !constraintDoc) return next;
 
-      // 2) y로 체크될 때만 그룹 라디오 반영
       if (value === 'y') {
+        const constraintPageNo = getConstraintPageNoByOverlay(target);
+        if (!constraintPageNo) return next;
+
         const groupIds = getCheckboxGroupIdsFull(
           constraintDoc,
-          target.page,
+          constraintPageNo,
           target.id
         );
 
@@ -818,19 +863,18 @@ export const ViewerWorkspace = forwardRef<
       return next;
     });
 
-    // 3) 기존 룰 엔진 연동 유지
     applyConstraintsForOverlay(uid, value);
   };
 
   const cycleCircle = (uid: string) => {
-    let nextValue: string = 'none';
+    let nextValue: string = '';
 
     updateOverlaysReadonly(prev => {
       const updated = prev.map(o => {
         if (o.uid !== uid) return o;
 
-        const order = ['none', 'c', 'cs', 'na'];
-        const current = o.value || 'none';
+        const order = ['', 'c', 'cs', 'na'];
+        const current = o.value || '';
         const idx = order.indexOf(current);
         nextValue = order[(idx + 1) % order.length];
 
@@ -950,7 +994,7 @@ export const ViewerWorkspace = forwardRef<
         .filter(o => o.type === 'circleslash')
         .map(o => ({
           id: o.id,
-          title: '',
+          title: o.title ?? '',
         })),
   }));
 
@@ -1060,7 +1104,7 @@ export const ViewerWorkspace = forwardRef<
               justifyContent: 'center',
               padding: 0,
               margin: 0,
-              border: 'none',
+              border: '',
               background: 'transparent',
               cursor: 'pointer',
               lineHeight: 1,
@@ -1256,17 +1300,25 @@ export const ViewerWorkspace = forwardRef<
             {logicalPages &&
               logicalPages.length > 0 &&
               (() => {
-                const lp = logicalPages[currentPage - 1] as any;
-                if (!lp || !Array.isArray(lp.attachments)) return null;
+                const lp = logicalPages.find(
+                  p => Number(p.page) === Number(currentPage)
+                ) as any;
+
+                if (!lp) return null;
 
                 const pageW = lp.width || pageBox.w;
                 const pageH = lp.height || pageBox.h;
                 const sx = pageBox.w / pageW;
                 const sy = pageBox.h / pageH;
+                const attachments =
+                  attachmentsByPage?.[currentPage] ?? lp.attachments ?? [];
+
+                if (!Array.isArray(attachments) || attachments.length === 0)
+                  return null;
 
                 return (
                   <>
-                    {lp.attachments.map((a: any, idx: number) => {
+                    {attachments.map((a: any, idx: number) => {
                       const left = Math.round((a.x || 0) * sx);
                       const top = Math.round((a.y || 0) * sy);
                       const width = Math.round((a.width || 0) * sx);
@@ -1325,6 +1377,160 @@ export const ViewerWorkspace = forwardRef<
                                 borderRadius: 4,
                               }}
                             />
+                          </div>
+                        );
+                      }
+                      if (a.type === 'auditorbox') {
+                        let parsed: any = null;
+
+                        try {
+                          parsed = a.text ? JSON.parse(a.text) : null;
+                        } catch (e) {
+                          parsed = null;
+                        }
+
+                        const wphp = String(parsed?.wphp ?? '').toLowerCase();
+                        const date = parsed?.date ?? '';
+                        const name = parsed?.name ?? '';
+                        const satisfactionRaw = String(
+                          parsed?.satisfaction ?? ''
+                        ).toLowerCase();
+
+                        const satisfactionText =
+                          satisfactionRaw === 'y'
+                            ? '만족'
+                            : satisfactionRaw === 'n'
+                              ? '불만족'
+                              : '';
+
+                        const baseFontSize = Math.max(
+                          6,
+                          Math.round(height * 0.15)
+                        );
+
+                        const labelCellStyle: React.CSSProperties = {
+                          borderRight: '1px solid #d32f2f',
+                          color: '#d32f2f',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          lineHeight: 1,
+                          minWidth: 0,
+                          padding: '0 3px',
+                          boxSizing: 'border-box',
+                        };
+
+                        const valueCellStyle: React.CSSProperties = {
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          lineHeight: 1,
+                          minWidth: 0,
+                          padding: '0 3px',
+                          boxSizing: 'border-box',
+                          color: '#111',
+                        };
+
+                        return (
+                          <div
+                            key={`att-auditor-${idx}`}
+                            style={{
+                              position: 'absolute',
+                              left,
+                              top,
+                              width,
+                              height,
+                              boxSizing: 'border-box',
+                              background: 'transparent',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'grid',
+                                gridTemplateRows: '1fr 1fr 1fr',
+                                border: '1px solid #d32f2f',
+                                color: '#111',
+                                background: 'transparent',
+                                fontSize: baseFontSize,
+                                lineHeight: 1,
+                                boxSizing: 'border-box',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: '1.3fr 1fr 1.7fr',
+                                  borderBottom: '1px solid #d32f2f',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    ...valueCellStyle,
+                                    borderRight: '1px solid #d32f2f',
+                                    gap: 0,
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color:
+                                        wphp === 'wp' ? '#d32f2f' : '#bdbdbd',
+                                    }}
+                                  >
+                                    WP
+                                  </span>
+                                  <span
+                                    style={{ color: '#888', margin: '0 1px' }}
+                                  >
+                                    /
+                                  </span>
+                                  <span
+                                    style={{
+                                      color:
+                                        wphp === 'hp' ? '#d32f2f' : '#bdbdbd',
+                                    }}
+                                  >
+                                    HP
+                                  </span>
+                                </div>
+
+                                <div style={labelCellStyle}>입회일</div>
+
+                                <div style={valueCellStyle}>{date}</div>
+                              </div>
+
+                              <div
+                                style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: '1.3fr 2.7fr',
+                                  borderBottom: '1px solid #d32f2f',
+                                  minWidth: 0,
+                                }}
+                              >
+                                <div style={labelCellStyle}>입회자</div>
+                                <div style={valueCellStyle}>{name}</div>
+                              </div>
+
+                              <div
+                                style={{
+                                  display: 'grid',
+                                  gridTemplateColumns: '1.3fr 2.7fr',
+                                  minWidth: 0,
+                                }}
+                              >
+                                <div style={labelCellStyle}>입회결과</div>
+                                <div style={valueCellStyle}>
+                                  {satisfactionText}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         );
                       }

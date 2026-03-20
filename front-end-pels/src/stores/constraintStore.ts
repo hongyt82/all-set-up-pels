@@ -15,11 +15,16 @@ export function useConstraintStore() {
   });
 
   // 특정 페이지 규칙을 가져오되 없으면 새로 만든다
-  const ensurePageRule = (page: number): ConstraintPageRule => {
-    const existing = constraintDoc.pages.find(p => p.page === page);
+  const ensurePageRule = (constraintPageNo: number): ConstraintPageRule => {
+    const existing = constraintDoc.pages.find(
+      p => p.constraintPageNo === constraintPageNo
+    );
     if (existing) return existing;
 
-    const newPage: ConstraintPageRule = { page, components: [] };
+    const newPage: ConstraintPageRule = {
+      constraintPageNo,
+      components: [],
+    };
     const next: ConstraintDoc = {
       ...constraintDoc,
       pages: [...constraintDoc.pages, newPage],
@@ -31,18 +36,16 @@ export function useConstraintStore() {
   // 특정 컴포넌트 규칙을 가져오되 없으면 새로 만든다
   // overlayType을 추가로 받아 circleslash rule 생성 시 groupType 자동 부여
   const ensureComponentRule = (
-    page: number,
+    constraintPageNo: number,
     id: string,
     overlayType?: string
   ): ConstraintComponentRule => {
-    const pageRule = ensurePageRule(page);
+    const pageRule = ensurePageRule(constraintPageNo);
     const existing = pageRule.components.find(c => c.id === id);
     if (existing) return existing;
 
-    // 신규 rule 생성
     const newComp: ConstraintComponentRule = { id };
 
-    // 🔥 circleslash인 경우 groupType 자동 삽입
     if (overlayType === 'circleslash') {
       newComp.groupType = 'circleslash';
     }
@@ -52,25 +55,33 @@ export function useConstraintStore() {
       components: [...pageRule.components, newComp],
     };
 
-    const nextPages = constraintDoc.pages.map(p =>
-      p.page === page ? updatedPage : p
-    );
+    const nextDoc: ConstraintDoc = {
+      ...constraintDoc,
+      pages: constraintDoc.pages.map(p =>
+        p.constraintPageNo === constraintPageNo ? updatedPage : p
+      ),
+    };
 
-    const nextDoc: ConstraintDoc = { ...constraintDoc, pages: nextPages };
+    // 새 페이지였던 경우 map만으로는 안 들어가므로 보정
+    if (
+      !constraintDoc.pages.some(p => p.constraintPageNo === constraintPageNo)
+    ) {
+      nextDoc.pages = [...constraintDoc.pages, updatedPage];
+    }
+
     setConstraintDoc(nextDoc);
-
     return newComp;
   };
 
   // 체크박스 여러 개를 라디오 그룹처럼 묶는 예시
-  const setRadioGroup = (page: number, groupIds: string[]) => {
+  const setRadioGroup = (constraintPageNo: number, groupIds: string[]) => {
     if (groupIds.length === 0) return;
 
     const [representative, ...rest] = groupIds;
-    const pageRule = ensurePageRule(page);
+    const pageRule = ensurePageRule(constraintPageNo);
 
     const others = pageRule.components.filter(c => c.id !== representative);
-    const repRuleBase = ensureComponentRule(page, representative);
+    const repRuleBase = ensureComponentRule(constraintPageNo, representative);
 
     const repRule: ConstraintComponentRule = {
       ...repRuleBase,
@@ -83,10 +94,19 @@ export function useConstraintStore() {
       components: [...others, repRule],
     };
 
+    const exists = constraintDoc.pages.some(
+      p => p.constraintPageNo === constraintPageNo
+    );
+
     const nextDoc: ConstraintDoc = {
       ...constraintDoc,
-      pages: constraintDoc.pages.map(p => (p.page === page ? updatedPage : p)),
+      pages: exists
+        ? constraintDoc.pages.map(p =>
+            p.constraintPageNo === constraintPageNo ? updatedPage : p
+          )
+        : [...constraintDoc.pages, updatedPage],
     };
+
     setConstraintDoc(nextDoc);
   };
 
@@ -98,7 +118,7 @@ export function useConstraintStore() {
     constraintDoc,
     setConstraintDoc,
     ensurePageRule,
-    ensureComponentRule,
+    // ensureComponentRule,
     setRadioGroup,
     loadConstraintDoc,
   };

@@ -27,7 +27,7 @@ export interface ConstraintComponentRule {
 }
 
 export interface ConstraintPageRule {
-  page: number; // 페이지 번호
+  constraintPageNo: number;
   components: ConstraintComponentRule[]; // 해당 페이지의 컴포넌트 규칙들
 
   dialoges?: {
@@ -51,7 +51,7 @@ export interface ConstraintPageRule {
     sectionId?: string;
     title: string;
     qr: string;
-    targetPdfPageNo: number;
+    targetPdfPageNo: number; // 모바일 연동 규격상 필드명 유지
     columnes: {
       sectionId?: string;
       title?: string;

@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   useEffect,
+  useMemo,
 } from 'react';
 import { BaseLayout } from '../components/layout/BaseLayout';
 import { ViewerHeader } from '../components/viewer/ViewerHeader';
@@ -36,6 +37,8 @@ import {
 } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import axios from 'axios';
+import { useWebSocketRoom } from '../hooks/useWebSocketRoom';
+
 // import NotoUrl from '/fonts/NotoSansKR-Regular.ttf?url';
 function getFontUrl() {
   if (import.meta.env.PROD) {
@@ -124,6 +127,10 @@ export function ViewerPage() {
     Record<number, TemplatePathData[]>
   >({});
 
+  const [attachmentsByPage, setAttachmentsByPage] = useState<
+    Record<number, any[]>
+  >({});
+
   // JSON 전체 (값 포함 JSON 저장할 때 필요)
   const [templateDoc, setTemplateDoc] = useState<TemplateDoc | null>(null);
 
@@ -168,18 +175,25 @@ export function ViewerPage() {
     meta?: any; // qr 객체 등 원본(선택)
   };
 
-  const getPdfPageNoByLogicalPage = (logicalPage: number) => {
-    const lp = vPages.find(p => Number(p.page) === Number(logicalPage));
-    const pdf = (lp as any)?.pdfPageNo;
-    return Number(pdf ?? logicalPage);
-  };
+  const getConstraintPageNoByLogicalPage = useCallback(
+    (logicalPage: number) => {
+      const lp = vPages.find(p => Number(p.page) === Number(logicalPage));
+      const no = Number((lp as any)?.constraintPageNo);
+      return Number.isFinite(no) && no > 0 ? no : null;
+    },
+    [vPages]
+  );
 
-  const getLogicalPageByPdfPageNo = (pdfPageNo: number) => {
-    const lp = vPages.find(
-      p => Number((p as any)?.pdfPageNo) === Number(pdfPageNo)
-    );
-    return Number(lp?.page ?? pdfPageNo);
-  };
+  //필요없으면 삭제
+  const getLogicalPageByConstraintPageNo = useCallback(
+    (constraintPageNo: number) => {
+      const lp = vPages.find(
+        p => Number((p as any)?.constraintPageNo) === Number(constraintPageNo)
+      );
+      return Number(lp?.page ?? 0);
+    },
+    [vPages]
+  );
 
   const [activeDialog, setActiveDialog] = useState<ActiveDialog | null>(null);
   const [dialogTag, setDialogTag] = useState<string | null>(null);
@@ -189,16 +203,21 @@ export function ViewerPage() {
     if (!constraintDoc) return;
 
     const logicalPage = pageInfo.currentPage;
-    const pdfPageNo = getPdfPageNoByLogicalPage(logicalPage);
+    const constraintPageNo = getConstraintPageNoByLogicalPage(logicalPage);
+    if (!constraintPageNo) return;
 
     const rulePage = constraintDoc.pages.find(
-      p => Number((p as any).page) === Number(pdfPageNo)
+      p => Number(p.constraintPageNo) === Number(constraintPageNo)
     );
 
     const dialoges = rulePage?.dialoges;
     if (!dialoges || dialoges.length === 0) return;
 
-    setActiveDialog({ kind: 'group', page: logicalPage, dialoges });
+    setActiveDialog({
+      kind: 'group',
+      page: logicalPage,
+      dialoges,
+    });
     setSelectedDialogIdx(0);
     setDialogTag('DialogGroupInPdfPage');
   }
@@ -211,25 +230,28 @@ export function ViewerPage() {
     let targetPdfPageNo: number | null = null;
 
     for (const pg of constraintDoc.pages) {
-      const list = (pg as any).qr_dialoges ?? [];
+      const list = pg.qr_dialoges ?? [];
+
       for (const qr of list) {
         if (qr.qr === barcode) {
           matches.push(qr);
+
           if (targetPdfPageNo == null) {
-            targetPdfPageNo = Number(qr.targetPdfPageNo ?? (pg as any).page);
+            targetPdfPageNo = Number(qr.targetPdfPageNo ?? pg.constraintPageNo);
           }
         }
       }
     }
 
     if (matches.length === 0) return;
+    if (!targetPdfPageNo) return;
 
-    const targetLogicalPage = getLogicalPageByPdfPageNo(
-      Number(targetPdfPageNo)
-    );
+    const targetLogicalPage = getLogicalPageByConstraintPageNo(targetPdfPageNo);
+
+    if (!targetLogicalPage) return;
+
     const first = matches[0];
-
-    const dialoges = first.dialoges ?? first.dialogs ?? matches; //  중첩이 없으면 matches 자체가 시간 리스트
+    const dialoges = first.dialoges ?? first.dialogs ?? matches;
 
     setActiveDialog({
       kind: 'qr',
@@ -246,22 +268,23 @@ export function ViewerPage() {
     if (!constraintDoc) return;
 
     const logicalPage = pageInfo.currentPage;
-    const pdfPageNo = getPdfPageNoByLogicalPage(logicalPage);
+    const constraintPageNo = getConstraintPageNoByLogicalPage(logicalPage);
+    if (!constraintPageNo) return;
 
     const rulePage = constraintDoc.pages.find(
-      p => Number((p as any).page) === Number(pdfPageNo)
+      p => Number(p.constraintPageNo) === Number(constraintPageNo)
     );
 
-    const qrs: any[] = (rulePage as any)?.qr_dialoges ?? [];
+    const qrs: any[] = rulePage?.qr_dialoges ?? [];
     if (qrs.length === 0) return;
 
     const first = qrs[0];
 
-    const targetPdfPageNo = Number(first.targetPdfPageNo ?? pdfPageNo);
-    const targetLogicalPage = getLogicalPageByPdfPageNo(targetPdfPageNo);
+    const targetPdfPageNo = Number(first.targetPdfPageNo ?? 0);
+    const targetLogicalPage = targetPdfPageNo
+      ? getLogicalPageByConstraintPageNo(targetPdfPageNo)
+      : logicalPage;
 
-    //  1) first.dialoges(중첩형) 있으면 그걸 쓰고
-    //  2) 없으면 qrs 자체를 시간 리스트로 사용
     const dialoges = first.dialoges ?? first.dialogs ?? qrs;
 
     setActiveDialog({
@@ -278,6 +301,516 @@ export function ViewerPage() {
   const [hasDialogInPage, setHasDialogInPage] = useState(false);
   const [hasQrInPage, setHasQrInPage] = useState(false);
 
+  type ChatMsg = { ts: number; from?: string; text: string };
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLog, setChatLog] = useState<ChatMsg[]>([]);
+  const seenChatKeysRef = useRef<Set<string>>(new Set());
+
+  type Participant = { USER_ID: string; USER_NAME: string; DEPT_NM: string };
+  const [participants, setParticipants] = useState<Participant[]>([]);
+
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+
+  // onChat 콜백 클로저 이슈 방지용
+  const chatOpenRef = useRef(false);
+  useEffect(() => {
+    chatOpenRef.current = chatOpen;
+  }, [chatOpen]);
+
+  //채팅시 스크롤 제어
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!chatOpen) return;
+
+    requestAnimationFrame(() => {
+      const el = chatScrollRef.current;
+      if (!el) return;
+      el.scrollTop = el.scrollHeight;
+    });
+  }, [chatOpen, chatLog.length]);
+
+  // ==========================
+  // WebSocket 식별자 구성 + 수신 반영 + hook 호출
+  // ==========================
+  const DOC_ID =
+    params.get('DOC_ID') ||
+    params.get('docId') ||
+    params.get('DOC') ||
+    params.get('TST_UNQ_KY_VAL') ||
+    'UNKNOWN';
+
+  const roomId = `DOC${DOC_ID}`;
+
+  // 11111
+  function genClientKey(prefix = 'WEB') {
+    const c: any = globalThis.crypto;
+
+    // 1) randomUUID 가능하면 사용
+    if (c && typeof c.randomUUID === 'function') {
+      return `${prefix}_${c.randomUUID()}`;
+    }
+
+    // 2) getRandomValues로 UUID v4 형태 만들어서 사용
+    if (c && typeof c.getRandomValues === 'function') {
+      const buf = new Uint8Array(16);
+      c.getRandomValues(buf);
+      buf[6] = (buf[6] & 0x0f) | 0x40;
+      buf[8] = (buf[8] & 0x3f) | 0x80;
+      const hex = [...buf].map(b => b.toString(16).padStart(2, '0')).join('');
+      const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+      return `${prefix}_${uuid}`;
+    }
+
+    // 3) 최후 fallback
+    return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
+  }
+
+  function getOrCreateClientKey() {
+    const key = 'viewer_clientKey';
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const v = genClientKey('WEB');
+    localStorage.setItem(key, v);
+    return v;
+  }
+
+  //  기존 clientKey 선언 교체
+  const clientKey = getOrCreateClientKey();
+
+  // 1111
+
+  const user = useMemo(
+    () => ({
+      USER_ID: localStorage.getItem('viewer_USER_ID') || 'WEB_DUMMY',
+      USER_NAME: localStorage.getItem('viewer_USER_NAME') || 'WEB_VIEWER',
+      DEPT_NM: localStorage.getItem('viewer_DEPT_NM') || 'WEB',
+    }),
+    []
+  );
+
+  // echo 방지용: 수신으로 페이지 이동했을 때는 다음 1회 송신 스킵
+  const suppressNextOutboundMoveRef = useRef(false);
+
+  const pendingRoomStateRef = useRef<{
+    lastPage?: number;
+    formValues?: any[];
+  } | null>(null);
+
+  // setForm이 overlays 준비 전에 오면 버려지므로, 잠시 쌓아두는 큐
+  const pendingSetFormsRef = useRef<
+    Array<{
+      formId: string;
+      page: number;
+      value: string;
+      type?: string;
+      raw?: any;
+    }>
+  >([]);
+
+  // (선택) 초기 roomState로 동기화 완료되기 전까지 outbound movePage 막고 싶으면
+  const hasSyncedFromRoomStateRef = useRef(false);
+
+  // roomState가 아예 안 오면 fallback으로 outbound 허용(첫 입장 방)
+  const roomStateFallbackTimerRef = useRef<number | null>(null);
+  const applyIncomingMovePage = useCallback((logicalPage: number) => {
+    const n = Number(logicalPage);
+    if (!Number.isFinite(n) || n <= 0) return;
+
+    suppressNextOutboundMoveRef.current = true;
+    wsRef.current?.goToPage(n);
+  }, []);
+
+  const applyIncomingSetForm = useCallback(
+    (p: {
+      formId: string;
+      page: number;
+      value: string;
+      type?: string;
+      raw?: any;
+    }) => {
+      const logicalPage = Number(p.page);
+
+      if (String(p.type || '').toLowerCase() === 'drawing') {
+        let obj: any;
+        try {
+          obj = typeof p.value === 'string' ? JSON.parse(p.value) : p.value;
+        } catch {
+          return;
+        }
+
+        const incoming: any[] = Array.isArray(obj?.paths)
+          ? obj.paths
+          : obj && Array.isArray(obj.points) && obj.points.length > 0
+            ? [obj]
+            : Array.isArray(obj)
+              ? obj
+              : [];
+
+        //  지우기/삭제 판정 (모바일 points:[] 케이스 처리)
+        const isPointsEmpty =
+          Array.isArray(obj?.points) && obj.points.length === 0;
+        const hasStrokeId = obj?.id != null && String(obj.id) !== '';
+
+        const isClearAll =
+          (Array.isArray(obj?.paths) && obj.paths.length === 0) ||
+          (isPointsEmpty && !hasStrokeId);
+
+        // 1) 전체 clear
+        if (isClearAll) {
+          setPathDataByPage(prev => ({ ...prev, [logicalPage]: [] }));
+          if (import.meta.env.DEV)
+            console.log('[DRAW CLEAR ALL]', { logicalPage });
+          return;
+        }
+
+        // 2) 특정 stroke 삭제 (points:[] + id 있음)
+        if (isPointsEmpty && hasStrokeId) {
+          const delId = String(obj.id);
+          setPathDataByPage(prev => {
+            const cur = prev[logicalPage] ?? [];
+            const next = cur.filter(
+              s => String((s as any)?.id ?? '') !== delId
+            );
+            if (import.meta.env.DEV)
+              console.log('[DRAW DELETE ONE]', {
+                logicalPage,
+                delId,
+                before: cur.length,
+                after: next.length,
+              });
+            return { ...prev, [logicalPage]: next };
+          });
+          return;
+        }
+
+        setPathDataByPage(prev => {
+          const cur = prev[logicalPage] ?? [];
+
+          // id 기준 dedupe (같은 stroke 재수신 방지)
+          const seen = new Set(cur.map(x => String((x as any)?.id ?? '')));
+          const next = [...cur];
+
+          for (const s of incoming) {
+            const id = String(s?.id ?? '');
+            if (id && seen.has(id)) continue;
+            next.push(s);
+            if (id) seen.add(id);
+          }
+
+          // 여기서 확인할 로그
+          if (import.meta.env.DEV) {
+            console.log('[DRAW APPLY]', {
+              logicalPage,
+              added: incoming.length,
+              total: next.length,
+            });
+          }
+
+          return { ...prev, [logicalPage]: next };
+        });
+
+        return;
+      }
+
+      if (String(p.type || '').toLowerCase() === 'auditorbox') {
+        const logicalPage = Number(p.page);
+
+        setAttachmentsByPage(prev => {
+          const list = prev[logicalPage] ?? [];
+
+          const nextItem = {
+            id: String(p.formId ?? ''),
+            type: 'auditorbox',
+            text: String(p.value ?? ''),
+            x: Number(p.raw?.x ?? 100),
+            y: Number(p.raw?.y ?? 100),
+            width: Number(p.raw?.width ?? 190),
+            height: Number(p.raw?.height ?? 78),
+          };
+
+          const found = list.some(
+            item =>
+              String(item.id) === String(nextItem.id) &&
+              String(item.type) === 'auditorbox'
+          );
+
+          const next = found
+            ? list.map(item =>
+                String(item.id) === String(nextItem.id) &&
+                String(item.type) === 'auditorbox'
+                  ? { ...item, ...nextItem }
+                  : item
+              )
+            : [...list, nextItem];
+
+          return {
+            ...prev,
+            [logicalPage]: next,
+          };
+        });
+
+        return;
+      }
+
+      setOverlaysByPage(prev => {
+        const list = prev[logicalPage] ?? [];
+
+        // overlays가 아직 준비 전이면 일단 큐에 쌓고 나중에 flush
+        if (list.length === 0) {
+          pendingSetFormsRef.current.push(p);
+          if (import.meta.env.DEV) {
+            console.log('[setForm] queued (overlays not ready)', {
+              logicalPage,
+              // pdfPageNo,
+              formId: p.formId,
+              type: p.type,
+              value: p.value,
+            });
+          }
+          return prev;
+        }
+
+        if (import.meta.env.DEV) {
+          const has = list.some(o => String(o.id) === String(p.formId));
+          if (!has)
+            console.warn('[setForm] id not found', {
+              logicalPage,
+              formId: p.formId,
+              sampleIds: list.slice(0, 10).map(o => o.id),
+            });
+        }
+
+        const next = list.map(o => {
+          if (String(o.id) !== String(p.formId)) return o;
+
+          let v = String(p.value ?? '');
+          if (o.type === 'checkbox') {
+            const low = v.trim().toLowerCase();
+            if (low === '1' || low === 'true') v = 'y';
+            if (low === '0' || low === 'false') v = 'n';
+          }
+          return { ...o, value: v };
+        });
+
+        return { ...prev, [logicalPage]: next };
+      });
+    },
+    [getLogicalPageByConstraintPageNo]
+  );
+
+  // const wsUrl = (() => {
+  //   const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  //   const host = window.location.hostname; // localhost 또는 192.168.0.20
+  //   return `${proto}://${host}:8600`;
+  // })();
+
+  // const wsUrl = import.meta.env.VITE_SYNC_WS_URL as string;
+
+  const wsUrl =
+    (import.meta.env.VITE_SYNC_WS_URL as string) ||
+    (() => {
+      const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const host = window.location.hostname; // 192.168.0.20 / localhost / 도메인
+      return `${proto}://${host}:8600`;
+    })();
+
+  const wsRoom = useWebSocketRoom({
+    wsUrl,
+    roomId,
+    clientKey,
+    user,
+
+    onRoomState: rs => {
+      if (!vPages.length) {
+        pendingRoomStateRef.current = rs;
+        return;
+      }
+
+      hasSyncedFromRoomStateRef.current = true;
+
+      if (rs.lastPage && rs.lastPage > 0) {
+        lastSentPdfPageNoRef.current = Number(rs.lastPage);
+        applyIncomingMovePage(rs.lastPage);
+      }
+
+      const list = rs.formValues || [];
+
+      //  drawing은 page별로 모아서 한번에 apply (중복/순서 안정화)
+      const drawByPage: Record<number, any[]> = {};
+
+      for (const fv of list) {
+        const type = String(fv.type ?? '').toLowerCase();
+        if (type !== 'drawing') continue;
+
+        const page = Number(fv.page ?? 0);
+        if (!page) continue;
+
+        let obj: any;
+        try {
+          obj = typeof fv.value === 'string' ? JSON.parse(fv.value) : fv.value;
+        } catch {
+          continue;
+        }
+
+        const strokes = Array.isArray(obj?.paths)
+          ? obj.paths
+          : obj && Array.isArray(obj.points)
+            ? [obj]
+            : Array.isArray(obj)
+              ? obj
+              : [];
+
+        (drawByPage[page] ||= []).push(...strokes);
+      }
+
+      // drawing 먼저 적용
+      Object.entries(drawByPage).forEach(([pdfPage, strokes]) => {
+        applyIncomingSetForm({
+          formId: 'drawing',
+          page: Number(pdfPage),
+          value: JSON.stringify({ paths: strokes }),
+          type: 'drawing',
+        });
+      });
+
+      // 나머지 폼 적용
+      list.forEach((fv: any) => {
+        const type = String(fv.type ?? '').toLowerCase();
+        if (type === 'drawing') return;
+
+        applyIncomingSetForm({
+          formId: String(fv.formId ?? ''),
+          page: Number(fv.page ?? 0),
+          value: String(fv.value ?? ''),
+          type: fv.type ? String(fv.type) : undefined,
+          raw: fv.raw,
+        });
+      });
+    },
+
+    // onMovePage: ({ page }) => applyIncomingMovePage(page),
+    onMovePage: ({ page }) => {
+      //디버깅
+      if (import.meta.env.DEV)
+        console.log('[movePage] IN  constraintPageNo=', page);
+      applyIncomingMovePage(page);
+    },
+
+    onSetForm: payload => applyIncomingSetForm(payload),
+
+    onChat: chat => {
+      const from = String(chat?.senderName ?? 'unknown');
+      const text = String(chat?.message ?? '');
+      const createdAt = String(chat?.createdAt ?? '');
+      const senderId = String(chat?.senderId ?? '');
+      const clientKeyInMsg = String(chat?.clientKey ?? '');
+
+      const key = `${createdAt}|${senderId}|${clientKeyInMsg}|${text}`;
+      if (seenChatKeysRef.current.has(key)) return;
+      seenChatKeysRef.current.add(key);
+
+      setChatLog(prev => [...prev, { ts: Date.now(), from, text }]);
+
+      // 내가 보낸 건 unread로 안 잡기
+      const isMe =
+        String(chat?.senderId ?? '') === String(user.USER_ID) ||
+        String(chat?.clientKey ?? '') === String(clientKey);
+
+      if (!isMe && !chatOpenRef.current) {
+        setUnreadChatCount(c => c + 1);
+      }
+    },
+
+    onClientList: ({ users }) => {
+      setParticipants(users || []);
+    },
+  });
+
+  useEffect(() => {
+    if (import.meta.env.DEV)
+      console.log('[WS OPEN?]', wsRoom.isOpen, wsUrl, roomId);
+    if (wsRoom.isOpen) {
+      wsRoom.requestClientList(); // 열리자마자 한번 더 요청
+    }
+  }, [wsRoom.isOpen]);
+
+  // roomState 미수신 fallback: 일정 시간 지나면 "동기화 완료"로 간주
+  useEffect(() => {
+    // 이미 동기화 끝났으면 필요 없음
+    if (hasSyncedFromRoomStateRef.current) return;
+
+    // 타이머 중복 방지
+    if (roomStateFallbackTimerRef.current != null) return;
+
+    roomStateFallbackTimerRef.current = window.setTimeout(() => {
+      // vPages가 아직 없으면 더 기다렸다가 vPages 생기면 pending 처리 useEffect가 실행됨
+      if (!vPages.length) {
+        roomStateFallbackTimerRef.current = null;
+        return;
+      }
+
+      // roomState가 끝내 안 온 경우: "빈 상태"로 동기화 완료 처리
+      hasSyncedFromRoomStateRef.current = true;
+
+      // 핵심: 첫 브로드캐스트가 1페이지로 나가서 방 전체를 덮는 것 방지
+      const logical = pageInfo.currentPage;
+      lastSentPdfPageNoRef.current = logical;
+
+      roomStateFallbackTimerRef.current = null;
+    }, 1200); // 0.8~1.5s 사이 추천 (서버 응답/네트워크 고려)
+  }, [vPages.length]);
+
+  useEffect(() => {
+    return () => {
+      if (roomStateFallbackTimerRef.current != null) {
+        clearTimeout(roomStateFallbackTimerRef.current);
+        roomStateFallbackTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const pending = pendingRoomStateRef.current;
+    if (!pending || !vPages.length) return;
+
+    pendingRoomStateRef.current = null;
+    hasSyncedFromRoomStateRef.current = true;
+
+    if (pending.lastPage && pending.lastPage > 0)
+      applyIncomingMovePage(pending.lastPage);
+
+    (pending.formValues || []).forEach((fv: any) =>
+      applyIncomingSetForm({
+        formId: String(fv.formId ?? ''),
+        page: Number(fv.page ?? 0),
+        value: String(fv.value ?? ''),
+        type: fv.type ? String(fv.type) : undefined,
+        raw: fv.raw,
+      })
+    );
+  }, [vPages, applyIncomingMovePage, applyIncomingSetForm]);
+
+  // overlaysByPage / vPages 준비 이후, 큐에 쌓인 setForm 재적용
+  useEffect(() => {
+    if (!vPages.length) return;
+
+    const q = pendingSetFormsRef.current;
+    if (!q.length) return;
+
+    // 한 번에 털기 (재진입 방지)
+    pendingSetFormsRef.current = [];
+
+    if (import.meta.env.DEV) {
+      console.log('[setForm] flush pending queue', q.length);
+    }
+
+    q.forEach(p => applyIncomingSetForm(p));
+  }, [vPages.length, overlaysByPage, applyIncomingSetForm]);
+
+  const lastSentPdfPageNoRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!constraintDoc) {
       setHasDialogInPage(false);
@@ -286,15 +819,55 @@ export function ViewerPage() {
     }
 
     const logicalPage = pageInfo.currentPage;
-    const pdfPageNo = getPdfPageNoByLogicalPage(logicalPage);
+    // const constraintPageNo = getPdfPageNoByLogicalPage(logicalPage); 확인필요hyt
+    const constraintPageNo = getConstraintPageNoByLogicalPage(logicalPage);
+
+    if (!constraintPageNo) {
+      setHasDialogInPage(false);
+      setHasQrInPage(false);
+      return;
+    }
 
     const rulePage = constraintDoc.pages?.find(
-      p => Number((p as any).page) === Number(pdfPageNo)
+      p => Number(p.constraintPageNo) === Number(constraintPageNo)
     );
 
     setHasDialogInPage(!!rulePage?.dialoges?.length);
-    setHasQrInPage(!!(rulePage as any)?.qr_dialoges?.length);
-  }, [pageInfo.currentPage, constraintDoc, vPages]);
+    setHasQrInPage(!!rulePage?.qr_dialoges?.length);
+  }, [pageInfo.currentPage, constraintDoc, getConstraintPageNoByLogicalPage]);
+
+  // ==========================
+  // 페이지 이동 브로드캐스트 (WEB -> Room)
+  // ==========================
+
+  const IS_VIEWER_READONLY = true;
+
+  useEffect(() => {
+    if (IS_VIEWER_READONLY) return; //웹을 “read-only client”로
+    if (!wsRoom.isOpen) return;
+    if (!hasSyncedFromRoomStateRef.current) return;
+
+    if (suppressNextOutboundMoveRef.current) {
+      suppressNextOutboundMoveRef.current = false;
+      return;
+    }
+
+    const logical = pageInfo.currentPage;
+    if (!logical || logical <= 0) return;
+
+    // 중복 constraintPageNo 문제 회피: "논리 페이지"를 그대로 전송
+    if (lastSentPdfPageNoRef.current === logical) return; // (이 ref는 이름만 pdf지만 그대로 써도 됨)
+    lastSentPdfPageNoRef.current = logical;
+
+    if (import.meta.env.DEV) {
+      console.log('[movePage] OUT logical', { logical });
+    }
+
+    const ok = wsRoom.sendMovePage(logical);
+    if (import.meta.env.DEV && !ok) {
+      console.log('[movePage] sendMovePage skipped (ws not open)');
+    }
+  }, [pageInfo.currentPage, wsRoom.isOpen, wsRoom.sendMovePage]);
 
   // ===============================
   // ViewerPage – DB 로딩 + Rule 공용 처리
@@ -336,11 +909,24 @@ export function ViewerPage() {
         const pdfRes = await axios.get('/proxy/pdf', {
           params: { path: PDF_PATH },
           responseType: 'blob',
+          withCredentials: true,
         });
 
         const file = new File([pdfRes.data], 'viewer.pdf', {
           type: 'application/pdf',
         });
+
+        // 디버깅
+        const ct = pdfRes.headers?.['content-type'];
+        console.log(
+          '[PDF PROXY] content-type=',
+          ct,
+          'size=',
+          pdfRes.data?.size
+        );
+
+        const textHead = await (pdfRes.data as Blob).slice(0, 50).text();
+        console.log('[PDF PROXY] head=', JSON.stringify(textHead));
 
         setPdfFile(file);
         setCurrentFile('viewer.pdf');
@@ -363,14 +949,20 @@ export function ViewerPage() {
         setVPages(json.pages || []);
 
         const pathMap: Record<number, TemplatePathData[]> = {};
-
         (parsed.pages || []).forEach((pg: any) => {
           if (Array.isArray(pg.pathData)) {
             pathMap[pg.page] = pg.pathData;
           }
         });
-
         setPathDataByPage(pathMap);
+
+        const attachmentMap: Record<number, any[]> = {};
+        (parsed.pages || []).forEach((pg: any) => {
+          attachmentMap[pg.page] = Array.isArray(pg.attachments)
+            ? pg.attachments
+            : [];
+        });
+        setAttachmentsByPage(attachmentMap);
 
         console.log('[ViewerPage] pathDataByPage', pathMap);
 
@@ -623,8 +1215,9 @@ export function ViewerPage() {
       // 각 페이지별 컴포넌트 그리기
       for (const pg of data.pages as any[]) {
         const realNo =
-          typeof pg.pdfPageNo === 'number' && pg.pdfPageNo > 0
-            ? pg.pdfPageNo
+          typeof pg.constraintPageNo === 'number' && pg.constraintPageNo > 0
+            ? // ? pg.constraintPageNo
+              pg.pdfPageNo
             : null;
         if (!realNo) continue; // 가상 페이지는 스킵
 
@@ -1089,6 +1682,15 @@ export function ViewerPage() {
         />
       </div>
 
+      <div className="px-3 py-1 text-xs text-slate-600 bg-slate-50 border-b">
+        참여자: {participants.length}
+        {participants.length > 0 && (
+          <span className="ml-2 text-slate-400">
+            ({participants.map(u => u.USER_NAME).join(', ')})
+          </span>
+        )}
+      </div>
+
       {/* ⚠️ 여기: centerRef에 min-h-0, 내부에 zoom>100일 때만 overflow-auto */}
       <div
         ref={centerRef}
@@ -1097,7 +1699,7 @@ export function ViewerPage() {
         }`}
       >
         <div className="flex flex-1 justify-center items-start py-3">
-          {/* 🔹 여기부터 래퍼 2단계 구조로 변경 */}
+          {/* � 여기부터 래퍼 2단계 구조로 변경 */}
           <div
             style={{
               width: BASE_W * pageScale,
@@ -1119,6 +1721,7 @@ export function ViewerPage() {
                 overlays={overlaysByPage}
                 logicalPages={vPages}
                 pathDataByPage={pathDataByPage}
+                attachmentsByPage={attachmentsByPage}
                 onPageInfoChange={info => setPageInfo(info)}
                 onOverlaysChange={(page, items) =>
                   setOverlaysByPage(prev => ({
@@ -1283,6 +1886,98 @@ export function ViewerPage() {
           onNextPage={handleNextPage}
           onPageChange={handlePageChange}
         />
+      </div>
+
+      {/*  Chat FAB + Panel */}
+      <div className="fixed bottom-9 right-4 z-[99999]">
+        {!chatOpen ? (
+          <button
+            className="relative px-3 py-1 rounded bg-black text-white text-sm shadow"
+            onClick={() => {
+              setChatOpen(true);
+              setUnreadChatCount(0);
+            }}
+          >
+            Chat
+            {unreadChatCount > 0 && (
+              <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] flex items-center justify-center">
+                {unreadChatCount > 99 ? '99+' : unreadChatCount}
+              </span>
+            )}
+          </button>
+        ) : (
+          <div className="w-[320px] h-[360px] bg-white rounded shadow-lg border flex flex-col overflow-hidden">
+            <div className="px-3 py-2 border-b flex items-center justify-between">
+              <div className="font-semibold text-sm">Room Chat</div>
+              <button
+                className="text-xs px-2"
+                onClick={() => setChatOpen(false)}
+              >
+                닫기
+              </button>
+            </div>
+
+            <div
+              ref={chatScrollRef}
+              className="flex-1 overflow-auto p-2 space-y-2 text-sm"
+            >
+              {chatLog.map((m, i) => (
+                <div key={i}>
+                  <span className="text-slate-500 text-xs mr-2">{m.from}</span>
+                  <span>{m.text}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-2 border-t flex gap-2">
+              <input
+                className="flex-1 border px-2 py-1 text-sm"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    const t = chatInput.trim();
+                    if (!t) return;
+
+                    const createdAt = new Date().toISOString();
+                    const key = `${createdAt}|${user.USER_ID}|${clientKey}|${t}`;
+
+                    seenChatKeysRef.current.add(key);
+                    setChatLog(prev => [
+                      ...prev,
+                      { ts: Date.now(), from: user.USER_NAME, text: t },
+                    ]);
+
+                    wsRoom.sendChat?.(t, { createdAt });
+                    setChatInput('');
+                  }
+                }}
+                placeholder="메시지 입력"
+              />
+              <button
+                className="px-3 py-1 rounded bg-slate-900 text-white text-sm"
+                onClick={() => {
+                  const t = chatInput.trim();
+                  if (!t) return;
+
+                  const createdAt = new Date().toISOString();
+                  const key = `${createdAt}|${user.USER_ID}|${clientKey}|${t}`;
+
+                  seenChatKeysRef.current.add(key);
+                  setChatLog(prev => [
+                    ...prev,
+                    { ts: Date.now(), from: user.USER_NAME, text: t },
+                  ]);
+
+                  wsRoom.sendChat?.(t, { createdAt });
+                  setChatInput('');
+                }}
+              >
+                전송
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </BaseLayout>
   );
