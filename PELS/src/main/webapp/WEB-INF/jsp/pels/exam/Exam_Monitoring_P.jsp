@@ -393,7 +393,7 @@
 											<td align="center">${exam.PRSTS_CFY_NM}</td>
 											<td align="center">
 												<!-- <a class="SubButton" href="javascript:MM_openViewer('${exam.TST_UNQ_KY_VAL}');"><span class="Text">보기</span></a> -->
-												<a class="SubButton" href="Exam_KhnpViewer.do?TST_UNQ_KY_VAL=${exam.TST_UNQ_KY_VAL}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_NO}&TITL_NM=${exam.PRCDOC_NM}"><span class="Text">보기</span></a>
+												<a class="SubButton" href="Exam_KhnpViewer.do?TST_UNQ_KY_VAL=${exam.TST_UNQ_KY_VAL}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_NO}&TITL_NM=${exam.PRCDOC_NM}"><span class="Text">보기1</span></a>
 											</td>
 											<td align="center">${exam.FM_RG_DT}</td>
 										</tr>

@@ -20,7 +20,8 @@
 <script type="text/javascript">
 // @kysoft
 function pageLoad(){
-	document.getElementById("iframPdfEditor").src = "<%= request.getContextPath() %>/e-link-v2/editor?FRM_UNQ_KY_VAL=${FRM_UNQ_KY_VAL}";
+	<%--document.getElementById("iframPdfEditor").src = "<%= request.getContextPath() %>/e-link-v2/editor?FRM_UNQ_KY_VAL=${FRM_UNQ_KY_VAL}";--%>
+    document.getElementById("iframPdfEditor").src = "http://localhost:4008/e-link-v2/editor?FRM_UNQ_KY_VAL=${FRM_UNQ_KY_VAL}";
 }
 
 </script>

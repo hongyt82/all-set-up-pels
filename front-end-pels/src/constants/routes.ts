@@ -7,6 +7,7 @@ export const ROUTES = {
   HOME: '/home',
   EDITOR: '/e-link-v2/editor',
   VIEWER: '/e-link-v2/viewer',
+  REPLAYVIEWER: '/e-link-v2/ReplayViewer',
   API_TEST: '/api-test',
   LODASH_TEST: '/lodash-test',
   MOMENT_TEST: '/moment-test',
