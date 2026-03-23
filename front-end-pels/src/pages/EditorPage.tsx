@@ -68,75 +68,128 @@ export function EditorPage() {
   } = useEditorStore();
 
   // constraint.json 편집용 상태
-  const { constraintDoc, setConstraintDoc, ensureComponentRule } =
-    useConstraintStore();
+  // const { constraintDoc, setConstraintDoc, ensureComponentRule } =
+  const { constraintDoc, setConstraintDoc } = useConstraintStore();
 
   const handleCopyPageResult = ({
-    fromPage,
-    toPage,
+    fromConstraintPageNo,
+    toConstraintPageNo,
     idMap,
   }: {
-    fromPage: number;
-    toPage: number;
+    fromConstraintPageNo: number;
+    toConstraintPageNo: number;
     idMap: Record<string, string>;
   }) => {
     setConstraintDoc(prev => {
       if (!prev?.pages?.length) return prev;
 
-      console.log('fromPage', {
-        fromPage,
-        rulePages: prev.pages.map(p => p.page),
-      });
+      const pages = [...prev.pages];
 
-      const srcPageRule = prev.pages.find(p => p.page === fromPage);
+      const srcPageRule = pages.find(
+        p => Number(p.constraintPageNo) === Number(fromConstraintPageNo)
+      );
       if (!srcPageRule) return prev;
 
-      const copiedComponents: ConstraintComponentRule[] = (
-        srcPageRule.components || []
-      )
-        .filter((c): c is ConstraintComponentRule => !!idMap[c.id])
-        .map(c => ({
-          ...c,
-          id: idMap[c.id],
-          groupby: Array.isArray(c.groupby)
-            ? c.groupby
-                .map(g => ({
-                  ...g,
-                  id: idMap[g.id] ?? g.id,
-                }))
-                .filter(g => g.id)
-            : undefined,
-        }));
+      const copiedPageRule = {
+        ...srcPageRule,
+        constraintPageNo: toConstraintPageNo,
+        components: Array.isArray(srcPageRule.components)
+          ? srcPageRule.components.map(rule => remapComponentRule(rule, idMap))
+          : [],
+        dialoges: remapDialoges(srcPageRule.dialoges, idMap),
+        qr_dialoges: remapDialoges(srcPageRule.qr_dialoges, idMap),
+      };
 
-      if (copiedComponents.length === 0) return prev;
-
-      const pages = [...prev.pages];
-      const idx = pages.findIndex(p => p.page === toPage);
+      const idx = pages.findIndex(
+        p => Number(p.constraintPageNo) === Number(toConstraintPageNo)
+      );
 
       if (idx === -1) {
-        pages.push({ page: toPage, components: copiedComponents });
+        pages.push(copiedPageRule);
       } else {
-        pages[idx] = { ...pages[idx], components: copiedComponents };
+        pages[idx] = copiedPageRule;
       }
 
       return { ...prev, pages };
     });
   };
 
-  const handleDeletePageResult = ({ deletedPage }: { deletedPage: number }) => {
+  const handleDeletePageResult = ({
+    deletedConstraintPageNo,
+  }: {
+    deletedConstraintPageNo: number;
+  }) => {
     setConstraintDoc(prev => ({
       ...prev,
-      pages: prev.pages
-        .filter(p => p.page !== deletedPage)
-        .map(p => (p.page > deletedPage ? { ...p, page: p.page - 1 } : p)),
+      pages: prev.pages.filter(
+        p => p.constraintPageNo !== deletedConstraintPageNo
+      ),
     }));
   };
 
+  const remapTreeItems = (
+    items: any[] | undefined,
+    idMap: Record<string, string>
+  ): any[] | undefined =>
+    Array.isArray(items)
+      ? items.map(item => ({
+          ...item,
+          id: idMap[item.id] ?? item.id,
+          children: remapTreeItems(item.children, idMap),
+        }))
+      : undefined;
+
+  const remapControls = (
+    controls: any[] | undefined,
+    idMap: Record<string, string>
+  ): any[] | undefined =>
+    Array.isArray(controls)
+      ? controls.map(ctrl => ({
+          ...ctrl,
+          id: idMap[ctrl.id] ?? ctrl.id,
+        }))
+      : undefined;
+
+  const remapDialoges = (
+    dialoges: any[] | undefined,
+    idMap: Record<string, string>
+  ): any[] | undefined =>
+    Array.isArray(dialoges)
+      ? dialoges.map(dialog => ({
+          ...dialog,
+          columnes: Array.isArray(dialog.columnes)
+            ? dialog.columnes.map((col: any) => ({
+                ...col,
+                controls: remapControls(col.controls, idMap),
+              }))
+            : dialog.columnes,
+        }))
+      : undefined;
+
+  const remapComponentRule = (rule: any, idMap: Record<string, string>) => ({
+    ...rule,
+    id: idMap[rule.id] ?? rule.id,
+    groupby: Array.isArray(rule.groupby)
+      ? rule.groupby.map((g: any) => ({
+          ...g,
+          id: idMap[g.id] ?? g.id,
+        }))
+      : undefined,
+    events: Array.isArray(rule.events)
+      ? rule.events.map((ev: any) => ({
+          ...ev,
+          targetId: idMap[ev.targetId] ?? ev.targetId,
+        }))
+      : undefined,
+    children: remapTreeItems(rule.children, idMap),
+  });
+
   // 현재 constraint 편집 대상 (페이지, 컴포넌트 id)
   const [constraintSelection, setConstraintSelection] = useState<{
-    page: number;
-    primaryId: string; // 대표 id (rule.id 로 쓰일 것 or "__PAGE_ALL__")
-    ids: string[]; // 선택된 전체 id
+    page: number; // 표시용 logical page
+    constraintPageNo: number; // 실제 rule 매칭용
+    primaryId: string;
+    ids: string[];
     mode: 'rule' | 'page';
   } | null>(null);
 
@@ -153,6 +206,7 @@ export function EditorPage() {
 
   // 편집 텍스트 (JSON 형태)
   const [constraintEditorText, setConstraintEditorText] = useState('');
+  const [constraintHelperText, setConstraintHelperText] = useState('');
 
   const wsRef = useRef<EditorWorkspaceHandle | null>(null);
 
@@ -170,6 +224,13 @@ export function EditorPage() {
     current: 1,
     total: 0,
   });
+
+  const currentPageItem = wsRef.current
+    ?.exportFullState()
+    .pages.find(p => p.logicalPageIndex === pageInfo.current);
+
+  const currentConstraintPageNo =
+    currentPageItem?.constraintPageNo ?? pageInfo.current;
 
   // ===== undo / redo snapshot =====
   interface EditorSnapshot {
@@ -230,8 +291,8 @@ export function EditorPage() {
 
   const handleCopyPageResults = (
     results: {
-      fromPage: number;
-      toPage: number;
+      fromConstraintPageNo: number;
+      toConstraintPageNo: number;
       idMap: Record<string, string>;
     }[]
   ) => {
@@ -240,34 +301,32 @@ export function EditorPage() {
 
       const pages = [...prev.pages];
 
-      results.forEach(({ fromPage, toPage, idMap }) => {
-        const srcPageRule = pages.find(p => p.page === fromPage);
+      results.forEach(({ fromConstraintPageNo, toConstraintPageNo, idMap }) => {
+        const srcPageRule = pages.find(
+          p => Number(p.constraintPageNo) === Number(fromConstraintPageNo)
+        );
         if (!srcPageRule) return;
 
-        const copiedComponents = (srcPageRule.components || [])
-          .filter(c => idMap[c.id])
-          .map(c => ({
-            ...c,
-            id: idMap[c.id],
-            groupby: Array.isArray(c.groupby)
-              ? c.groupby.map(g => ({
-                  ...g,
-                  id: idMap[g.id] ?? g.id,
-                }))
-              : undefined,
-          }));
+        const copiedPageRule = {
+          ...srcPageRule,
+          constraintPageNo: toConstraintPageNo,
+          components: Array.isArray(srcPageRule.components)
+            ? srcPageRule.components.map(rule =>
+                remapComponentRule(rule, idMap)
+              )
+            : [],
+          dialoges: remapDialoges(srcPageRule.dialoges, idMap),
+          qr_dialoges: remapDialoges(srcPageRule.qr_dialoges, idMap),
+        };
 
-        if (!copiedComponents.length) return;
-
-        const idx = pages.findIndex(p => p.page === toPage);
+        const idx = pages.findIndex(
+          p => Number(p.constraintPageNo) === Number(toConstraintPageNo)
+        );
 
         if (idx === -1) {
-          pages.push({ page: toPage, components: copiedComponents });
+          pages.push(copiedPageRule);
         } else {
-          pages[idx] = {
-            ...pages[idx],
-            components: copiedComponents,
-          };
+          pages[idx] = copiedPageRule;
         }
       });
 
@@ -277,7 +336,7 @@ export function EditorPage() {
 
   // PDF 로드 완료 상태 (총 페이지가 0보다 크면 PDF가 로드된 것으로 간주)
   const hasPdfLoaded = pageInfo.total > 0;
-
+  const [docKey, setDocKey] = useState<string>('DOC0001');
   const [isRuleListOpen, setIsRuleListOpen] = useState(false);
 
   const [isTreeEditorOpen, setIsTreeEditorOpen] = useState(false);
@@ -288,9 +347,17 @@ export function EditorPage() {
   // const [searchParams] = useSearchParams();
   // const docId = searchParams.get('docId') ?? undefined;
 
+  const buildDocKeyFromApi = (PRCDOC_CFY?: string, PRCDOC_NO?: string) => {
+    const cfy = String(PRCDOC_CFY ?? '').trim();
+    const noRaw = String(PRCDOC_NO ?? '').trim();
+    const no = noRaw.includes('-') ? (noRaw.split('-').pop() ?? '') : noRaw;
+
+    return `${cfy}${no}`.replace(/[^A-Za-z0-9]/g, '');
+  };
+
   const params = new URLSearchParams(window.location.search);
   const FRM_UNQ_KY_VAL = params.get('FRM_UNQ_KY_VAL');
-  const isDbMode = !!FRM_UNQ_KY_VAL;
+  const sourceMode: 'db' | 'local' = FRM_UNQ_KY_VAL ? 'db' : 'local';
 
   useEffect(() => {
     if (!FRM_UNQ_KY_VAL) return;
@@ -302,7 +369,25 @@ export function EditorPage() {
         withCredentials: true,
       });
 
-      const { PDF_PATH, FRM_OVER_JSON, FRM_CONS_JSON } = metaRes.data;
+      console.log('[EditorPage] API response:', metaRes.data);
+      console.log('[EditorPage] PRCDOC_CFY:', metaRes.data?.PRCDOC_CFY);
+      console.log('[EditorPage] PRCDOC_NO:', metaRes.data?.PRCDOC_NO);
+
+      const { PDF_PATH, FRM_OVER_JSON, FRM_CONS_JSON, PRCDOC_CFY, PRCDOC_NO } =
+        metaRes.data;
+
+      const nextDocKey = buildDocKeyFromApi(PRCDOC_CFY, PRCDOC_NO);
+
+      console.log('[EditorPage] buildDocKeyFromApi input', {
+        PRCDOC_CFY,
+        PRCDOC_NO,
+      });
+      console.log('[EditorPage] generated docKey:', nextDocKey);
+
+      if (sourceMode === 'db') {
+        setDocKey(buildDocKeyFromApi(PRCDOC_CFY, PRCDOC_NO));
+      }
+
       if (!PDF_PATH) return;
 
       const isProd = import.meta.env.PROD;
@@ -344,7 +429,7 @@ export function EditorPage() {
     load().catch(err => {
       console.error('[Editor][DB] load failed', err);
     });
-  }, [pageInfo.total]);
+  }, [FRM_UNQ_KY_VAL, pageInfo.total, sourceMode, setConstraintDoc]);
 
   // ===== 스케일 계산 (V1 방식 + 줌 반영) =====
   const recalcScale = useCallback(() => {
@@ -652,17 +737,13 @@ export function EditorPage() {
               setIsOverlayVisible(true);
             }
           }}
-          onImportPdf={
-            isDbMode
-              ? undefined
-              : file => {
-                  console.log(
-                    '📄 [EditorPage] importPdf from header',
-                    file.name
-                  );
-                  wsRef.current?.loadPdfFile(file);
-                }
-          }
+          sourceMode={sourceMode}
+          docKey={docKey}
+          onChangeDocKey={setDocKey}
+          onImportPdf={file => {
+            console.log('📄 [EditorPage] importPdf from header', file.name);
+            wsRef.current?.loadPdfFile(file);
+          }}
           onSaveFormJson={() => wsRef.current?.downloadJsonCreate()}
           // 정렬/간격/크기/초기화
           onAlignLeft={handleAlignLeft}
@@ -711,7 +792,7 @@ export function EditorPage() {
               insertAfter,
             });
 
-            // console.log("COPY RESULT:", results);
+            console.log('COPY RESULT:', results);
 
             if (results && Array.isArray(results)) {
               handleCopyPageResults(results);
@@ -791,14 +872,17 @@ export function EditorPage() {
             >
               <EditorWorkspace
                 ref={wsRef}
-                // docId={docId}
+                sourceMode={sourceMode}
+                docKey={docKey}
+                onChangeDocKey={setDocKey}
                 isOverlayVisible={isOverlayVisible}
                 onPageInfoChange={handlePageInfoChange}
                 scale={pageScale}
                 constraints={constraintDoc}
                 onCopyPageResult={handleCopyPageResult}
                 onOpenConstraintEditor={({
-                  page,
+                  // page,
+                  constraintPageNo,
                   overlays,
                   rightClickedUid,
                 }) => {
@@ -816,21 +900,33 @@ export function EditorPage() {
 
                   const ids = overlays.map(o => o.id);
 
-                  // 대표 id 기준으로 rule 확보/생성
-                  const rule = ensureComponentRule(
-                    page,
-                    primary.id,
-                    primary.type
+                  const existingPageRule = constraintDoc?.pages?.find(
+                    p => Number(p.constraintPageNo) === Number(constraintPageNo)
                   );
 
+                  const existingRule = existingPageRule?.components?.find(
+                    c => String(c.id) === String(primary.id)
+                  );
+
+                  const draftRule =
+                    existingRule ??
+                    ({
+                      id: primary.id,
+                      ...(primary.type === 'circleslash'
+                        ? { groupType: 'circleslash' }
+                        : {}),
+                    } as ConstraintComponentRule);
+
+                  setConstraintHelperText('');
                   setConstraintSelection({
-                    page,
+                    page: pageInfo.current,
+                    constraintPageNo,
                     primaryId: primary.id,
                     ids,
                     mode: 'rule',
                   });
 
-                  setConstraintEditorText(formatConstraintJson(rule));
+                  setConstraintEditorText(formatConstraintJson(draftRule));
                 }}
                 // onPdfLoadedChange={setHasPdfLoaded}
               />
@@ -845,42 +941,69 @@ export function EditorPage() {
           selection={constraintSelection}
           text={constraintEditorText}
           onChangeText={setConstraintEditorText}
-          onClose={() => setConstraintSelection(null)}
+          helperText={constraintHelperText}
+          onChangeHelperText={setConstraintHelperText}
+          onClose={() => {
+            setConstraintSelection(null);
+            setConstraintHelperText('');
+          }}
           onRevert={() => {
             if (!constraintSelection) return;
-            const { page, primaryId, mode } = constraintSelection;
+            const { constraintPageNo, primaryId, mode } = constraintSelection;
 
             if (mode === 'page') {
               const pageRule = constraintDoc?.pages?.find(
-                (p: any) => Number(p.page) === Number(page)
+                (p: any) =>
+                  Number(p.constraintPageNo) === Number(constraintPageNo)
               );
               if (!pageRule) return;
               setConstraintEditorText(formatConstraintJson(pageRule));
               return;
             }
 
-            // 단일 rule 모드
-            const rule = ensureComponentRule(page, primaryId);
-            setConstraintEditorText(formatConstraintJson(rule));
+            const pageRule = constraintDoc?.pages?.find(
+              (p: any) =>
+                Number(p.constraintPageNo) === Number(constraintPageNo)
+            );
+
+            const existingRule = pageRule?.components?.find(
+              (c: any) => String(c.id) === String(primaryId)
+            );
+
+            const draftRule =
+              existingRule ??
+              ({
+                id: primaryId,
+              } as any);
+
+            setConstraintEditorText(formatConstraintJson(draftRule));
           }}
           onSave={() => {
             if (!constraintSelection) return;
-            const { page, primaryId, mode } = constraintSelection;
+            const { constraintPageNo, primaryId, mode } = constraintSelection;
 
             try {
               const parsed = JSON.parse(constraintEditorText || '{}') as any;
 
               if (mode === 'page') {
-                const pageNo = Number(parsed.page ?? page);
+                const targetConstraintPageNo = Number(
+                  parsed.constraintPageNo ?? constraintPageNo
+                );
 
                 setConstraintDoc(prev => {
                   const pages = [...prev.pages];
                   const idx = pages.findIndex(
-                    (p: any) => Number(p.page) === pageNo
+                    (p: any) =>
+                      Number(p.constraintPageNo) ===
+                      Number(targetConstraintPageNo)
                   );
 
-                  // parsed 전체를 저장 (components 뿐 아니라 qr_dialoges 등 포함)
-                  const newPageObj = { ...parsed, page: pageNo };
+                  const newPageObj = {
+                    ...parsed,
+                    constraintPageNo: targetConstraintPageNo,
+                  };
+
+                  delete newPageObj.page;
 
                   if (idx === -1) pages.push(newPageObj);
                   else pages[idx] = newPageObj;
@@ -892,23 +1015,23 @@ export function EditorPage() {
                 return;
               }
 
-              // 🔹 단일 rule 편집 저장 (기존 로직)
-              parsed.id = primaryId; // 항상 대표 id 하나만 사용
-              const pageNo = page;
+              parsed.id = primaryId;
+              const pageNo = constraintPageNo;
 
               setConstraintDoc(prev => {
                 const pages = [...prev.pages];
-                const pageIndex = pages.findIndex(p => p.page === pageNo);
+                const pageIndex = pages.findIndex(
+                  p => Number(p.constraintPageNo) === Number(pageNo)
+                );
 
                 if (pageIndex === -1) {
-                  // 페이지가 없으면 새 페이지 규칙 생성
                   pages.push({
-                    page: pageNo,
+                    constraintPageNo: pageNo,
                     components: [parsed],
                   });
                 } else {
                   const pageRule = pages[pageIndex];
-                  const comps = [...pageRule.components];
+                  const comps = [...(pageRule.components || [])];
                   const compIndex = comps.findIndex(c => c.id === parsed.id);
 
                   if (compIndex === -1) {
@@ -937,33 +1060,76 @@ export function EditorPage() {
           }}
           onAppendSelectedIds={() => {
             if (!constraintSelection) return;
-            const { primaryId, ids: prevIds, mode } = constraintSelection;
 
-            // 페이지 전체 모드에서는 복잡하니 일단 막기
-            if (mode === 'page') {
-              alert(
-                '페이지 전체 편집 모드에서는 "선택 추가"를 사용할 수 없습니다.\n개별 rule 을 선택해서 편집해 주세요.'
-              );
+            const { primaryId, ids: prevIds, mode } = constraintSelection;
+            const idsFromWs = wsRef.current?.getSelectedOverlayIds?.() ?? [];
+
+            if (!idsFromWs.length) {
+              alert('먼저 추가할 컴포넌트를 선택해 주세요.');
               return;
             }
 
-            const idsFromWs = wsRef.current?.getSelectedOverlayIds?.() ?? [];
-            if (!idsFromWs.length) return;
+            if (mode === 'page') {
+              const existingRaw = constraintHelperText ?? '';
+              const existing = existingRaw.trimEnd();
 
-            const mergedIds = Array.from(
-              new Set<string>([primaryId, ...prevIds, ...idsFromWs])
-            );
+              const existingIds = new Set(
+                Array.from(existing.matchAll(/"id"\s*:\s*"([^"]+)"/g)).map(
+                  match => match[1]
+                )
+              );
 
-            setConstraintSelection(prev => {
-              if (!prev) return prev;
-              return { ...prev, ids: mergedIds };
-            });
+              const appendedIds = idsFromWs
+                .map(id => String(id))
+                .filter(id => !existingIds.has(id));
+
+              if (appendedIds.length === 0) {
+                return;
+              }
+
+              const appendedLines = appendedIds.map(id => `"id": "${id}"`);
+
+              const nextText =
+                existing.length > 0
+                  ? `${existing}\n${appendedLines.join('\n')}`
+                  : appendedLines.join('\n');
+
+              setConstraintHelperText(nextText);
+
+              const mergedIds = Array.from(
+                new Set<string>([
+                  ...prevIds,
+                  ...idsFromWs.map(id => String(id)),
+                ])
+              );
+
+              setConstraintSelection(prev =>
+                prev ? { ...prev, ids: mergedIds } : prev
+              );
+
+              return;
+            }
 
             try {
               const raw = (constraintEditorText || '').trim();
               const base: any = raw ? JSON.parse(raw) : {};
+
+              const mergedIds = Array.from(
+                new Set<string>([
+                  primaryId,
+                  ...prevIds,
+                  ...idsFromWs.map(id => String(id)),
+                ])
+              );
+
+              setConstraintSelection(prev => {
+                if (!prev) return prev;
+                return { ...prev, ids: mergedIds };
+              });
+
               base.id = primaryId;
               base.groupby = mergedIds.map(id => ({ id }));
+
               setConstraintEditorText(formatConstraintJson(base));
             } catch (err) {
               console.error(err);
@@ -971,11 +1137,10 @@ export function EditorPage() {
             }
           }}
           onDelete={() => {
-            const { page, primaryId, mode } = constraintSelection;
+            const { page, constraintPageNo, primaryId, mode } =
+              constraintSelection;
 
-            // 페이지 전체 삭제는 일단 보류
             if (mode === 'page') {
-              // 필요하면 여기서 페이지 단위 rule 삭제 구현 가능
               alert('페이지 전체 rule 삭제는 아직 구현하지 않았습니다.');
               return;
             }
@@ -990,7 +1155,9 @@ export function EditorPage() {
 
             setConstraintDoc(prev => {
               const pages = [...prev.pages];
-              const pageIdx = pages.findIndex(p => p.page === page);
+              const pageIdx = pages.findIndex(
+                p => Number(p.constraintPageNo) === Number(constraintPageNo)
+              );
               if (pageIdx === -1) return prev;
 
               const pageRule = pages[pageIdx];
@@ -1007,6 +1174,7 @@ export function EditorPage() {
             });
 
             setConstraintSelection(null);
+            setConstraintHelperText('');
             alert('rule 이 삭제되었습니다.');
           }}
         />
@@ -1019,42 +1187,77 @@ export function EditorPage() {
             treeEditorMode === 'edit' ? constraintDoc?.treelist : undefined
           }
           onSave={tree => {
+            const currentPageItem = wsRef.current
+              ?.exportFullState()
+              .pages.find(p => p.logicalPageIndex === pageInfo.current);
+
+            if (!currentPageItem) {
+              alert('현재 페이지 정보를 찾을 수 없습니다.');
+              return;
+            }
+
+            const currentConstraintPageNo = currentPageItem.constraintPageNo;
+
+            const overlayIds = new Set(
+              (wsRef.current?.getAllCircleSlashItems() ?? []).map(o => o.id)
+            );
+
+            const treeIds: string[] = [];
+
+            const collectTreeIds = (nodes: any[]) => {
+              nodes.forEach(n => {
+                if (overlayIds.has(n.id)) {
+                  treeIds.push(String(n.id));
+                }
+                if (Array.isArray(n.children)) {
+                  collectTreeIds(n.children);
+                }
+              });
+            };
+
+            collectTreeIds(tree);
+
             setConstraintDoc(prev => {
               if (!prev) return prev;
 
-              // 1️ treelist 저장
-              const nextDoc = {
-                ...prev,
-                treelist: tree,
-              };
-
-              // 2 treelist id → overlay id 매핑 생성
-              // (circleSlashItems 는 overlay.id 리스트)
-              const overlayIds = new Set(
-                (wsRef.current?.getAllCircleSlashItems() ?? []).map(o => o.id)
+              const pages = [...prev.pages];
+              const pageIdx = pages.findIndex(
+                p => p.constraintPageNo === currentConstraintPageNo
               );
 
-              // 3 모든 treelist 노드를 순회하며
-              //     rule.id 를 overlay.id 로 강제 맞춤
-              const rewriteRules = (nodes: any[]) => {
-                nodes.forEach(n => {
-                  if (overlayIds.has(n.id)) {
-                    // n.id 가 overlay.id 인 경우만 rule 생성
-                    ensureComponentRule(
-                      /* page */ pageInfo.current,
-                      /* id */ n.id,
-                      /* type */ 'circleslash'
-                    );
-                  }
-                  if (Array.isArray(n.children)) {
-                    rewriteRules(n.children);
-                  }
-                });
+              const pageRule =
+                pageIdx >= 0
+                  ? { ...pages[pageIdx] }
+                  : {
+                      constraintPageNo: currentConstraintPageNo,
+                      components: [],
+                    };
+
+              const comps = [...(pageRule.components || [])];
+
+              treeIds.forEach(id => {
+                const exists = comps.some(c => String(c.id) === String(id));
+                if (!exists) {
+                  comps.push({
+                    id,
+                    groupType: 'circleslash',
+                  });
+                }
+              });
+
+              pageRule.components = comps;
+
+              if (pageIdx >= 0) {
+                pages[pageIdx] = pageRule;
+              } else {
+                pages.push(pageRule);
+              }
+
+              return {
+                ...prev,
+                treelist: tree,
+                pages,
               };
-
-              rewriteRules(tree);
-
-              return nextDoc;
             });
 
             alert('treelist + rule 매핑이 저장되었습니다.');
@@ -1087,37 +1290,40 @@ export function EditorPage() {
 
       {isRuleListOpen && (
         <ConstraintRuleListPanel
-          page={pageInfo.current}
+          displayPage={pageInfo.current}
+          constraintPageNo={currentConstraintPageNo}
           constraintDoc={constraintDoc}
-          onSelectRule={({ page, ruleId, ids }) => {
+          onSelectRule={({ page, constraintPageNo, ruleId, ids }) => {
             const pageRule = constraintDoc?.pages?.find(
-              (p: any) => Number(p.page) === Number(page)
+              (p: any) =>
+                Number(p.constraintPageNo) === Number(constraintPageNo)
             );
 
-            // 1) "이 페이지 전체 JSON"
             if (ruleId === '__PAGE_ALL__') {
               if (!pageRule) return;
 
+              setConstraintHelperText('');
               setConstraintSelection({
-                page,
+                page, // 표시용 4
+                constraintPageNo, // 실제 lookup/save용 38
                 primaryId: '__PAGE_ALL__',
                 ids,
                 mode: 'page',
               });
 
-              // 핵심: components만 말고 pageRule 전체!
               setConstraintEditorText(formatConstraintJson(pageRule));
               return;
             }
 
-            // 2) 개별 rule 선택
             const rule = pageRule?.components?.find(
               (c: any) => String(c.id) === String(ruleId)
             );
             if (!rule) return;
 
+            setConstraintHelperText('');
             setConstraintSelection({
-              page,
+              page, // 표시용 4
+              constraintPageNo, // 실제 lookup/save용 38
               primaryId: ruleId,
               ids,
               mode: 'rule',

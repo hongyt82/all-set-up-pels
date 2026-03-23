@@ -3,10 +3,12 @@ import React from 'react';
 import type { ConstraintDoc } from '../../types/constraints';
 
 interface ConstraintRuleListPanelProps {
-  page: number;
+  displayPage: number;
+  constraintPageNo: number;
   constraintDoc: ConstraintDoc | null;
   onSelectRule: (payload: {
     page: number;
+    constraintPageNo: number;
     ruleId: string;
     ids: string[];
   }) => void;
@@ -15,12 +17,19 @@ interface ConstraintRuleListPanelProps {
 
 export const ConstraintRuleListPanel: React.FC<
   ConstraintRuleListPanelProps
-> = ({ page, constraintDoc, onSelectRule, onClose }) => {
+  // > = ({ constraintPageNo, constraintDoc, onSelectRule, onClose }) => {
+> = ({
+  displayPage,
+  constraintPageNo,
+  constraintDoc,
+  onSelectRule,
+  onClose,
+}) => {
   if (!constraintDoc?.pages?.length) return null;
 
   // page가 number/string 혼재해도 매칭되도록
   const pageRule = constraintDoc.pages.find(
-    (p: any) => Number(p.page) === Number(page)
+    (p: any) => Number(p.constraintPageNo) === Number(constraintPageNo)
   );
 
   const rules = (pageRule as any)?.components || [];
@@ -58,7 +67,10 @@ export const ConstraintRuleListPanel: React.FC<
       "
     >
       <div className="flex items-center justify-between mb-1">
-        <div className="text-xs font-semibold">Rule 목록 (page {page})</div>
+        {/*<div className="text-xs font-semibold">Rule 목록 (page {constraintPageNo})</div>*/}
+        <div className="text-xs font-semibold">
+          Rule 목록 (page {displayPage})
+        </div>
         <button
           type="button"
           className="text-[10px] px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600"
@@ -74,7 +86,8 @@ export const ConstraintRuleListPanel: React.FC<
           type="button"
           onClick={() =>
             onSelectRule({
-              page,
+              page: displayPage,
+              constraintPageNo,
               ruleId: '__PAGE_ALL__',
               ids: allGroupIds,
             })
@@ -100,7 +113,7 @@ export const ConstraintRuleListPanel: React.FC<
             </span>
           </div>
           <div className="text-[10px] text-emerald-100/80">
-            page {page} 의 전체 JSON
+            page {constraintPageNo} 의 전체 JSON
           </div>
         </button>
       )}
@@ -127,7 +140,8 @@ export const ConstraintRuleListPanel: React.FC<
                 type="button"
                 onClick={() =>
                   onSelectRule({
-                    page,
+                    page: displayPage,
+                    constraintPageNo,
                     ruleId: id,
                     ids: Array.from(new Set(groupIds)),
                   })
