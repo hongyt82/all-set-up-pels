@@ -554,6 +554,79 @@ export function ViewerPage() {
         return;
       }
 
+      type PageItem = TemplateDoc['pages'][number];
+
+      if (String(p.type || '').toLowerCase() === 'addpage') {
+        const insertAt = Number(p.value ?? p.page ?? 0);
+
+        if (!Number.isFinite(insertAt) || insertAt <= 0) return;
+
+        setVPages(prev => {
+          if (!Array.isArray(prev) || prev.length === 0) return prev;
+
+          const idx = Math.max(0, Math.min(prev.length, insertAt - 1));
+
+          const blankPage: PageItem = {
+            page: insertAt,
+            width: prev[0]?.width ?? BASE_W,
+            height: prev[0]?.height ?? BASE_H,
+            isChange: 'N',
+            components: [],
+            pdfPageNo: -1,
+            constraintPageNo: -1,
+            attachments: [],
+          };
+
+          const inserted: PageItem[] = [
+            ...prev.slice(0, idx),
+            blankPage,
+            ...prev.slice(idx),
+          ];
+
+          return inserted.map((pg, i) => ({
+            ...pg,
+            page: i + 1,
+          }));
+        });
+
+        setOverlaysByPage(prev => {
+          const next: Record<number, OverlayItem[]> = {};
+          Object.entries(prev).forEach(([key, value]) => {
+            const pageNo = Number(key);
+            next[pageNo >= insertAt ? pageNo + 1 : pageNo] = value.map(
+              item => ({
+                ...item,
+                page: pageNo >= insertAt ? pageNo + 1 : pageNo,
+              })
+            );
+          });
+          next[insertAt] = [];
+          return next;
+        });
+
+        setAttachmentsByPage(prev => {
+          const next: Record<number, any[]> = {};
+          Object.entries(prev).forEach(([key, value]) => {
+            const pageNo = Number(key);
+            next[pageNo >= insertAt ? pageNo + 1 : pageNo] = value;
+          });
+          next[insertAt] = [];
+          return next;
+        });
+
+        setPathDataByPage(prev => {
+          const next: Record<number, TemplatePathData[]> = {};
+          Object.entries(prev).forEach(([key, value]) => {
+            const pageNo = Number(key);
+            next[pageNo >= insertAt ? pageNo + 1 : pageNo] = value;
+          });
+          next[insertAt] = [];
+          return next;
+        });
+
+        return;
+      }
+
       setOverlaysByPage(prev => {
         const list = prev[logicalPage] ?? [];
 
@@ -679,6 +752,9 @@ export function ViewerPage() {
       list.forEach((fv: any) => {
         const type = String(fv.type ?? '').toLowerCase();
         if (type === 'drawing') return;
+
+        // DB 최종 JSON(pages)에 이미 반영된 페이지 구조는 roomState로 다시 적용하지 않음
+        if (isDbMode && (type === 'addpage' || type === 'deletepage')) return;
 
         applyIncomingSetForm({
           formId: String(fv.formId ?? ''),
@@ -942,6 +1018,7 @@ export function ViewerPage() {
         const templateJson = {
           ...(parsed.doc || {}),
           pages: parsed.pages || [],
+          removePages: parsed.removePages || [],
         };
 
         const json = templateJson as TemplateDoc;
@@ -1086,8 +1163,9 @@ export function ViewerPage() {
     if (!templateDoc) return null;
 
     const base: any = { ...templateDoc };
+    base.removePages = templateDoc.removePages || [];
 
-    const pages = (templateDoc.pages || []).map(pg => {
+    const pages = (vPages || []).map(pg => {
       const W = pg.width || BASE_W;
       const H = pg.height || BASE_H;
       const items = overlaysByPage[pg.page] || [];
