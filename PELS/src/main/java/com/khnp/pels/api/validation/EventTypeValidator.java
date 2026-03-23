@@ -22,18 +22,22 @@ public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCon
             case PAGE_ADD:
             case PAGE_DELETE:
                 valid &= require(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
+                valid &= forbidden(context, dto.getPdfPageNo(), "STROKE_SEQ");
+                valid &= forbidden(context, dto.getPdfPageNo(), "IMAGE_SEQ");
                 break;
 
             case STROKE_ADD:
                 valid &= require(context, dto.getStroke(), "STROKE");
             case STROKE_DELETE:
                 valid &= require(context, dto.getStrokeSeq(), "STROKE_SEQ");
+                valid &= forbidden(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
                 break;
 
             case IMAGE_ADD:
                 valid &= require(context, dto.getImage(), "IMAGE");
             case IMAGE_DELETE:
                 valid &= require(context, dto.getImageSeq(), "IMAGE_SEQ");
+                valid &= forbidden(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
                 break;
             default:
                 return valid;
@@ -48,6 +52,17 @@ public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCon
     private boolean require(ConstraintValidatorContext context, Object value, String field) {
         if (value == null) {
             addError(context, field, field + "는 필수입니다");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 존재하면 안되는 값 검증
+     */
+    private boolean forbidden(ConstraintValidatorContext context, Object value, String field) {
+        if (value != null) {
+            addError(context, field, field + "는 존재하면 안됩니다");
             return false;
         }
         return true;
