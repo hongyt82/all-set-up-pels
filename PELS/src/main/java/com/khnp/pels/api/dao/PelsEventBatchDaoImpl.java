@@ -1,12 +1,12 @@
 package com.khnp.pels.api.dao;
 
+import com.khnp.pels.api.dto.TstEventEntity;
+import com.khnp.pels.api.dto.TstEventImageEntity;
 import com.khnp.pels.api.dto.TstEventStrokeEntity;
 import org.apache.ibatis.session.SqlSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
-import java.util.List;
 
 @Repository("pelsEventBatchDao")
 public class PelsEventBatchDaoImpl implements PelsEventBatchDao {
@@ -20,18 +20,8 @@ public class PelsEventBatchDaoImpl implements PelsEventBatchDao {
 	 * @return 처리 개수
 	 */
 	@Override
-	public int insertTstEventBatch(TstEventStrokeEntity eventEntity) {
+	public int insertTstEventBatch(TstEventEntity eventEntity) {
 		return batchSqlSession.insert("TstEventBatchInsert", eventEntity);
-	}
-
-	/**
-	 * 이벤트 입력
-	 * @param eventEntity 이벤트 객체
-	 * @return 처리 개수
-	 */
-	@Override
-	public int insertTstEvent(TstEventStrokeEntity eventEntity) {
-		return batchSqlSession.insert("TstEventInsert", eventEntity);
 	}
 
 	/**
@@ -42,6 +32,16 @@ public class PelsEventBatchDaoImpl implements PelsEventBatchDao {
 	@Override
 	public int insertTstEventStroke(TstEventStrokeEntity eventStrokeEntity) {
 		return batchSqlSession.insert("TstEventStrokeInsert", eventStrokeEntity);
+	}
+
+	/**
+	 * 이벤트 사진 입력
+	 * @param eventImageEntity 이벤트 사진 객체
+	 * @return 처리 개수
+	 */
+	@Override
+	public int insertTstEventImage(TstEventImageEntity eventImageEntity) {
+		return batchSqlSession.insert("TstEventImageInsert", eventImageEntity);
 	}
 
 	/**

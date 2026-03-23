@@ -3,13 +3,14 @@ package com.khnp.pels.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.khnp.pels.api.converter.PelsEventConverter;
 import com.khnp.pels.api.dto.ApiResponse;
+import com.khnp.pels.api.dto.TstEventMeta;
 import com.khnp.pels.api.dto.TstEventStrokeEntity;
 import com.khnp.pels.api.dto.TstEventStrokeMeta;
 import com.khnp.pels.api.service.PelsEventService;
 import com.khnp.pels.common.exception.RestBadRequestException;
 import com.khnp.pels.common.validation.JsonMetaBinder;
 import com.khnp.pels.common.validation.JsonTypeFactory;
-import com.khnp.pels.common.validation.StrokeFilename;
+import com.khnp.pels.api.validation.StrokeFilename;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,8 +37,6 @@ public class PelsStrokeApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(PelsStrokeApiController.class);
 
-    private final ObjectMapper objectMapper;
-
     private final JsonMetaBinder jsonMetaBinder;
 
     private final JsonTypeFactory jsonTypeFactory;
@@ -49,8 +48,8 @@ public class PelsStrokeApiController {
 
     /**
      * 수행기록 이벤트 스트로크 벌크 저장
-     * @param metaJson 이벤트 스트로크 JSON 문자열
-     * @param mpFiles 이벤트 스트로크 포인트경로 바이너리 파일(s)
+     * @param metaJson 이벤트 스트로크 JSON 
+     * @param mpFiles 이벤트 스트로크 바이너리 파일(s)
      * @return ApiResponse
      */
     @PostMapping(
@@ -63,10 +62,8 @@ public class PelsStrokeApiController {
             @RequestPart("files") List<MultipartFile> mpFiles
     ) {
         // meta json 변환 및 검증
-        List<TstEventStrokeMeta> eventStrokeMetaList = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.listType(TstEventStrokeMeta.class));
+        List<TstEventMeta> eventStrokeMetaList = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.listType(TstEventMeta.class));
         logger.info("### saveTstEventStrokeBulk(), Request strokes={}", eventStrokeMetaList.size());
-        // Entity로 변환
-        List<TstEventStrokeEntity> eventStrokeEntityList = pelsEventConverter.toStrokeEntityList(eventStrokeMetaList);
 
         // stroke path files 검증
         if(mpFiles==null || mpFiles.isEmpty()){
@@ -92,7 +89,7 @@ public class PelsStrokeApiController {
         logger.info("### saveTstEventStrokeBulk(), Created file maps={}", fileMap.size());
 
         // 이벤트 스트로크 저장
-        int prcsCnt = pelsEventService.saveTstEventStrokeBulk(eventStrokeEntityList, fileMap);
+        int prcsCnt = pelsEventService.saveTstEventStrokeBulk(eventStrokeMetaList, fileMap);
         logger.info("### saveTstEventStrokeBulk(), Completed save strokes={}", prcsCnt);
 
         return ResponseEntity.ok().body(ApiResponse.success());
@@ -101,7 +98,7 @@ public class PelsStrokeApiController {
     /**
      * 수행기록 이벤트 스트로크 단일 저장
      * @param metaJson 이벤트 스트로크 메터 JSON
-     * @param mpFile 이벤트 스트로크 포인트경로 파일
+     * @param mpFile 이벤트 스트로크 바이너리 파일
      * @return ApiResponse
      */
     @PostMapping(
@@ -113,11 +110,9 @@ public class PelsStrokeApiController {
             @RequestPart("file") MultipartFile mpFile
     ) {
         // meta json 검증
-        TstEventStrokeMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventStrokeMeta.class));
-        logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={} STROKE_SEQ={}, Start",
-                eventStrokeMeta.getTST_UNQ_KY_VAL(), eventStrokeMeta.getPAGE_NO(), eventStrokeMeta.getSTROKE_SEQ());
-        // Entity로 변환
-        TstEventStrokeEntity eventStrokeEntity = pelsEventConverter.toStrokeEntity(eventStrokeMeta);
+        TstEventMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
+        logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={}  PAGE_ADD_SEQ={} STROKE_SEQ={}, Start",
+                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
         // stroke path files 검증
         if(mpFile==null || mpFile.isEmpty()){
@@ -132,25 +127,26 @@ public class PelsStrokeApiController {
 
         // 파일명 체크
         StrokeFilename.parse(original);
+        byte[] strokeFile;
         try {
-            eventStrokeEntity.setPOINT_PATH(mpFile.getBytes());
+            strokeFile = mpFile.getBytes();
         } catch (IOException e) {
             throw new RestBadRequestException("Failed to read file");
         }
-        logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={} STROKE_SEQ={}, Checked stroke files",
-                eventStrokeEntity.getTST_UNQ_KY_VAL(), eventStrokeEntity.getPAGE_NO(), eventStrokeEntity.getSTROKE_SEQ());
+        logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, Checked stroke file",
+                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
-        //save stroke
-        pelsEventService.saveTstEventStroke(eventStrokeEntity);
-        logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={} STROKE_SEQ={}, Completed save stroke",
-                eventStrokeEntity.getTST_UNQ_KY_VAL(), eventStrokeEntity.getPAGE_NO(), eventStrokeEntity.getSTROKE_SEQ());
+        // 스트로크 저장
+        pelsEventService.saveTstEventStroke(eventStrokeMeta, strokeFile);
+        logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, Completed save stroke",
+                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
 
     /**
      * 수행기록 이벤트 스트로크 단일 삭제
-     * @param metaJson 시험(점검) 스트로크 JSON 문자열
+     * @param metaJson 이벤트 스트로크 JSON
      * @return ApiResponse
      */
     @DeleteMapping
@@ -158,21 +154,14 @@ public class PelsStrokeApiController {
             @RequestBody String metaJson
     ) {
         // meta json 파싱 검증
-        TstEventStrokeMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventStrokeMeta.class));
-        logger.info("### deleteTstEventStroke() TST_UNQ_KY_VAL={} PAGE_NO={} STROKE_SEQ={}, Start",
-                eventStrokeMeta.getTST_UNQ_KY_VAL(), eventStrokeMeta.getPAGE_NO(), eventStrokeMeta.getSTROKE_SEQ());
-        // Entity로 변환
-        TstEventStrokeEntity eventStrokeEntity = pelsEventConverter.toStrokeEntity(eventStrokeMeta);
+        TstEventMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
+        logger.info("### deleteTstEventStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, Start",
+                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
         // 스트로크 삭제
-        int prcsCnt = pelsEventService.deleteTstEventStroke(eventStrokeEntity);
-        if(prcsCnt == 0){
-            logger.info("### deleteTstEventStroke() TST_UNQ_KY_VAL={} PAGE_NO={} STROKE_SEQ={}, No stroke found",
-                    eventStrokeEntity.getTST_UNQ_KY_VAL(), eventStrokeEntity.getPAGE_NO(), eventStrokeEntity.getSTROKE_SEQ());
-            return ResponseEntity.ok().body(ApiResponse.success("No stroke found to delete"));
-        }
-        logger.info("### deleteTstEventStroke() TST_UNQ_KY_VAL={} PAGE_NO={} STROKE_SEQ={}, End",
-                eventStrokeEntity.getTST_UNQ_KY_VAL(), eventStrokeEntity.getPAGE_NO(), eventStrokeEntity.getSTROKE_SEQ());
+        pelsEventService.deleteTstEventStroke(eventStrokeMeta);
+        logger.info("### deleteTstEventStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, End",
+                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }

@@ -1,0 +1,21 @@
+package com.khnp.pels.api.dto;
+
+import lombok.*;
+
+import java.math.BigDecimal;
+
+@Data
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+public class TstEventEntity {
+    private Long eventSno;         //이벤트일련번호
+    private Integer eventTyp;      //이벤트유형(1,2,3,4,5,6)
+    private Long tstUnqKyVal;      //시험고유키값
+    private Integer pageNo;        //페이지번호
+    private Integer pageAddSeq;    //페이지추가순번
+    private Integer pdfPageNo;     //PDF페이지번호
+    private Integer eventTrgtSeq;  //이벤트대상순번(스트로크순번 or 이미지순번)
+    private String userId;         //사용자ID
+    private String eventDt;        //이벤트일시
+}

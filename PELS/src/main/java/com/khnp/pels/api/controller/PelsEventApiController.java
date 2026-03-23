@@ -3,11 +3,13 @@ package com.khnp.pels.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.khnp.pels.api.converter.PelsEventConverter;
 import com.khnp.pels.api.dto.ApiResponse;
+import com.khnp.pels.api.dto.TstEventEntity;
+import com.khnp.pels.api.dto.TstEventResponse;
 import com.khnp.pels.api.dto.TstEventStrokeEntity;
 import com.khnp.pels.api.service.PelsEventService;
+import com.khnp.pels.api.validation.StrokeFilename;
 import com.khnp.pels.common.validation.JsonMetaBinder;
 import com.khnp.pels.common.validation.JsonTypeFactory;
-import com.khnp.pels.common.validation.StrokeFilename;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,15 +37,7 @@ public class PelsEventApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(PelsEventApiController.class);
 
-    private final ObjectMapper objectMapper;
-
-    private final JsonMetaBinder jsonMetaBinder;
-
-    private final JsonTypeFactory jsonTypeFactory;
-
     private final PelsEventService pelsEventService;
-
-    private final PelsEventConverter pelsEventConverter;
 
 
     /**
@@ -51,15 +45,15 @@ public class PelsEventApiController {
      * @param tstUnqKyVal 시험고유키값
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TstEventStrokeEntity>>> getTstEventBulkList (
+    public ResponseEntity<ApiResponse<List<TstEventResponse>>> getTstEventBulkList (
             @RequestParam("tstUnqKyVal") Long tstUnqKyVal
     ) throws Exception {
         logger.info("### getTstEventBulkList() TST_UNQ_KY_VAL={}, Start", tstUnqKyVal);
 
         // 이벤트 목록 조회
-        List<TstEventStrokeEntity> eventBulkList = pelsEventService.getTstEventBulkList(tstUnqKyVal);
+        List<TstEventResponse> eventBulkList = pelsEventService.getTstEventBulkList(tstUnqKyVal);
 
-        logger.info("### getTstEventBulkList() TST_UNQ_KY_VAL={}, End. events={}", tstUnqKyVal, eventBulkList.size());
+        logger.info("### getTstEventBulkList() TST_UNQ_KY_VAL={}, End events={}", tstUnqKyVal, eventBulkList.size());
         return ResponseEntity.ok().body(ApiResponse.success(eventBulkList));
     }
 
@@ -78,9 +72,9 @@ public class PelsEventApiController {
         String boundary = "----strokeBoundary" + UUID.randomUUID().toString().replaceAll("-", "");
 
         // 스트로크 목록 조회
-        TstEventStrokeEntity paramEntity = new TstEventStrokeEntity();
-        paramEntity.setTST_UNQ_KY_VAL(tstUnqKyVal);
-        paramEntity.setPAGE_NO(pageNo);
+        TstEventEntity paramEntity = new TstEventEntity();
+        paramEntity.setTstUnqKyVal(tstUnqKyVal);
+        paramEntity.setPageNo(pageNo);
         List<TstEventStrokeEntity> tstStrokeEntityList = pelsEventService.getTstEventStrokeByPageList(paramEntity);
         logger.info("### getTstEventStrokeByPageList() TST_UNQ_KY_VAL={}, PAGE_NO={}, strokes={}", tstUnqKyVal, pageNo, tstStrokeEntityList.size());
 
@@ -91,12 +85,8 @@ public class PelsEventApiController {
             // files part (files로 여러개)
             int makeFileCnt = 0;
             for (TstEventStrokeEntity e : tstStrokeEntityList) {
-                String filename = new StrokeFilename(
-                    e.getTST_UNQ_KY_VAL() != null ? e.getTST_UNQ_KY_VAL() : 0,
-                    e.getPAGE_NO() != null ? e.getPAGE_NO() : 0,
-                    e.getSTROKE_SEQ() != null ? e.getSTROKE_SEQ() : 0
-                ).toFilename();
-                MultipartMixedWriter.writeBinaryPart(os, boundary, filename, e.getPOINT_PATH());
+                MultipartMixedWriter.writeBinaryPart(os, boundary,
+                        StrokeFilename.responseFilename(e.getEventSno()), e.getPointPath());
                 makeFileCnt++;
             }
             logger.info("### getTstEventStrokeByPageList() TST_UNQ_KY_VAL={}, PAGE_NO={}, Write files={}", tstUnqKyVal, pageNo, makeFileCnt);

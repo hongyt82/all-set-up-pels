@@ -7,13 +7,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.*;
-import java.math.BigDecimal;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TstEventStrokeMeta {
+public class TstEventImageMeta {
 
     @JsonProperty("POS_X")
     @NotNull
@@ -25,15 +24,19 @@ public class TstEventStrokeMeta {
     @Min(1) @Max(999999)
     private Integer posY;
 
-    @JsonProperty("STROKE_COLOR")
+    @JsonProperty("WIDTH")
     @NotNull
-    @Min(Integer.MIN_VALUE) @Max(9999999999L)
-    private Long strokeColor;
+    @Min(1) @Max(999999)
+    private Integer width;
 
-    @JsonProperty("STROKE_WIDTH")
+    @JsonProperty("HEIGHT")
     @NotNull
-    @DecimalMin(value = "0.00", inclusive = false)
-    @DecimalMax(value = "9999.99")
-    private BigDecimal strokeWidth;
+    @Min(1) @Max(999999)
+    private Integer height;
+
+    @JsonProperty("FILE_URL")
+    @NotBlank
+    @Size(max = 500)
+    private String fileUrl;
 
 }

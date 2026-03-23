@@ -1,84 +1,106 @@
 package com.khnp.pels.api.converter;
 
-import com.khnp.pels.api.dto.TstEventPageMeta;
-import com.khnp.pels.api.dto.TstEventStrokeEntity;
-import com.khnp.pels.api.dto.TstEventStrokeMeta;
+import com.khnp.pels.api.dto.*;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
 public class PelsEventConverter {
 
     /**
-     * 이벤트 페이지 목록 저장 - 내부 서버 전달 Entity List로 변환
-     * @param list 이벤트 페이지 메타 목록
-     * @return 이벤트 페이지 목록
+     * 이벤트 목록 저장 - 내부 서버 전달 Entity List로 변환
+     * @param list 이벤트 메타 목록
+     * @return 이벤트 목록
      */
-    public List<TstEventStrokeEntity> toPageEntityList(List<TstEventPageMeta> list) {
-        return list.stream().map(dto -> TstEventStrokeEntity.builder()
-                .EVENT_TYP(dto.getEVENT_TYP().getValue())
-                .TST_UNQ_KY_VAL(dto.getTST_UNQ_KY_VAL())
-                .PAGE_NO(dto.getPAGE_NO())
-                .PDF_PAGE_NO(dto.getPDF_PAGE_NO())
-                .USER_ID(dto.getUSER_ID())
-                .EVENT_DT(dto.getEVENT_DT())
-                .build()
+    public List<TstEventEntity> toEventList(List<TstEventMeta> list) {
+        return list.stream().map(
+                this::toEventEntity
         ).collect(Collectors.toList());
     }
 
     /**
-     * 이벤트 페이지 저장 - 내부 서버 전달 Entity로 변환
-     * @param dto 이벤트 페이지 메타 DTO
-     * @return 이벤트 페이지 엔터티
+     * 이벤트 저장 - 내부 서버 전달 Entity로 변환
+     * @param dto 이벤트 메타 DTO
+     * @return 이벤트 엔터티
      */
-    public TstEventStrokeEntity toPageEntity(TstEventPageMeta dto) {
-        return TstEventStrokeEntity.builder()
-                .EVENT_TYP(dto.getEVENT_TYP().getValue())
-                .TST_UNQ_KY_VAL(dto.getTST_UNQ_KY_VAL())
-                .PAGE_NO(dto.getPAGE_NO())
-                .PDF_PAGE_NO(dto.getPDF_PAGE_NO())
-                .USER_ID(dto.getUSER_ID())
-                .EVENT_DT(dto.getEVENT_DT())
+    public TstEventEntity toEventEntity(TstEventMeta dto) {
+        Integer eventTrgtSeq;
+        switch (dto.getEventTyp()){
+            case STROKE_ADD:
+            case STROKE_DELETE:
+                eventTrgtSeq = dto.getStrokeSeq();
+                break;
+            case IMAGE_ADD:
+            case IMAGE_DELETE:
+                eventTrgtSeq = dto.getImageSeq();
+                break;
+            default: eventTrgtSeq = null;
+        }
+
+        return TstEventEntity.builder()
+                .eventTyp(dto.getEventTyp().getValue())
+                .tstUnqKyVal(dto.getTstUnqKyVal())
+                .pageNo(dto.getPageNo())
+                .pageAddSeq(dto.getPageAddSeq())
+                .pdfPageNo(dto.getPdfPageNo())
+                .eventTrgtSeq(eventTrgtSeq)
+                .userId(dto.getUserId())
+                .eventDt(dto.getEventDt())
                 .build();
     }
 
     /**
      * 이벤트 스트로크 목록 저장 - 내부 서버 전달 Entity List로 변환
-     * @param list 이벤트 페이지 메타 목록
-     * @return 이벤트 페이지 목록
+     * @param list 이벤트 메타 목록
+     * @return 이벤트 스트로크 목록
      */
-    public List<TstEventStrokeEntity> toStrokeEntityList(List<TstEventStrokeMeta> list) {
-        return list.stream().map(dto -> TstEventStrokeEntity.builder()
-                .EVENT_TYP(dto.getEVENT_TYP().getValue())
-                .TST_UNQ_KY_VAL(dto.getTST_UNQ_KY_VAL())
-                .PAGE_NO(dto.getPAGE_NO())
-                .STROKE_SEQ(dto.getSTROKE_SEQ())
-                .STROKE_COLOR(dto.getSTROKE_COLOR())
-                .STROKE_WIDTH(dto.getSTROKE_WIDTH())
-                .USER_ID(dto.getUSER_ID())
-                .EVENT_DT(dto.getEVENT_DT())
-                .build()
+    public List<TstEventStrokeEntity> toEventStrokeList(List<TstEventMeta> list) {
+        return list.stream().map(
+                this::toEventStrokeEntity
         ).collect(Collectors.toList());
     }
 
     /**
      * 이벤트 스트로크 저장 - 내부 서버 전달 Entity로 변환
-     * @param dto 이벤트 페이지 메타 DTO
-     * @return 이벤트 페이지 엔터티
+     * @param dto 이벤트 메타 DTO
+     * @return 이벤트 스트로크 엔터티
      */
-    public TstEventStrokeEntity toStrokeEntity(TstEventStrokeMeta dto) {
+    public TstEventStrokeEntity toEventStrokeEntity(TstEventMeta dto) {
         return TstEventStrokeEntity.builder()
-                .EVENT_TYP(dto.getEVENT_TYP().getValue())
-                .TST_UNQ_KY_VAL(dto.getTST_UNQ_KY_VAL())
-                .PAGE_NO(dto.getPAGE_NO())
-                .STROKE_SEQ(dto.getSTROKE_SEQ())
-                .STROKE_COLOR(dto.getSTROKE_COLOR())
-                .STROKE_WIDTH(dto.getSTROKE_WIDTH())
-                .USER_ID(dto.getUSER_ID())
-                .EVENT_DT(dto.getEVENT_DT())
+                .posX(dto.getStroke().getPosX())
+                .posY(dto.getStroke().getPosY())
+                .strokeColor(dto.getStroke().getStrokeColor())
+                .strokeWidth(dto.getStroke().getStrokeWidth())
                 .build();
+    }
+
+    /**
+     * 이벤트 사진 목록 저장 - 내부 서버 전달 Entity List로 변환
+     * @param list 이벤트 메타 목록
+     * @return 이벤트 사진 목록
+     */
+    public List<TstEventImageEntity> toEventImageList(List<TstEventMeta> list) {
+        return list.stream().map(
+                this::toEventImageEntiry
+        ).collect(Collectors.toList());
+    }
+
+    /**
+     * 이벤트 사진 저장 - 내부 서버 전달 Entity List로 변환
+     * @param dto 이벤트 메타
+     * @return 이벤트 사진 엔터티
+     */
+    public TstEventImageEntity toEventImageEntiry(TstEventMeta dto) {
+        return TstEventImageEntity.builder()
+            .posX(dto.getImage().getPosX())
+            .posY(dto.getImage().getPosY())
+            .width(dto.getImage().getWidth())
+            .height(dto.getImage().getHeight())
+            .fileUrl(dto.getImage().getFileUrl())
+            .build();
     }
 
 }

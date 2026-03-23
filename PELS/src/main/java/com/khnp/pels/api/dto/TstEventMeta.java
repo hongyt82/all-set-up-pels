@@ -1,72 +1,81 @@
 package com.khnp.pels.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.khnp.pels.common.validation.EventType;
+import com.khnp.pels.api.converter.EventTypeHandler;
+import com.khnp.pels.api.validation.EventType;
+import com.khnp.pels.api.validation.ValidEventTypeCondition;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
+import javax.validation.Valid;
 import javax.validation.constraints.*;
-import java.math.BigDecimal;
 
+/**
+ *
+ */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@ValidEventTypeCondition
 public class TstEventMeta {
 
     @JsonProperty("EVENT_TYP")
     @NotNull
-    private EventType EVENT_TYP;
+    private EventType eventTyp;
 
     @JsonProperty("TST_UNQ_KY_VAL")
     @NotNull
     @Min(1)
-    private Long TST_UNQ_KY_VAL;
+    private Long tstUnqKyVal;
 
     @JsonProperty("PAGE_NO")
     @NotNull
     @Min(1) @Max(99999)
-    private Integer PAGE_NO;
+    private Integer pageNo;
 
+    @JsonProperty("PAGE_ADD_SEQ")
+    @NotNull
+    @Min(0) @Max(99999)
+    private Integer pageAddSeq;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("PDF_PAGE_NO")
-//    @NotNull
     @Min(1) @Max(99999)
-    private Integer PDF_PAGE_NO;
+    private Integer pdfPageNo;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("STROKE_SEQ")
-//    @NotNull
     @Min(1) @Max(99999)
-    private Integer STROKE_SEQ;
+    private Integer strokeSeq;
 
-    @JsonProperty("STROKE_COLOR")
-//    @NotNull
-    private Long STROKE_COLOR;
-
-    @JsonProperty("STROKE_WIDTH")
-//    @NotNull
-    @DecimalMin(value = "0.0", inclusive = false)
-    @DecimalMax(value = "1000.0")
-    private BigDecimal STROKE_WIDTH;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("IMAGE_SEQ")
+    @Min(1) @Max(99999)
+    private Integer imageSeq;
 
     @JsonProperty("USER_ID")
     @NotBlank
     @Size(max=20)
-    private String USER_ID;
+    private String userId;
 
     @JsonProperty("EVENT_DT")
     @NotNull
     @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$", message = "yyyy-MM-dd'T'HH:mm:ss.SSS와 일치해야 합니다")
-    private String EVENT_DT;
+    private String eventDt;
 
-    // 생성 후 삭제한 경우
-    @JsonProperty("DLTPR_ID")
-    @Size(max=20)
-    private String DLTPR_ID;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("STROKE")
+    @Valid
+    private TstEventStrokeMeta stroke;
 
-    @JsonProperty("DLT_DT")
-    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$", message = "yyyy-MM-dd'T'HH:mm:ss.SSS와 일치해야 합니다")
-    private String DLT_DT;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("IMAGE")
+    @Valid
+    private TstEventImageMeta image;
 
 }

@@ -1,13 +1,14 @@
 package com.khnp.pels.api.dao;
 
+import com.khnp.pels.api.dto.TstEventEntity;
+import com.khnp.pels.api.dto.TstEventImageEntity;
+import com.khnp.pels.api.dto.TstEventResponse;
 import com.khnp.pels.api.dto.TstEventStrokeEntity;
 import org.apache.ibatis.session.SqlSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.Map;
 
 @Repository("pelsEventDao")
 public class PelsEventDaoImpl implements PelsEventDao {
@@ -22,7 +23,7 @@ public class PelsEventDaoImpl implements PelsEventDao {
 	 * @return 이벤트 목록
 	 */
 	@Override
-	public List<TstEventStrokeEntity> selectTstEventList(Long tstUnqKyVal) {
+	public List<TstEventResponse> selectTstEventList(Long tstUnqKyVal) {
 		return sqlSession.selectList("TstEventSelectList", tstUnqKyVal);
 	}
 
@@ -32,7 +33,7 @@ public class PelsEventDaoImpl implements PelsEventDao {
 	 * @return 스트로크 목록
 	 */
 	@Override
-	public List<TstEventStrokeEntity> selectTstEventStrokeByPageList(TstEventStrokeEntity entity) {
+	public List<TstEventStrokeEntity> selectTstEventStrokeByPageList(TstEventEntity entity) {
 		return sqlSession.selectList("TstEventStrokeByPageList", entity);
 	}
 
@@ -52,7 +53,7 @@ public class PelsEventDaoImpl implements PelsEventDao {
 	 * @return 처리 개수
 	 */
 	@Override
-	public int insertTstEvent(TstEventStrokeEntity entity) {
+	public int insertTstEvent(TstEventEntity entity) {
 		return sqlSession.insert("TstEventInsert", entity);
 	}
 
@@ -63,7 +64,17 @@ public class PelsEventDaoImpl implements PelsEventDao {
 	 */
 	@Override
 	public int insertTstEventStroke(TstEventStrokeEntity entity) {
-		return sqlSession.update("TstEventStrokeInsert", entity);
+		return sqlSession.insert("TstEventStrokeInsert", entity);
+	}
+
+	/**
+	 * 이벤트 사진 입력
+	 * @param entity 이벤트 사진 객체
+	 * @return 처리 개수
+	 */
+	@Override
+	public int insertTstEventImage(TstEventImageEntity entity) {
+		return sqlSession.insert("TstEventImageInsert", entity);
 	}
 
 }

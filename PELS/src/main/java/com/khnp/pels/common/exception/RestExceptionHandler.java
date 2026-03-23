@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.Optional;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RestControllerAdvice(basePackages = "com.khnp.mpps.api")
+@RestControllerAdvice(basePackages = "com.khnp.pels.api")
 class RestExceptionHandler {
 
     @ExceptionHandler(RestBadRequestException.class)

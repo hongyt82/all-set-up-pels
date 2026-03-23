@@ -1,5 +1,6 @@
-package com.khnp.pels.common.validation;
+package com.khnp.pels.api.validation;
 
+import com.khnp.pels.api.dto.TstEventMeta;
 import com.khnp.pels.common.exception.RestBadRequestException;
 import lombok.Value;
 
@@ -7,6 +8,7 @@ import lombok.Value;
 public class StrokeFilename {
     long tstUnqKyVal;
     int pageNo;
+    int pageAddSeq;
     int strokeSeq;
 
     /**
@@ -45,19 +47,36 @@ public class StrokeFilename {
 
         String core = name.substring("stroke_".length(), name.length() - ".bin".length());
         String[] parts = core.split("_");
-        if (parts.length != 3){
+        if (parts.length != 4){
             throw new RestBadRequestException("Invalid stroke filename: " + filename);
         }
 
         long t = Long.parseLong(parts[0]);
         int p = Integer.parseInt(parts[1]);
-        int s = Integer.parseInt(parts[2]);
+        int p2 = Integer.parseInt(parts[2]);
+        int s = Integer.parseInt(parts[3]);
 
-        return new StrokeFilename(t, p, s);
+        return new StrokeFilename(t, p, p2, s);
     }
 
     public String toFilename() {
-        return "stroke_" + tstUnqKyVal + "_" + pageNo + "_" + strokeSeq + ".bin";
+        return "stroke_" + tstUnqKyVal
+                + "_" + pageNo
+                + "_" + pageAddSeq
+                + "_" + strokeSeq
+                + ".bin";
+    }
+
+    public static String toFilename(TstEventMeta eventMeta) {
+        return "stroke_" + eventMeta.getTstUnqKyVal()
+                + "_" + eventMeta.getPageNo()
+                + "_" + eventMeta.getPageAddSeq()
+                + "_" + eventMeta.getStrokeSeq()
+                + ".bin";
+    }
+
+    public static String responseFilename(Long eventSno) {
+        return "stroke_" + eventSno + ".bin";
     }
 
 }

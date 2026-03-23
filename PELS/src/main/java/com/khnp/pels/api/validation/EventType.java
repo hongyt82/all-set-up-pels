@@ -1,13 +1,14 @@
-package com.khnp.pels.common.validation;
+package com.khnp.pels.api.validation;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum EventType {
     PAGE_ADD(1),
     PAGE_DELETE(2),
     STROKE_ADD(3),
-    STROKE_DELETE(4);
+    STROKE_DELETE(4),
+    IMAGE_ADD(5),
+    IMAGE_DELETE(6);
 
     private final int value;
     EventType(int value) {
@@ -19,8 +20,7 @@ public enum EventType {
         return value;
     }
 
-    @JsonCreator
-    public static EventType forValue(int value) {
+    public static EventType fromValue(int value) {
         for (EventType t : values()) {
             if (t.getValue() == value) {
                 return t;
