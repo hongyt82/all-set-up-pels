@@ -28,6 +28,7 @@ import LodashTestPage from './pages/LodashTestPage';
 import MomentTestPage from './pages/MomentTestPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ViewerPage } from './pages/ViewerPage';
+import {ReplayViewerPage} from "./pages/ReplayViewerPage.tsx";
 import { getBrowserInfo, logBrowserInfo } from './utils';
 import { globalErrorHandler } from './utils/errorHandler';
 import NetworkTestPage from './pages/NetworkTestPage.tsx';
@@ -133,6 +134,7 @@ export default function App() {
           {IS_DEV && <Route path={ROUTES.HOME} element={<HomePage />} />}
           <Route path={ROUTES.EDITOR} element={<EditorPage />} />
           <Route path={ROUTES.VIEWER} element={<ViewerPage />} />
+          <Route path={ROUTES.REPLAYVIEWER} element={<ReplayViewerPage />} />
           {IS_DEV && <Route path={ROUTES.API_TEST} element={<ApiTestPage />} />}
           {IS_DEV && (
             <Route path={ROUTES.LODASH_TEST} element={<LodashTestPage />} />
