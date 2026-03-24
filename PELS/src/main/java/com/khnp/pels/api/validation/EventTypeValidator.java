@@ -7,6 +7,12 @@ import javax.validation.ConstraintValidatorContext;
 
 public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCondition, TstEventMeta> {
 
+    /**
+     * 검증
+     * @param dto
+     * @param context
+     * @return
+     */
     @Override
     public boolean isValid(TstEventMeta dto, ConstraintValidatorContext context) {
 
@@ -22,8 +28,8 @@ public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCon
             case PAGE_ADD:
             case PAGE_DELETE:
                 valid &= require(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
-                valid &= forbidden(context, dto.getPdfPageNo(), "STROKE_SEQ");
-                valid &= forbidden(context, dto.getPdfPageNo(), "IMAGE_SEQ");
+                valid &= forbidden(context, dto.getStrokeSeq(), "STROKE_SEQ");
+                valid &= forbidden(context, dto.getImageSeq(), "IMAGE_SEQ");
                 break;
 
             case STROKE_ADD:
