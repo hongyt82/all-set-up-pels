@@ -1018,7 +1018,6 @@ export function ViewerPage() {
         const templateJson = {
           ...(parsed.doc || {}),
           pages: parsed.pages || [],
-          removePages: parsed.removePages || [],
         };
 
         const json = templateJson as TemplateDoc;
@@ -1163,7 +1162,6 @@ export function ViewerPage() {
     if (!templateDoc) return null;
 
     const base: any = { ...templateDoc };
-    base.removePages = templateDoc.removePages || [];
 
     const pages = (vPages || []).map(pg => {
       const W = pg.width || BASE_W;
