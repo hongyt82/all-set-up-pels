@@ -63,7 +63,7 @@ public class PELSFormController {
 	
 	private JsonXssFilter jsonXssFilter = new JsonXssFilter();
 	
-	private String URL = "http://211.248.231.206:18080/";
+	private String URL = "http://218.157.239.4:19090/";
 	
 	/**
 	 * 절차서(서식)관리 > 정주기시험
