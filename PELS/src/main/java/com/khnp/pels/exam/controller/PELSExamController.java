@@ -83,7 +83,7 @@ public class PELSExamController {
 	@Resource(name = "utilProperties")
 	private Properties utilProperties;	
 	
-	private String URL = "http://211.248.231.206:18080";
+	private String URL = "http://218.157.239.4:19090";
 
 	/**
 	 * 시험(점검)관리 > 시험(점검)준비
