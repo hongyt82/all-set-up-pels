@@ -8,50 +8,10 @@
 	// 등록 화면으로 이동
 	function fnExamInput () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Input.do"
+		form.action = "Exam_Input_M.do"
 		form.submit()
 	}
 	
-	
-	// 리플레이
-	function fnExamReplay() {
-		const chkElements = $('#form input[name=CHK_ITEM]')
-		const chkElements1 = $('#form input[name=PRCDOC_NO]')
-		const chkElements2 = $('#form input[name=PRCDOC_NM]')
-		const chkElements3 = $('#form input[name=CHCK_TITL]')
-		let chkCnt = 0;
-		let chkParam = '';
-		let chkParam1 = '';
-		let chkParam2 = '';
-		let chkParam3 = '';
-		for (let i = 0; i < chkElements.length; i++) { 
-			if ($(chkElements[i]).is(':checked')) {
-				chkCnt++;
-				chkParam = $(chkElements[i]).val();
-				chkParam1 = $(chkElements1[i]).val();
-				chkParam2 = $(chkElements2[i]).val();
-				chkParam3 = $(chkElements3[i]).val();
-			}
-		}
-		
-		if (chkCnt == 0) {
-			alert('리플레이할 자료를 선택하여 주십시오.')
-			return
-		} else if (chkCnt != 1) {
-			alert('리플레이을 위해서는 하나만 선택해야 합니다.')
-			return
-		}
-		
-		let form = document.getElementById('formPopup');
-		form.CHCK_SNO.value = chkParam;
-		form.PRCDOC_NO.value = chkParam1;
-		form.PRCDOC_NM.value = chkParam2;
-		form.CHCK_TITL.value = chkParam3;
-		form.action = "Exam_KhnpReplayViewer.do";
-		form.target = "_self";
-		form.submit()
-	}
-
 	// 수정 화면으로 이동
 	function fnExamDetail() {
 		const chkElements = $('#form input[name=CHK_ITEM]')
@@ -92,7 +52,7 @@
 	// 시험(점검)준비 조회
 	function fnSearch () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Search.do"
+		form.action = "Exam_Search1.do"
 		form.target = "_self";
 		form.submit()
 	}
@@ -100,7 +60,7 @@
 	function fnPage (page) {
 		let form = document.getElementById('form')
 		form.PAGE.value = page;
-		form.action = "Exam_Search.do"
+		form.action = "Exam_Search1.do"
 		form.target = "_self";
 		form.submit()
 	}				
@@ -174,10 +134,12 @@
 </script>
 <body class="no-skin real-skin">
 <form id="formPopup" name="formPopup" method="post">
-<input type="hidden" name="CHCK_SNO" id="CHCK_SNO" value="">
-<input type="hidden" name="PRCDOC_NO" id="PRCDOC_NO" value="">
-<input type="hidden" name="PRCDOC_NM" id="PRCDOC_NM" value="">
-<input type="hidden" name="CHCK_TITL" id="CHCK_TITL" value="">
+<input type="hidden" name="ATFL_PHCL_NM" id="ATFL_PHCL_NM" value="">
+<input type="hidden" name="TST_UNQ_KY_VAL" id="TST_UNQ_KY_VAL" value="">
+<input type="hidden" name="ATFL_PHCL_NM_OZR" id="ATFL_PHCL_NM_OZR" value="">
+<input type="hidden" name="CFY" id="CFY" value="">
+<input type="hidden" name="FRM_UNQ_KY_VAL" id="FRM_UNQ_KY_VAL" value="">
+<input type="hidden" name="USER_ID" id="USER_ID" value="">
 </form>
 <form id="form" name="form" method="post">
 <input type="hidden" name="PAGE" value="${PAGE}">
@@ -185,6 +147,7 @@
 <input type="hidden" name="ENDPAGE" value="${ENDPAGE}"> 
 <input type="hidden" name="LISTCNT" value="${LISTCNT}"> 
 <input type="hidden" name="TOTALPAGE" value="${TOTALPAGE}">
+<input type="hidden" name="USER_ID" value="${USER_ID}">
 	<div class="page-content">
 		<div class="page-content-area">
 			<!-- #ection:basics/page-header -->
@@ -203,12 +166,7 @@
 			</div><!-- /page-header -->
 			<!-- #section:basics/page-button -->
 			<div class="PageButtonGroup" style="text-align:right">
-				<a class="btn-m" href="javascript:fnExamReplay();"><span class="Text">리플레이</span></a>
-				<!-- 
-				<a class="btn-m" href="javascript:fnExamInput();"><span class="Text">등록</span></a>
-                <a class="btn-m" href="javascript:fnExamDetail();"><span class="Text">수정</span></a>
-                <a class="btn-m" href="javascript:fnFormDelete();"><span class="Text">삭제</span></a>
-                 -->
+				<a class="btn-m" href="javascript:fnExamInput();"><span class="Text">SAP 검색</span></a>
 			</div>
 			<!-- /page-button-->
 			<div class="row">
@@ -220,44 +178,21 @@
 								<table border="0" cellpadding="0" cellspacing="0" class="Outline">
 									<colgroup>
 										<col class="Title" />
-										<col style="width:10%" />
+										<col style="width:20%" />
 										<col class="Title" />
-										<col style="width:15%" />
+										<col style="width:20%" />
 	                                    <col class="Title" />
-	                                    <col style="width:20%" />
-	                                    <col class="Title" />
-	                                    <col style="width:30%" />
-	                                    <col class="Title" />
-	                                    <col style="width:15%" />
+	                                    <col style="width:60%" />
 									</colgroup>
 									<tr>
-										<td class="Title"><span class="Label">발전소</span></td>
-										<td class="Value">
-											<select name="PPCD" id="PPCD">
-											<c:forEach var="plant" items="${plantList}" begin="0" end="${plantList.size()}" step="1">
-												<option value="${plant.PPCD}">${plant.PWPL_NM}</option>
-											</c:forEach>
-											</select>
-										</td>
-	                                    <td class="Title"><span class="Label">절차서번호</span></td>
-	                                    <td class="Value">
-	                                        <input type="text" class="TextBox" name="SH_PRCDOC_NO" id="SH_PRCDOC_NO" style="width:120px;"  value="${SH_PRCDOC_NO}"/>
-	                                    </td>
 										<td class="Title">절차서명</td>
 										<td class="Value">
-	                                        <input type="text" class="TextBox" name="SH_PRCDOC_NM" id="SH_PRCDOC_NM" style="width:200px;" value="${SH_PRCDOC_NM}"/>
+	                                        <input type="text" class="TextBox" name="SH_PRCDOC_NM" id="SH_PRCDOC_NM" style="width:100px;" value="${SH_PRCDOC_NM}"/>
 										</td>
 	                                    <td class="Title"><span class="Label">시험명</span></td>
 	                                    <td class="Value">
-	                                        <input type="text" class="TextBox" name="SH_CHCK_TITL" id="SH_CHCK_TITL" style="width:150px;" value="${SH_CHCK_TITL}"/>
+	                                        <input type="text" class="TextBox" name="SH_TITL_NM" id="SH_TITL_NM" style="width:150px;" value="${SH_TITL_NM}"/>
 	                                    </td>
-										<td class="Title"><span class="Label">정렬</span></td>
-										<td class="Value">
-											<select name="SH_SORT" id="SH_SORT">
-												<option value="CHCK_STRT_DT">시험시작일</option>
-												<option value="LAST_MDF_DT">등록일</option>
-											</select>
-										</td>
 									</tr>
 								</table>
 								<a class="SearchButton" href="javascript:fnSearch();"><span class='Text'>조회</span></a>
@@ -268,7 +203,7 @@
 					<div class="RealPanel">
 						<div class="Title">
 							<div class="TitleArea">
-								<span class="SubTitle">시험수행현황 A1</span><span class="count">총 ${TCNT} 건</span>
+								<span class="SubTitle">시험수행현황 A2</span><span class="count">총 ${TCNT} 건</span>
 							</div>
 							<div class="ControlArea">
 								<a class="InfoButton" href="javascript:downloadExcelFile();"><span class="Text">엑셀 다운로드</span></a>
@@ -280,51 +215,57 @@
 								<table cellspacing="0" cellpadding="0" border="0" class="Outline">
 									<colgroup>
 										<col width="70px" />
-										<col width="200px" />
+										<col width="100px" />
                                         <col width="150px" />
 					  					<col width="*" />
                                         <col width="*" />
                                         <col width="80px" />
+                                        <col width="80px" />
                                         <col width="70px" />
-                                        <col width="150px" />
 									</colgroup>
 									<tr class="Header">
 										<th>선택</th>
-										<th>시험기간</th>
+										<th>등록일</th>
 										<th>절차서번호</th>
 										<th>절차서명</th>
 										<th>시험명</th>
 										<th>상태</th>
+										<th>다운로드</th>
 										<th>절차서</th>
-										<th>최종수정일시</th>
 									</tr>
-									<c:forEach var="exam" items="${examList}" begin="0" end="${examList.size()}" step="1">
+									<c:forEach var="exam" items="${examList}" begin="0" end="${examList.size()}" step="1" varStatus="status">
 										<tr class="Item">
 											<td align="center" style="font-weight:bold">
-												<input name="CHK_ITEM" id="CHK_ITEM" type="checkbox"  onclick="checkOnlyOne(this)" value="${exam.CHCK_SNO}">
+												<input name="CHK_ITEM" id="CHK_ITEM" type="checkbox"  onclick="checkOnlyOne(this)" value="${exam.TST_UNQ_KY_VAL}">
 												<input name="PRCDOC_NO" id="PRCDOC_NO" type="hidden" value="${exam.PRCDOC_NO}">
-												<input name="PRCDOC_NM" id="PRCDOC_NM" type="hidden" value="${exam.PRCDOC_NM}">
-												<input name="CHCK_TITL" id="CHCK_TITL" type="hidden" value="${exam.CHCK_TITL}">
 												<input name="PRCDOC_RVSN_NO" id="PRCDOC_RVSN_NO" type="hidden" value="${exam.PRCDOC_RVSN_NO}">
-												<input name="ATFL_PHCL_NM" id="ATFL_PHCL_NM" type="hidden" value="">
+												<input name="ATFL_PHCL_NM" id="ATFL_PHCL_NM" type="hidden" value="${exam.OZD_FNAME1}">
+												<input name="FRM_UNQ_KY_VAL" id="FRM_UNQ_KY_VAL" type="hidden" value="${exam.FRM_UNQ_KY_VAL}">
 												<input name="CNMR_ID" id="CNMR_ID" type="hidden" value="${exam.CNMR_ID}">
 												<input name="CHKPR_ID" id="CHKPR_ID" type="hidden" value="${exam.CHKPR_ID}">
 											</td>
-											<td align="center">${exam.CHCK_DT}</td>
+											<td align="center">${exam.FM_CHCK_STRT_DT}</td>
 											<td align="center">${exam.PRCDOC_NO}</td>
-											<td align="left">${exam.PRCDOC_NM}</td>
-											<td align="left">${exam.CHCK_TITL}</td>
+											<td align="left">${exam.PRCDOC_TITL}</td>
+											<td align="left">${exam.TITL_NM}</td>
 											<td align="center">${exam.PRSTS_CFY_NM}</td>
 											<td align="center">
-												<!-- <a class="SubButton" href="javascript:MM_openViewer('${exam.TST_UNQ_KY_VAL}');"><span class="Text">보기</span></a> -->
-												<a class="SubButton" href="Exam_KhnpViewer.do?CHCK_SNO=${exam.CHCK_SNO}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_NM}&CHCK_TITL=${exam.CHCK_TITL}"><span class="Text">보기1</span></a>
+												<c:if test="${status.count > 2}">
+													완료
+												</c:if>
+												<c:if test="${status.count < 2}">
+													<a class="SubButton" href="javascript:MM_openViewer('${exam.TST_UNQ_KY_VAL}');"><span class="Text">다운로드</span></a>
+												</c:if>
 											</td>
-											<td align="center">${exam.FM_RG_DT}</td>
+											<td align="center">
+												<!-- <a class="SubButton" href="javascript:MM_openViewer('${exam.TST_UNQ_KY_VAL}');"><span class="Text">보기</span></a> -->
+												<a class="SubButton" href="Exam_KhnpViewer.do?TST_UNQ_KY_VAL=${exam.TST_UNQ_KY_VAL}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_TITL}&TITL_NM=${exam.TITL_NM}"><span class="Text">보기</span></a>
+											</td>
 										</tr>
 									</c:forEach>
 									<c:if test="${examList.size() eq 0}">
 										<tr class="Item">
-											<td colspan=7" style="text-align: center;">조회된 자료가 없습니다.</td>
+											<td colspan=9" style="text-align: center;">조회된 자료가 없습니다.</td>
 										</tr>
 									</c:if>                                              
 									</table>

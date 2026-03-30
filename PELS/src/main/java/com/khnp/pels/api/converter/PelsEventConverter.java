@@ -41,8 +41,9 @@ public class PelsEventConverter {
         }
 
         return TstEventEntity.builder()
+        		.pwplId(dto.getPwplId())
                 .eventTyp(dto.getEventTyp().getValue())
-                .tstUnqKyVal(dto.getTstUnqKyVal())
+                .chckSno(dto.getChckSno())
                 .pageNo(dto.getPageNo())
                 .pageAddSeq(dto.getPageAddSeq())
                 .pdfPageNo(dto.getPdfPageNo())
@@ -70,6 +71,8 @@ public class PelsEventConverter {
      */
     public TstEventStrokeEntity toEventStrokeEntity(TstEventMeta dto) {
         return TstEventStrokeEntity.builder()
+        		.pwplId(dto.getPwplId())
+        		.chckSno(dto.getChckSno())
                 .posX(dto.getStroke().getPosX())
                 .posY(dto.getStroke().getPosY())
                 .strokeColor(dto.getStroke().getStrokeColor())
@@ -95,6 +98,8 @@ public class PelsEventConverter {
      */
     public TstEventImageEntity toEventImageEntiry(TstEventMeta dto) {
         return TstEventImageEntity.builder()
+        	.pwplId(dto.getPwplId())
+        	.chckSno(dto.getChckSno())
             .posX(dto.getImage().getPosX())
             .posY(dto.getImage().getPosY())
             .width(dto.getImage().getWidth())

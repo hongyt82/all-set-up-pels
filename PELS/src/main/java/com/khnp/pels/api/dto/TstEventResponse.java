@@ -10,14 +10,13 @@ import lombok.experimental.SuperBuilder;
 import javax.validation.constraints.*;
 
 /**
- *
+ * 이벤트 조회에 대한 응답 DTO
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@ValidEventTypeCondition
 @JsonPropertyOrder({
     "EVENT_SNO"
 })

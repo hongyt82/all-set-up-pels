@@ -25,7 +25,7 @@ const BASE_H = Math.round((PDF_BOUNDARY.height / PDF_BOUNDARY.width) * BASE_W);
 
 type ReplayEventItem = {
   EVENT_TYP: number;
-  TST_UNQ_KY_VAL: number;
+  CHCK_SNO: number;
   PAGE_NO: number;
   PDF_PAGE_NO: number | null;
   STROKE_SEQ: number | null;
@@ -112,7 +112,7 @@ function decodeStrokeBinary(
 
 export function ReplayViewerPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
-  const tstUnqKyVal = params.get('TST_UNQ_KY_VAL') || '';
+  const chckSno = params.get('CHCK_SNO') || '';
 
   const [currentFile, setCurrentFile] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | undefined>();
@@ -263,13 +263,13 @@ export function ReplayViewerPage() {
   );
 
   useEffect(() => {
-    if (!tstUnqKyVal) return;
+    if (!chckSno) return;
 
     const load = async () => {
       setLoading(true);
       try {
         const metaRes = await axios.get('/api/Exam_Json_M.do', {
-          params: { TST_UNQ_KY_VAL: tstUnqKyVal },
+          params: { CHCK_SNO: chckSno },
           withCredentials: true,
         });
 
@@ -324,7 +324,7 @@ export function ReplayViewerPage() {
         }
 
         const eventRes = await axios.get('/api/events', {
-          params: { tstUnqKyVal: tstUnqKyVal },
+          params: { chckSno: chckSno },
           withCredentials: true,
         });
 
@@ -352,8 +352,8 @@ export function ReplayViewerPage() {
 
         for (const pageNo of pageNos) {
           const strokeRes = await fetch(
-            `/api/events/strokes?tstUnqKyVal=${encodeURIComponent(
-              tstUnqKyVal
+            `/api/events/strokes?chckSno=${encodeURIComponent(
+              chckSno
             )}&pageNo=${pageNo}`,
             { credentials: 'include' }
           );
@@ -406,7 +406,7 @@ export function ReplayViewerPage() {
     };
 
     void load();
-  }, [tstUnqKyVal]);
+  }, [chckSno]);
 
   useEffect(() => {
     if (!basePages.length) return;
@@ -494,7 +494,7 @@ export function ReplayViewerPage() {
     <BaseLayout>
       <div ref={headerRef}>
         <ViewerHeader
-          isDbMode={!!tstUnqKyVal}
+          isDbMode={!!chckSno}
           hasPdf={!!pdfFile}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}

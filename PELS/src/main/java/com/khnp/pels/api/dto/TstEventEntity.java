@@ -11,7 +11,8 @@ import java.math.BigDecimal;
 public class TstEventEntity {
     private Long eventSno;         //이벤트일련번호
     private Integer eventTyp;      //이벤트유형(1,2,3,4,5,6)
-    private Long tstUnqKyVal;      //시험고유키값
+    private Long chckSno;      //시험고유키값
+    private String pwplId;     //발전소아이디
     private Integer pageNo;        //페이지번호
     private Integer pageAddSeq;    //페이지추가순번
     private Integer pdfPageNo;     //PDF페이지번호

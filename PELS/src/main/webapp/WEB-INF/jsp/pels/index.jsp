@@ -139,26 +139,34 @@
 						<b class="arrow"></b>
                         <ul class="submenu">
                             <li class="">
-                                <a href="javascript:addTab(1, 'Exam_Monitoring', 'Exam_Monitoring.do?PRCDOC_CFY=P&PRSTS_CFY=A','나의문서 대기중');">
-                                    대기중
+                                <a href="javascript:addTab(1, 'Exam_Search_R', 'Exam_Search.do?PRSTS_CFY=R','나의문서 대기중');">
+                                    준비 및 수행중
                                 </a>
                                 <b class="arrow"></b>
                             </li>
+                            <!-- 
                             <li class="">
                                 <a href="javascript:addTab(2, 'Outcome_Search_F', 'Outcome_Search.do?PRCDOC_CFY=P&PRSTS_CFY=F','나의문서 진행중')">
                                     진행중
                                 </a>
                                 <b class="arrow"></b>
                             </li>
+                             -->
                             <li class="">
-                                <a href="javascript:addTab(3, 'Outcome_Search_C', 'Outcome_Search.do?PRCDOC_CFY=P&PRSTS_CFY=C','나의문서 완료')">
-                                    완료
+                                <a href="javascript:addTab(3, 'Outcome_Search_C', 'Outcome_Search.do?PRSTS_CFY=C','나의문서 완료')">
+                                    점검완료
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
                                 <a href="javascript:addTab(4, 'Outcome_Etc_Search', 'Outcome_Etc_Search.do','기타양식');">
-                                    기타양식
+                                    기타양식(PDF 등록)
+                                </a>
+                                <b class="arrow"></b>
+                            </li>
+                            <li class="">
+                                <a href="javascript:addTab(4, 'Outcome_Etc_Search', 'Outcome_Etc_Search.do','기타양식');">
+                                    기타양식(PDF 점검현황)
                                 </a>
                                 <b class="arrow"></b>
                             </li>

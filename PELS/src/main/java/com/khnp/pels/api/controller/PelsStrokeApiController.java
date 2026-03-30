@@ -1,28 +1,32 @@
 package com.khnp.pels.api.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.khnp.pels.api.converter.PelsEventConverter;
-import com.khnp.pels.api.dto.ApiResponse;
-import com.khnp.pels.api.dto.TstEventMeta;
-import com.khnp.pels.api.dto.TstEventStrokeEntity;
-import com.khnp.pels.api.dto.TstEventStrokeMeta;
-import com.khnp.pels.api.service.PelsEventService;
-import com.khnp.pels.common.exception.RestBadRequestException;
-import com.khnp.pels.common.validation.JsonMetaBinder;
-import com.khnp.pels.common.validation.JsonTypeFactory;
-import com.khnp.pels.api.validation.StrokeFilename;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.khnp.pels.api.converter.PelsEventConverter;
+import com.khnp.pels.api.dto.ApiResponse;
+import com.khnp.pels.api.dto.TstEventMeta;
+import com.khnp.pels.api.service.PelsEventService;
+import com.khnp.pels.api.validation.StrokeFilename;
+import com.khnp.pels.common.exception.RestBadRequestException;
+import com.khnp.pels.common.validation.JsonMetaBinder;
+import com.khnp.pels.common.validation.JsonTypeFactory;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * 수행기록 이벤트 스트로크 관련 Api Controller
@@ -112,7 +116,7 @@ public class PelsStrokeApiController {
         // meta json 검증
         TstEventMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={}  PAGE_ADD_SEQ={} STROKE_SEQ={}, Start",
-                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
         // stroke path files 검증
         if(mpFile==null || mpFile.isEmpty()){
@@ -134,12 +138,12 @@ public class PelsStrokeApiController {
             throw new RestBadRequestException("Failed to read file");
         }
         logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, Checked stroke file",
-                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
         // 스트로크 저장
         pelsEventService.saveTstEventStroke(eventStrokeMeta, strokeFile);
         logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, Completed save stroke",
-                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -156,12 +160,12 @@ public class PelsStrokeApiController {
         // meta json 파싱 검증
         TstEventMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### deleteTstEventStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, Start",
-                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
         // 스트로크 삭제
         pelsEventService.deleteTstEventStroke(eventStrokeMeta);
         logger.info("### deleteTstEventStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, End",
-                eventStrokeMeta.getTstUnqKyVal(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }

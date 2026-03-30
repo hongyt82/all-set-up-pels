@@ -2,12 +2,12 @@ package com.khnp.pels.exam.dto;
 
 public class PdfInfo {
     private int totalPages;
-    private float canvasWidth;
-    private float canvasHeight;
+    private long canvasWidth;
+    private long canvasHeight;
 
     public PdfInfo() {}
 
-    public PdfInfo(int totalPages, float canvasWidth, float canvasHeight) {
+    public PdfInfo(int totalPages, long canvasWidth, long canvasHeight) {
         this.totalPages = totalPages;
         this.canvasWidth = canvasWidth;
         this.canvasHeight = canvasHeight;
