@@ -25,14 +25,14 @@ import javax.validation.constraints.*;
 public class TstEventMeta {
 
 
+    @JsonProperty("EVENT_TYP_SQNO")
+    @NotNull
+    private EventType eventTyp;
+
     @JsonProperty("PWPL_ID")
     @NotBlank
     @Size(max=20)
     private String pwplId;
-    
-    @JsonProperty("EVENT_SQNO")
-    @NotNull
-    private EventType eventTyp;
 
     @JsonProperty("CHCK_SNO")
     @NotNull
@@ -55,14 +55,14 @@ public class TstEventMeta {
     private Integer pdfPageNo;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("STROKE_SEQ")
+    @JsonProperty("STRK_SEQ")
     @Min(1) @Max(99999)
-    private Integer strokeSeq;
+    private Integer strkSeq;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("IMAGE_SEQ")
+    @JsonProperty("IMG_SEQ")
     @Min(1) @Max(99999)
-    private Integer imageSeq;
+    private Integer imgSeq;
 
     @JsonProperty("USER_ID")
     @NotBlank

@@ -8,17 +8,17 @@ public interface PelsEventDao {
 
 	/**
 	 * 이벤트 목록 조회
-	 * @param chckSno 시험고유키값
+	 * @param eventEntity 이벤트 스트로크 객체
 	 * @return 이벤트 목록
 	 */
-	List<TstEventResponse> selectTstEventList(Long chckSno);
+	List<TstEventResponse> selectTstEventList(TstEventEntity eventEntity);
 
 	/**
 	 * 페이지별 이벤트 스트로크 목록 조회
-	 * @param entity 이벤트 스트로크 객체
+	 * @param eventEntity 이벤트 스트로크 객체
 	 * @return 스트로크 목록
 	 */
-	List<TstEventStrokeEntity> selectTstEventStrokeByPageList(TstEventEntity entity);
+	List<TstEventStrokeEntity> selectTstEventStrokeByPageList(TstEventEntity eventEntity);
 
 	/**
 	 * 이벤트 시퀀스 목록 조회

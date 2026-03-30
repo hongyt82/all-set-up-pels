@@ -5,15 +5,16 @@
 
     <resultMap id="tstEventResultMap" type="com.khnp.pels.api.dto.TstEventResponse">
         <id property="eventSno" column="EVENT_SNO"/>
-        <result property="eventTyp" column="EVENT_SQNO"
+        <result property="eventTyp" column="EVENT_TYP_SQNO"
                 jdbcType="INTEGER" javaType="com.khnp.pels.api.validation.EventType"
                 typeHandler="com.khnp.pels.api.converter.EventTypeHandler"/>
+        <result property="pwplId" column="PWPL_ID"/>
         <result property="chckSno" column="CHCK_SNO"/>
         <result property="pageNo" column="PAGE_CNT"/>
         <result property="pageAddSeq" column="INSRTN_PAGE_CNT"/>
         <result property="pdfPageNo" column="PDF_PAGE_CNT"/>
-        <result property="strokeSeq" column="STROKE_SEQ"/>
-        <result property="imageSeq" column="IMAGE_SEQ"/>
+        <result property="strkSeq" column="STRK_SEQ"/>
+        <result property="imgSeq" column="IMG_SEQ"/>
         <result property="userId" column="USER_ID"/>
         <result property="eventDt" column="EVENT_CRTE_DT"/>
 
@@ -34,16 +35,17 @@
     </resultMap>
 
     <!-- 수행기록 이벤트 목록 조회 -->
-    <select id="TstEventSelectList" parameterType="long" resultMap="tstEventResultMap">
+    <select id="TstEventSelectList" parameterType="com.khnp.pels.api.dto.TstEventEntity" resultMap="tstEventResultMap">
         /** com.khnp.pels.api.TstEventSelectList */
         SELECT T1.EVENT_SNO,
-               T1.EVENT_SQNO,
+               T1.EVENT_TYP_SQNO,
+               T1.PWPL_ID,
                T1.CHCK_SNO,
                T1.PAGE_CNT,
                T1.INSRTN_PAGE_CNT,
                T1.PDF_PAGE_CNT,
-               CASE WHEN T1.EVENT_SQNO IN (3,4) THEN T1.EVENT_DOC_SQNO ELSE NULL END AS STROKE_SEQ,
-               CASE WHEN T1.EVENT_SQNO IN (5,6) THEN T1.EVENT_DOC_SQNO ELSE NULL END AS IMAGE_SEQ,
+               CASE WHEN T1.EVENT_TYP_SQNO IN (3,4) THEN T1.EVENT_DOC_SQNO ELSE NULL END AS STRK_SEQ,
+               CASE WHEN T1.EVENT_TYP_SQNO IN (5,6,7,8) THEN T1.EVENT_DOC_SQNO ELSE NULL END AS IMG_SEQ,
                T1.USER_ID,
                TO_CHAR(T1.EVENT_CRTE_DT, 'YYYY-MM-DD"T"HH24:MI:SS.FF3') AS EVENT_CRTE_DT,
                T2.X_CRDNT AS STRK_POS_X,
@@ -55,16 +57,13 @@
                T3.WDTH_NUMV,
                T3.HDTH_NUMV,
                T3.URL_INFO
-          FROM GE_PL_CHCK0103_D T1
-               LEFT JOIN GE_PL_CHCK0104_D T2
-                         ON T1.PWPL_ID = T2.PWPL_ID
-						AND T1.CHCK_SNO = T2.CHCK_SNO
-						AND T1.EVENT_SNO = T2.EVENT_SNO
-               LEFT JOIN GE_PL_CHCK0105_D T3
-                         ON T1.PWPL_ID = T3.PWPL_ID
-						AND T1.CHCK_SNO = T3.CHCK_SNO
-						AND T1.EVENT_SNO = T3.EVENT_SNO
-         WHERE T1.CHCK_SNO = #{value}
+          FROM GE_PL_EVNT01_M T1
+               LEFT JOIN GE_PL_EVNT0101_D T2
+                         ON T1.EVENT_SNO = T2.EVENT_SNO
+               LEFT JOIN GE_PL_EVNT0102_D T3
+                         ON T1.EVENT_SNO = T3.EVENT_SNO
+         WHERE T1.PWPL_ID = #{pwplId, jdbcType=BIGINT}
+           AND T1.CHCK_SNO = #{chckSno, jdbcType=BIGINT}
          ORDER
             BY T1.EVENT_CRTE_DT
              , T1.EVENT_SNO
@@ -81,12 +80,11 @@
         /** com.khnp.pels.api.TstEventStrokeByPageList */
         SELECT T1.EVENT_SNO,
                T2.LINE_PTH_DCR
-          FROM GE_PL_CHCK0103_D T1
-               JOIN GE_PL_CHCK0104_D T2
-                    ON T1.PWPL_ID = T2.PWPL_ID
-					AND T1.CHCK_SNO = T2.CHCK_SNO
-					AND T1.EVENT_SNO = T2.EVENT_SNO
-         WHERE T1.CHCK_SNO = #{chckSno, jdbcType=BIGINT}
+          FROM GE_PL_EVNT01_M T1
+               JOIN GE_PL_EVNT0101_D T2
+                    ON T1.EVENT_SNO = T2.EVENT_SNO
+         WHERE T1.PWPL_ID = #{pwplId, jdbcType=BIGINT}
+           AND T1.CHCK_SNO = #{chckSno, jdbcType=BIGINT}
            AND T1.PAGE_CNT = #{pageNo, jdbcType=INTEGER}
          ORDER
             BY T1.EVENT_CRTE_DT
@@ -104,9 +102,9 @@
     <insert id="TstEventBatchInsert" parameterType="com.khnp.pels.api.dto.TstEventEntity">
         /** com.khnp.pels.api.TstEventBatchInsert */
         INSERT
-          INTO GE_PL_CHCK0103_D
+          INTO GE_PL_EVNT01_M
              ( EVENT_SNO
-             , EVENT_SQNO
+             , EVENT_TYP_SQNO
              , PWPL_ID
              , CHCK_SNO
              , PAGE_CNT
@@ -137,9 +135,9 @@
             SELECT CHCK_EVENT_SEQ.NEXTVAL FROM DUAL
         </selectKey>
         INSERT
-          INTO GE_PL_CHCK0103_D
+          INTO GE_PL_EVNT01_M
              ( EVENT_SNO
-             , EVENT_SQNO
+             , EVENT_TYP_SQNO
              , PWPL_ID
              , CHCK_SNO
              , PAGE_CNT
@@ -167,10 +165,8 @@
     <insert id="TstEventStrokeInsert" parameterType="com.khnp.pels.api.dto.TstEventStrokeEntity">
         /** com.khnp.pels.api.TstEventStrokeInsert */
         INSERT
-          INTO GE_PL_CHCK0104_D
+          INTO GE_PL_EVNT0101_D
              ( EVENT_SNO
-             , PWPL_ID
-             , CHCK_SNO
              , X_CRDNT
              , Y_CRDNT
              , LINE_PTH_DCR
@@ -179,8 +175,6 @@
              )
         VALUES
              ( #{eventSno, jdbcType=BIGINT}
-             , #{pwplId, jdbcType=VARCHAR}
-             , #{chckSno, jdbcType=BIGINT}
              , #{posX, jdbcType=INTEGER}
              , #{posY, jdbcType=INTEGER}
              , #{pointPath, jdbcType=BLOB}
@@ -193,10 +187,8 @@
     <insert id="TstEventImageInsert" parameterType="com.khnp.pels.api.dto.TstEventImageEntity">
         /** com.khnp.pels.api.TstEventImageInsert */
         INSERT
-          INTO GE_PL_CHCK0105_D
+          INTO GE_PL_EVNT0102_D
              ( EVENT_SNO
-             , PWPL_ID
-             , CHCK_SNO
              , X_CRDNT
              , Y_CRDNT
              , WDTH_NUMV
@@ -205,8 +197,6 @@
              )
         VALUES
              ( #{eventSno, jdbcType=BIGINT}
-             , #{pwplId, jdbcType=VARCHAR}
-             , #{chckSno, jdbcType=BIGINT}
              , #{posX, jdbcType=INTEGER}
              , #{posY, jdbcType=INTEGER}
              , #{width, jdbcType=INTEGER}

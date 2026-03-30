@@ -12,10 +12,10 @@ public interface PelsEventService {
 
 	/**
 	 * 수행기록 이벤트 벌크 목록 조회
-	 * @param chckSno 시험고유키값
+	 * @param eventEntity 이벤트 객체
 	 * @return List<TstEventResponse> 이벤트 엔터티 목록
 	 */
-	List<TstEventResponse> getTstEventBulkList(Long chckSno);
+	List<TstEventResponse> getTstEventBulkList(TstEventEntity eventEntity);
 
 	/**
 	 * 페이지별 이벤트 스트로크 목록 조회

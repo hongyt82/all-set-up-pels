@@ -19,22 +19,22 @@ public class PelsEventDaoImpl implements PelsEventDao {
 
 	/**
 	 * 이벤트 목록 조회
-	 * @param chckSno 시험고유키값
+	 * @param eventEntity 이벤트 스트로크 객체
 	 * @return 이벤트 목록
 	 */
 	@Override
-	public List<TstEventResponse> selectTstEventList(Long chckSno) {
-		return sqlSession.selectList("TstEventSelectList", chckSno);
+	public List<TstEventResponse> selectTstEventList(TstEventEntity eventEntity) {
+		return sqlSession.selectList("TstEventSelectList", eventEntity);
 	}
 
 	/**
 	 * 페이지별 이벤트 스트로크 목록 조회
-	 * @param entity 이벤트 스트로크 객체
+	 * @param eventEntity 이벤트 스트로크 객체
 	 * @return 스트로크 목록
 	 */
 	@Override
-	public List<TstEventStrokeEntity> selectTstEventStrokeByPageList(TstEventEntity entity) {
-		return sqlSession.selectList("TstEventStrokeByPageList", entity);
+	public List<TstEventStrokeEntity> selectTstEventStrokeByPageList(TstEventEntity eventEntity) {
+		return sqlSession.selectList("TstEventStrokeByPageList", eventEntity);
 	}
 
 	/**

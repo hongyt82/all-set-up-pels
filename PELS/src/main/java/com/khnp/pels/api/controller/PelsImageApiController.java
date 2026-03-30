@@ -32,7 +32,7 @@ import java.util.Map;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/images")
+@RequestMapping("/images")
 public class PelsImageApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(PelsImageApiController.class);
@@ -63,7 +63,7 @@ public class PelsImageApiController {
 
         // 이벤트 사진 저장
         int prcsCnt = pelsEventService.saveTstEventImageBulk(eventImageMetaList);
-        logger.info("### saveTstEventImageBulk(), Completed save strokes={}", prcsCnt);
+        logger.info("### saveTstEventImageBulk(), Completed save images={}", prcsCnt);
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -82,13 +82,13 @@ public class PelsImageApiController {
     ) {
         // meta json 검증
         TstEventMeta eventImageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
-        logger.info("### saveTstEventImage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} IMAGE_SEQ={}, Start",
-                eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
+        logger.info("### saveTstEventImage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} IMG_SEQ={} Start",
+                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImgSeq());
 
         // 사진 저장
         pelsEventService.saveTstEventImage(eventImageMeta);
-        logger.info("### saveTstEventImage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} IMAGE_SEQ={}, Completed save stroke",
-                eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
+        logger.info("### saveTstEventImage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} IMG_SEQ={}, Completed save stroke",
+                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImgSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -103,13 +103,13 @@ public class PelsImageApiController {
             @RequestBody String metaJson
     ) {
         TstEventMeta eventImageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
-        logger.info("### deleteTstEventImage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} IMAGE_SEQ={}, Start",
-                eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
+        logger.info("### deleteTstEventImage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} IMG_SEQ={} Start",
+                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImgSeq());
 
         // 사진 삭제
         pelsEventService.deleteTstEventImage(eventImageMeta);
-        logger.info("### deleteTstEventImage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} IMAGE_SEQ={}, Completed save stroke",
-                eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
+        logger.info("### deleteTstEventImage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} IMG_SEQ={}, Completed save stroke",
+                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImgSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }

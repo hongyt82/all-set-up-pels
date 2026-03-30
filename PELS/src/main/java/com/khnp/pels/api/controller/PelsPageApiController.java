@@ -25,7 +25,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/pages")
+@RequestMapping("/pages")
 public class PelsPageApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(PelsPageApiController.class);
@@ -52,11 +52,11 @@ public class PelsPageApiController {
     ) {
         // meta json 변환 및 검증
         List<TstEventMeta> eventPageMetaList = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.listType(TstEventMeta.class));
-        logger.info("### saveTstEventPageBulk(), Request event pages={}", eventPageMetaList.size());
+        logger.info("### saveTstEventPageBulk(), Request pages={}", eventPageMetaList.size());
 
         // 이벤트 페이지 벌크 저장
         int prcsCnt = pelsEventService.saveTstEventPageBulk(eventPageMetaList);
-        logger.info("### saveTstEventPageBulk(), Completed save event pages={}", prcsCnt);
+        logger.info("### saveTstEventPageBulk(), Completed save pages={}", prcsCnt);
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -75,13 +75,13 @@ public class PelsPageApiController {
     ) {
         // meta json 검증
         TstEventMeta eventPageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
-        logger.info("### saveTstEventPage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={}, Start",
-                eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
+        logger.info("### saveTstEventPage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} Start",
+                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
 
         // 이벤트 페이지 저장
         pelsEventService.saveTstEventPage(eventPageMeta);
-        logger.info("### saveTstEventPage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={}, Completed save event page",
-                eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
+        logger.info("### saveTstEventPage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={}, Completed save page",
+                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -97,13 +97,13 @@ public class PelsPageApiController {
     ) {
         // meta json 파싱 검증
         TstEventMeta eventPageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
-        logger.info("### deleteTstEventPage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={}, Start",
-                eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
+        logger.info("### deleteTstEventPage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} Start",
+                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
 
         // 이벤트 페이지 삭제
         int prcsCnt = pelsEventService.deleteTstEventPage(eventPageMeta);
-        logger.info("### deleteTstEventPage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={}, End",
-                eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
+        logger.info("### deleteTstEventPage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} End",
+                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }

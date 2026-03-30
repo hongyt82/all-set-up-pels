@@ -13,8 +13,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class TstEventStrokeEntity {
     private Long eventSno;          //이벤트일련번호
-    private Long chckSno;     //시험번호
-    private String pwplId;     //발전소아이디
     private Integer posX;           //좌표X
     private Integer posY;           //좌표Y
     private byte[] pointPath;       //포인트경로

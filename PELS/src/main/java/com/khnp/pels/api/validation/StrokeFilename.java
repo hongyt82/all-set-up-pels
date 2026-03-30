@@ -6,16 +6,17 @@ import lombok.Value;
 
 @Value
 public class StrokeFilename {
-    long chckSno;
-    int pageNo;
-    int pageAddSeq;
-    int strokeSeq;
+    long pwplId;    //발전소ID
+    long chckSno;   //시험순번
+    int pageNo;     //페이지번호
+    int pageAddSeq; //추가페이지SEQ
+    int strokeSeq;  //스트로크SEQ
 
     /**
      * 순수 바이너리 파일명 얻기
      * @param filePath 파일전체경로
      * @return 순수 파일명
-     * @apiNote C:\fakepath\stroke_3_1_1.bin -> stroke_3_1_1.bin
+     * @apiNote C:\fakepath\stroke_3_2_3_1_1.bin -> stroke_3_2_3_1_1.bin
      */
     public static String baseFileName(String filePath) {
         if (filePath == null) return null;
@@ -51,16 +52,18 @@ public class StrokeFilename {
             throw new RestBadRequestException("Invalid stroke filename: " + filename);
         }
 
-        long t = Long.parseLong(parts[0]);
-        int p = Integer.parseInt(parts[1]);
-        int p2 = Integer.parseInt(parts[2]);
-        int s = Integer.parseInt(parts[3]);
+        long pw = Long.parseLong(parts[0]);
+        int c = Integer.parseInt(parts[1]);
+        int p = Integer.parseInt(parts[2]);
+        int ps = Integer.parseInt(parts[3]);
+        int s = Integer.parseInt(parts[4]);
 
-        return new StrokeFilename(t, p, p2, s);
+        return new StrokeFilename(pw, c, p, ps, s);
     }
 
     public String toFilename() {
-        return "stroke_" + chckSno
+        return "stroke_" + pwplId
+                + "_"  + chckSno
                 + "_" + pageNo
                 + "_" + pageAddSeq
                 + "_" + strokeSeq
@@ -68,10 +71,11 @@ public class StrokeFilename {
     }
 
     public static String toFilename(TstEventMeta eventMeta) {
-        return "stroke_" + eventMeta.getChckSno()
+        return "stroke_" + eventMeta.getPwplId()
+                + "_" + eventMeta.getChckSno()
                 + "_" + eventMeta.getPageNo()
                 + "_" + eventMeta.getPageAddSeq()
-                + "_" + eventMeta.getStrokeSeq()
+                + "_" + eventMeta.getStrkSeq()
                 + ".bin";
     }
 

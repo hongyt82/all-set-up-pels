@@ -31,18 +31,20 @@ public class PelsEventConverter {
         switch (dto.getEventTyp()){
             case STROKE_ADD:
             case STROKE_DELETE:
-                eventTrgtSeq = dto.getStrokeSeq();
+                eventTrgtSeq = dto.getStrkSeq();
                 break;
             case IMAGE_ADD:
             case IMAGE_DELETE:
-                eventTrgtSeq = dto.getImageSeq();
+            case IMAGE_MODIFY:
+            case IMAGE_RESIZE:
+                eventTrgtSeq = dto.getImgSeq();
                 break;
             default: eventTrgtSeq = null;
         }
 
         return TstEventEntity.builder()
-        		.pwplId(dto.getPwplId())
                 .eventTyp(dto.getEventTyp().getValue())
+                .pwplId(dto.getPwplId())
                 .chckSno(dto.getChckSno())
                 .pageNo(dto.getPageNo())
                 .pageAddSeq(dto.getPageAddSeq())
@@ -71,8 +73,6 @@ public class PelsEventConverter {
      */
     public TstEventStrokeEntity toEventStrokeEntity(TstEventMeta dto) {
         return TstEventStrokeEntity.builder()
-        		.pwplId(dto.getPwplId())
-        		.chckSno(dto.getChckSno())
                 .posX(dto.getStroke().getPosX())
                 .posY(dto.getStroke().getPosY())
                 .strokeColor(dto.getStroke().getStrokeColor())
@@ -98,8 +98,6 @@ public class PelsEventConverter {
      */
     public TstEventImageEntity toEventImageEntiry(TstEventMeta dto) {
         return TstEventImageEntity.builder()
-        	.pwplId(dto.getPwplId())
-        	.chckSno(dto.getChckSno())
             .posX(dto.getImage().getPosX())
             .posY(dto.getImage().getPosY())
             .width(dto.getImage().getWidth())

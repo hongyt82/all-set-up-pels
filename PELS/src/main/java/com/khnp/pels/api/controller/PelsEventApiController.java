@@ -46,14 +46,19 @@ public class PelsEventApiController {
      */
     @GetMapping
     public ResponseEntity<ApiResponse<List<TstEventResponse>>> getTstEventBulkList (
+            @RequestParam("pwplId") String pwplId,
             @RequestParam("chckSno") Long chckSno
     ) throws Exception {
-        logger.info("### getTstEventBulkList() CHCK_SNO={}, Start", chckSno);
+        logger.info("### getTstEventBulkList() PWPL_ID={} CHCK_SNO={} Start", pwplId, chckSno);
 
         // 이벤트 목록 조회
-        List<TstEventResponse> eventBulkList = pelsEventService.getTstEventBulkList(chckSno);
+        TstEventEntity paramEntity = new TstEventEntity();
+        paramEntity.setPwplId(pwplId);
+        paramEntity.setChckSno(chckSno);
+        List<TstEventResponse> eventBulkList = pelsEventService.getTstEventBulkList(paramEntity);
 
-        logger.info("### getTstEventBulkList() CHCK_SNO={}, End events={}", chckSno, eventBulkList.size());
+        logger.info("### getTstEventBulkList() PWPL_ID={} CHCK_SNO={} End, events={}",
+                pwplId, chckSno, eventBulkList.size());
         return ResponseEntity.ok().body(ApiResponse.success(eventBulkList));
     }
 
@@ -63,20 +68,24 @@ public class PelsEventApiController {
      */
     @GetMapping( value = "/strokes")
     public void getTstEventStrokeByPageList (
+            @RequestParam("pwplId") String pwplId,
             @RequestParam("chckSno") Long chckSno,
-            @RequestParam("pageNo") Integer pageNo,
+            @RequestParam("pageCnt") Integer pageCnt,
             HttpServletResponse response
     ) throws Exception {
-        logger.info("### getTstEventStrokeByPageList() CHCK_SNO={}, PAGE_NO={}, Start", chckSno, pageNo);
+        logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} Start",
+                pwplId, chckSno, pageCnt);
 
         String boundary = "----strokeBoundary" + UUID.randomUUID().toString().replaceAll("-", "");
 
         // 스트로크 목록 조회
         TstEventEntity paramEntity = new TstEventEntity();
+        paramEntity.setPwplId(pwplId);
         paramEntity.setChckSno(chckSno);
-        paramEntity.setPageNo(pageNo);
+        paramEntity.setPageNo(pageCnt);
         List<TstEventStrokeEntity> tstStrokeEntityList = pelsEventService.getTstEventStrokeByPageList(paramEntity);
-        logger.info("### getTstEventStrokeByPageList() CHCK_SNO={}, PAGE_NO={}, strokes={}", chckSno, pageNo, tstStrokeEntityList.size());
+        logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={}, strokes={}",
+                pwplId, chckSno, pageCnt, tstStrokeEntityList.size());
 
         // MultiPart 시작
         MultipartMixedWriter.begin(response, boundary);
@@ -89,12 +98,14 @@ public class PelsEventApiController {
                         StrokeFilename.responseFilename(e.getEventSno()), e.getPointPath());
                 makeFileCnt++;
             }
-            logger.info("### getTstEventStrokeByPageList() CHCK_SNO={}, PAGE_NO={}, Write files={}", chckSno, pageNo, makeFileCnt);
+            logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={}, Write files={}",
+                    pwplId, chckSno, pageCnt, makeFileCnt);
 
             // MultiPart 종료 (내부에서 flush)
             MultipartMixedWriter.end(os, boundary);
         }
-        logger.info("### getTstEventStrokeByPageList() CHCK_SNO={}, PAGE_NO={}, End", chckSno, pageNo);
+        logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} End",
+                pwplId, chckSno, pageCnt);
     }
 
 }

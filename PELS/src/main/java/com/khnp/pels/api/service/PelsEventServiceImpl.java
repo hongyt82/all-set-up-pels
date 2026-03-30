@@ -30,12 +30,12 @@ public class PelsEventServiceImpl implements PelsEventService {
 
 	/**
 	 * 수행기록 이벤트 벌크 목록 조회
-	 * @param chckSno 시험고유키값
+	 * @param eventEntity 이벤트 객체
 	 * @return List<TstEventStrokeEntity> 이벤트 엔터티 목록
 	 */
 	@Override
-	public List<TstEventResponse> getTstEventBulkList(Long chckSno) {
-		return pelsEventDao.selectTstEventList(chckSno);
+	public List<TstEventResponse> getTstEventBulkList(TstEventEntity eventEntity) {
+		return pelsEventDao.selectTstEventList(eventEntity);
 	}
 	
 	/**

@@ -36,7 +36,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/strokes")
+@RequestMapping("/strokes")
 public class PelsStrokeApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(PelsStrokeApiController.class);
@@ -46,8 +46,6 @@ public class PelsStrokeApiController {
     private final JsonTypeFactory jsonTypeFactory;
 
     private final PelsEventService pelsEventService;
-
-    private final PelsEventConverter pelsEventConverter;
 
 
     /**
@@ -115,8 +113,8 @@ public class PelsStrokeApiController {
     ) {
         // meta json 검증
         TstEventMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
-        logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={}  PAGE_ADD_SEQ={} STROKE_SEQ={}, Start",
-                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+        logger.info("### saveTstStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={} Start",
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
 
         // stroke path files 검증
         if(mpFile==null || mpFile.isEmpty()){
@@ -137,13 +135,13 @@ public class PelsStrokeApiController {
         } catch (IOException e) {
             throw new RestBadRequestException("Failed to read file");
         }
-        logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, Checked stroke file",
-                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+        logger.info("### saveTstStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={}, Checked stroke file",
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
 
         // 스트로크 저장
         pelsEventService.saveTstEventStroke(eventStrokeMeta, strokeFile);
-        logger.info("### saveTstStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, Completed save stroke",
-                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+        logger.info("### saveTstStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={}, Completed save stroke",
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -159,13 +157,13 @@ public class PelsStrokeApiController {
     ) {
         // meta json 파싱 검증
         TstEventMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
-        logger.info("### deleteTstEventStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, Start",
-                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+        logger.info("### deleteTstEventStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={}, Start",
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
 
         // 스트로크 삭제
         pelsEventService.deleteTstEventStroke(eventStrokeMeta);
-        logger.info("### deleteTstEventStroke() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} STROKE_SEQ={}, End",
-                eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrokeSeq());
+        logger.info("### deleteTstEventStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={}, End",
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
