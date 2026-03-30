@@ -230,7 +230,9 @@ export function ReplayViewerPage() {
         .map(pg => {
           const pageNo = Number((pg as any).page);
           const pdfPageNo =
-            (pg as any).pdfPageNo == null ? null : Number((pg as any).pdfPageNo);
+            (pg as any).pdfPageNo == null
+              ? null
+              : Number((pg as any).pdfPageNo);
 
           return {
             ...pg,
@@ -257,8 +259,7 @@ export function ReplayViewerPage() {
         const pageNo = Number(ev.PAGE_CNT);
         const pdfPageNo =
           ev.PDF_PAGE_CNT == null ? null : Number(ev.PDF_PAGE_CNT);
-        const strokeSeq =
-          ev.STROKE_SEQ == null ? null : Number(ev.STROKE_SEQ);
+        const strokeSeq = ev.STROKE_SEQ == null ? null : Number(ev.STROKE_SEQ);
 
         if (eventType === 1) {
           const insertIdx = Math.max(
@@ -315,7 +316,8 @@ export function ReplayViewerPage() {
 
       nextLogicalPages.forEach(page => {
         const pageNo = Number(page.page);
-        const activeIds = activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
+        const activeIds =
+          activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
         const strokeMap = strokePathByPage[pageNo] ?? {};
 
         nextPathDataByPage[pageNo] = Array.from(activeIds)
@@ -337,6 +339,25 @@ export function ReplayViewerPage() {
       };
     },
     [attachmentsByPage, basePages, strokePathByPage]
+  );
+
+  const moveToEventPage = useCallback(
+    (eventIndex: number) => {
+      const event = events[eventIndex];
+      if (!event) return;
+
+      const targetPage = Number(event.PAGE_CNT);
+      if (!Number.isFinite(targetPage) || targetPage <= 0) return;
+
+      const exists = logicalPages.some(
+        page => Number(page.page) === targetPage
+      );
+
+      if (!exists) return;
+
+      wsRef.current?.goToPage(targetPage);
+    },
+    [events, logicalPages]
   );
 
   useEffect(() => {
@@ -407,12 +428,12 @@ export function ReplayViewerPage() {
 
         const nextEvents: ReplayEventItem[] = Array.isArray(eventRes.data?.data)
           ? [...eventRes.data.data].sort((a, b) => {
-            const ta = new Date(a.EVENT_CRTE_DT).getTime();
-            const tb = new Date(b.EVENT_CRTE_DT).getTime();
+              const ta = new Date(a.EVENT_CRTE_DT).getTime();
+              const tb = new Date(b.EVENT_CRTE_DT).getTime();
 
-            if (ta !== tb) return ta - tb;
-            return Number(a.EVENT_SNO) - Number(b.EVENT_SNO);
-          })
+              if (ta !== tb) return ta - tb;
+              return Number(a.EVENT_SNO) - Number(b.EVENT_SNO);
+            })
           : [];
 
         setEvents(nextEvents);
@@ -539,8 +560,13 @@ export function ReplayViewerPage() {
         wsRef.current?.goToPage(firstPage);
       }
     }
-  }, [basePages, events, playheadIndex, buildReplayState, pageInfo.currentPage]);
-
+  }, [
+    basePages,
+    events,
+    playheadIndex,
+    buildReplayState,
+    pageInfo.currentPage,
+  ]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -554,9 +580,7 @@ export function ReplayViewerPage() {
     const targetPage = Number(currentEvent.PAGE_CNT);
     if (!Number.isFinite(targetPage) || targetPage <= 0) return;
 
-    const exists = logicalPages.some(
-      page => Number(page.page) === targetPage
-    );
+    const exists = logicalPages.some(page => Number(page.page) === targetPage);
 
     if (!exists) return;
 
@@ -564,7 +588,6 @@ export function ReplayViewerPage() {
       wsRef.current?.goToPage(targetPage);
     }
   }, [isPlaying, playheadIndex, events, logicalPages, pageInfo.currentPage]);
-
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -675,7 +698,18 @@ export function ReplayViewerPage() {
           className="px-3 py-1 rounded bg-slate-900 text-white"
           onClick={() => {
             setIsPlaying(false);
-            setPlayheadIndex(prev => Math.max(-1, prev - 1));
+
+            setPlayheadIndex(prev => {
+              const next = Math.max(-1, prev - 1);
+
+              if (next >= 0) {
+                requestAnimationFrame(() => {
+                  moveToEventPage(next);
+                });
+              }
+
+              return next;
+            });
           }}
           disabled={totalEvents === 0}
         >
@@ -685,7 +719,18 @@ export function ReplayViewerPage() {
           className="px-3 py-1 rounded bg-slate-900 text-white"
           onClick={() => {
             setIsPlaying(false);
-            setPlayheadIndex(prev => Math.min(totalEvents - 1, prev + 1));
+
+            setPlayheadIndex(prev => {
+              const next = Math.min(totalEvents - 1, prev + 1);
+
+              if (next >= 0) {
+                requestAnimationFrame(() => {
+                  moveToEventPage(next);
+                });
+              }
+
+              return next;
+            });
           }}
           disabled={totalEvents === 0}
         >
