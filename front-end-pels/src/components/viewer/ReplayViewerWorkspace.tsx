@@ -132,10 +132,10 @@ export const ReplayViewerWorkspace = forwardRef<
       const loadingTask = (pdfjsLib as any).getDocument(
         withCMap
           ? {
-            data,
-            cMapUrl: '/pdfjs/cmaps/',
-            cMapPacked: true,
-          }
+              data,
+              cMapUrl: '/pdfjs/cmaps/',
+              cMapPacked: true,
+            }
           : { data }
       );
       const doc: PDFDocumentProxy = await loadingTask.promise;
@@ -207,10 +207,10 @@ export const ReplayViewerWorkspace = forwardRef<
           const loadingTask = (pdfjsLib as any).getDocument(
             withCMap
               ? {
-                data,
-                cMapUrl: '/pdfjs/cmaps/',
-                cMapPacked: true,
-              }
+                  data,
+                  cMapUrl: '/pdfjs/cmaps/',
+                  cMapPacked: true,
+                }
               : { data }
           );
           const doc: PDFDocumentProxy = await loadingTask.promise;
@@ -267,14 +267,15 @@ export const ReplayViewerWorkspace = forwardRef<
 
       const hasLogical = Array.isArray(logicalPages) && logicalPages.length > 0;
 
-      const lp = hasLogical ? findLogicalPage(currentPage) as any : undefined;
+      const lp = hasLogical ? (findLogicalPage(currentPage) as any) : undefined;
       const targetPdfPageNo = Number(lp?.targetPdfPageNo);
       const pdfPageNo = Number(lp?.pdfPageNo);
-      const mappedNo = Number.isFinite(targetPdfPageNo) && targetPdfPageNo > 0
-        ? Math.min(Math.max(1, targetPdfPageNo), pdfDoc.numPages)
-        : Number.isFinite(pdfPageNo) && pdfPageNo > 0
-          ? Math.min(Math.max(1, pdfPageNo), pdfDoc.numPages)
-          : null;
+      const mappedNo =
+        Number.isFinite(targetPdfPageNo) && targetPdfPageNo > 0
+          ? Math.min(Math.max(1, targetPdfPageNo), pdfDoc.numPages)
+          : Number.isFinite(pdfPageNo) && pdfPageNo > 0
+            ? Math.min(Math.max(1, pdfPageNo), pdfDoc.numPages)
+            : null;
 
       const isVirtual = hasLogical && !mappedNo;
       const realPageNo =
@@ -316,7 +317,10 @@ export const ReplayViewerWorkspace = forwardRef<
         try {
           await task.promise;
         } catch (e) {
-          console.warn('[ReplayViewerWorkspace] render task error (ignored)', e);
+          console.warn(
+            '[ReplayViewerWorkspace] render task error (ignored)',
+            e
+          );
         } finally {
           renderTaskRef.current = null;
         }

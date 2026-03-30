@@ -24,15 +24,29 @@ const BASE_W = BASE_PAGE_WIDTH;
 const BASE_H = Math.round((PDF_BOUNDARY.height / PDF_BOUNDARY.width) * BASE_W);
 
 type ReplayEventItem = {
-  EVENT_TYP: number;
+  EVENT_SNO: number;
+  EVENT_SQNO: number;
   CHCK_SNO: number;
-  PAGE_NO: number;
-  PDF_PAGE_NO: number | null;
+  PAGE_CNT: number;
+  INSRTN_PAGE_CNT: number | null;
+  PDF_PAGE_CNT: number | null;
   STROKE_SEQ: number | null;
-  STROKE_COLOR: number | null;
-  STROKE_WIDTH: number | null;
+  IMAGE_SEQ: number | null;
   USER_ID: string;
-  EVENT_DT: string;
+  EVENT_CRTE_DT: string;
+  STROKE?: {
+    X_CRDNT?: number | null;
+    Y_CRDNT?: number | null;
+    LINE_SNO?: number | null;
+    LINE_ETT?: number | null;
+  } | null;
+  IMAGE?: {
+    posX?: number | null;
+    posY?: number | null;
+    width?: number | null;
+    height?: number | null;
+    fileUrl?: string | null;
+  } | null;
 };
 
 type ReplayLogicalPage = any;
@@ -52,34 +66,72 @@ function parseFilename(headers: string) {
   return match?.[1] ?? '';
 }
 
-function parseStrokeSeqFromFilename(filename: string) {
+function parseEventSnoFromFilename(filename: string) {
   const match = filename.match(/_(\d+)\.bin$/i);
   return match ? Number(match[1]) : null;
 }
 
-function parseMultipartMixedText(
-  raw: string,
+function indexOfSubarray(
+  source: Uint8Array,
+  target: Uint8Array,
+  fromIndex = 0
+) {
+  outer: for (let i = fromIndex; i <= source.length - target.length; i++) {
+    for (let j = 0; j < target.length; j++) {
+      if (source[i + j] !== target[j]) continue outer;
+    }
+    return i;
+  }
+
+  return -1;
+}
+
+function parseMultipartMixedBinary(
+  raw: ArrayBuffer,
   boundary: string
 ): Array<{ filename: string; body: Uint8Array }> {
-  const parts = raw
-    .split(`--${boundary}`)
-    .map(v => v.trim())
-    .filter(v => v && v !== '--');
-
+  const bytes = new Uint8Array(raw);
   const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const boundaryBytes = encoder.encode(`--${boundary}`);
+  const headerSepBytes = encoder.encode('\r\n\r\n');
   const out: Array<{ filename: string; body: Uint8Array }> = [];
 
-  for (const part of parts) {
-    const splitIndex = part.indexOf('\r\n\r\n');
-    if (splitIndex < 0) continue;
+  let cursor = 0;
 
-    const headerText = part.slice(0, splitIndex);
-    const bodyText = part.slice(splitIndex + 4).replace(/\r\n$/, '');
+  while (true) {
+    let boundaryStart = indexOfSubarray(bytes, boundaryBytes, cursor);
+    if (boundaryStart < 0) break;
+
+    let partStart = boundaryStart + boundaryBytes.length;
+
+    if (bytes[partStart] === 45 && bytes[partStart + 1] === 45) break;
+
+    if (bytes[partStart] === 13 && bytes[partStart + 1] === 10) {
+      partStart += 2;
+    }
+
+    const headerEnd = indexOfSubarray(bytes, headerSepBytes, partStart);
+    if (headerEnd < 0) break;
+
+    const headerText = decoder.decode(bytes.slice(partStart, headerEnd));
     const filename = parseFilename(headerText);
+
+    const bodyStart = headerEnd + headerSepBytes.length;
+    const nextBoundary = indexOfSubarray(bytes, boundaryBytes, bodyStart);
+    if (nextBoundary < 0) break;
+
+    let bodyEnd = nextBoundary;
+    if (bytes[bodyEnd - 2] === 13 && bytes[bodyEnd - 1] === 10) {
+      bodyEnd -= 2;
+    }
+
     out.push({
       filename,
-      body: encoder.encode(bodyText),
+      body: bytes.slice(bodyStart, bodyEnd),
     });
+
+    cursor = nextBoundary;
   }
 
   return out;
@@ -174,85 +226,110 @@ export function ReplayViewerPage() {
 
   const buildReplayState = useCallback(
     (sourceEvents: ReplayEventItem[], appliedIndex: number): ReplayState => {
-      const pageMap = new Map<number, ReplayLogicalPage>();
-      const activeStrokeIdsByPage = new Map<number, Set<number>>();
+      const nextLogicalPages: ReplayLogicalPage[] = [...basePages]
+        .map(pg => {
+          const pageNo = Number((pg as any).page);
+          const pdfPageNo =
+            (pg as any).pdfPageNo == null ? null : Number((pg as any).pdfPageNo);
 
-      basePages.forEach(pg => {
-        const pageNo = Number((pg as any).page);
-        pageMap.set(pageNo, {
-          ...pg,
-          page: pageNo,
-          pdfPageNo: Number((pg as any).pdfPageNo ?? 0) || null,
-          targetPdfPageNo:
-            Number((pg as any).targetPdfPageNo ?? (pg as any).pdfPageNo ?? 0) ||
-            null,
-          width: Number((pg as any).width) || BASE_W,
-          height: Number((pg as any).height) || BASE_H,
-          attachments:
-            attachmentsByPage[pageNo] ??
-            (Array.isArray((pg as any).attachments) ? (pg as any).attachments : []),
-          deleted: false,
-        });
-      });
+          return {
+            ...pg,
+            page: pageNo,
+            pdfPageNo,
+            width: Number((pg as any).width) || BASE_W,
+            height: Number((pg as any).height) || BASE_H,
+            attachments:
+              attachmentsByPage[pageNo] ??
+              (Array.isArray((pg as any).attachments)
+                ? (pg as any).attachments
+                : []),
+          };
+        })
+        .sort((a, b) => Number(a.page) - Number(b.page));
+
+      const activeStrokeIdsByPage = new Map<number, Set<number>>();
 
       for (let i = 0; i <= appliedIndex; i++) {
         const ev = sourceEvents[i];
         if (!ev) continue;
 
-        const pageNo = Number(ev.PAGE_NO);
-        const pdfPageNo = Number(ev.PDF_PAGE_NO ?? 0) || null;
-        const strokeSeq = Number(ev.STROKE_SEQ ?? 0) || null;
+        const eventType = Number(ev.EVENT_SQNO);
+        const pageNo = Number(ev.PAGE_CNT);
+        const pdfPageNo =
+          ev.PDF_PAGE_CNT == null ? null : Number(ev.PDF_PAGE_CNT);
+        const strokeSeq =
+          ev.STROKE_SEQ == null ? null : Number(ev.STROKE_SEQ);
 
-        if (ev.EVENT_TYP === 1) {
-          const prev = pageMap.get(pageNo);
-          pageMap.set(pageNo, {
-            ...(prev ?? {}),
-            page: pageNo,
+        if (eventType === 1) {
+          const insertIdx = Math.max(
+            0,
+            Math.min(nextLogicalPages.length, pageNo - 1)
+          );
+
+          nextLogicalPages.splice(insertIdx, 0, {
+            page: 0,
             pdfPageNo,
-            targetPdfPageNo: pdfPageNo,
-            width: Number(prev?.width) || BASE_W,
-            height: Number(prev?.height) || BASE_H,
-            attachments: attachmentsByPage[pageNo] ?? prev?.attachments ?? [],
-            deleted: false,
+            constraintPageNo: pdfPageNo ?? -1,
+            width: nextLogicalPages[0]?.width ?? BASE_W,
+            height: nextLogicalPages[0]?.height ?? BASE_H,
+            isChange: 'N',
+            components: [],
+            attachments: [],
           });
+
+          nextLogicalPages.forEach((pg, idx) => {
+            pg.page = idx + 1;
+          });
+
+          continue;
         }
 
-        if (ev.EVENT_TYP === 2) {
-          const prev = pageMap.get(pageNo);
-          if (prev) {
-            pageMap.set(pageNo, {
-              ...prev,
-              deleted: true,
+        if (eventType === 2) {
+          const removeIdx = pageNo - 1;
+
+          if (removeIdx >= 0 && removeIdx < nextLogicalPages.length) {
+            nextLogicalPages.splice(removeIdx, 1);
+
+            nextLogicalPages.forEach((pg, idx) => {
+              pg.page = idx + 1;
             });
           }
+
+          continue;
         }
 
-        if (ev.EVENT_TYP === 3 && strokeSeq != null) {
+        if (eventType === 3 && strokeSeq != null) {
           const set = activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
           set.add(strokeSeq);
           activeStrokeIdsByPage.set(pageNo, set);
         }
 
-        if (ev.EVENT_TYP === 4 && strokeSeq != null) {
+        if (eventType === 4 && strokeSeq != null) {
           const set = activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
           set.delete(strokeSeq);
           activeStrokeIdsByPage.set(pageNo, set);
         }
       }
 
-      const nextLogicalPages = Array.from(pageMap.values())
-        .filter(page => !page.deleted)
-        .sort((a, b) => Number(a.page) - Number(b.page));
-
       const nextPathDataByPage: Record<number, TemplatePathData[]> = {};
+
       nextLogicalPages.forEach(page => {
         const pageNo = Number(page.page);
         const activeIds = activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
         const strokeMap = strokePathByPage[pageNo] ?? {};
+
         nextPathDataByPage[pageNo] = Array.from(activeIds)
           .map(id => strokeMap[id])
           .filter(Boolean);
       });
+
+      // console
+      console.log('[replay] buildReplayState', {
+        appliedIndex,
+        logicalPages: nextLogicalPages,
+        pathDataByPage: nextPathDataByPage,
+      });
+      // console
 
       return {
         logicalPages: nextLogicalPages,
@@ -329,18 +406,25 @@ export function ReplayViewerPage() {
         });
 
         const nextEvents: ReplayEventItem[] = Array.isArray(eventRes.data?.data)
-          ? [...eventRes.data.data].sort(
-            (a, b) =>
-              new Date(a.EVENT_DT).getTime() - new Date(b.EVENT_DT).getTime()
-          )
+          ? [...eventRes.data.data].sort((a, b) => {
+            const ta = new Date(a.EVENT_CRTE_DT).getTime();
+            const tb = new Date(b.EVENT_CRTE_DT).getTime();
+
+            if (ta !== tb) return ta - tb;
+            return Number(a.EVENT_SNO) - Number(b.EVENT_SNO);
+          })
           : [];
 
         setEvents(nextEvents);
+        console.log('[replay] event sample', nextEvents[0]);
 
         const pageNos = Array.from(
           new Set(
             nextEvents
-              .map(ev => Number(ev.PAGE_NO))
+              .filter(
+                ev => Number(ev.EVENT_SQNO) === 3 || Number(ev.EVENT_SQNO) === 4
+              )
+              .map(ev => Number(ev.PAGE_CNT))
               .filter(pageNo => Number.isFinite(pageNo) && pageNo > 0)
           )
         );
@@ -364,39 +448,70 @@ export function ReplayViewerPage() {
           const boundary = extractBoundary(contentType);
           if (!boundary) continue;
 
-          const raw = await strokeRes.text();
-          const parts = parseMultipartMixedText(raw, boundary);
+          const rawBuffer = await strokeRes.arrayBuffer();
+          const parts = parseMultipartMixedBinary(rawBuffer, boundary);
+
           const pageEvents = nextEvents.filter(
-            ev => Number(ev.PAGE_NO) === Number(pageNo)
+            ev => Number(ev.PAGE_CNT) === Number(pageNo)
           );
 
           nextStrokePathByPage[pageNo] = {};
 
           for (const part of parts) {
-            const strokeSeq = parseStrokeSeqFromFilename(part.filename);
-            if (!strokeSeq) continue;
+            const eventSno = parseEventSnoFromFilename(part.filename);
+            if (!eventSno) continue;
 
             const addEvent = [...pageEvents]
               .reverse()
               .find(
                 ev =>
-                  Number(ev.EVENT_TYP) === 3 &&
-                  Number(ev.STROKE_SEQ ?? 0) === Number(strokeSeq)
+                  Number(ev.EVENT_SQNO) === 3 &&
+                  Number(ev.EVENT_SNO) === Number(eventSno)
               );
+
+            if (!addEvent) continue;
+
+            const strokeSeq =
+              addEvent.STROKE_SEQ == null ? null : Number(addEvent.STROKE_SEQ);
+
+            // const strokeColor = addEvent.STROKE?.strokeColor ?? null;
+            // const strokeWidth = addEvent.STROKE?.strokeWidth ?? null;
+            const strokeColor = addEvent.STROKE?.LINE_SNO ?? null;
+            const strokeWidth = addEvent.STROKE?.LINE_ETT ?? null;
 
             const decoded = decodeStrokeBinary(
               part.body,
-              addEvent?.STROKE_COLOR ?? null,
-              addEvent?.STROKE_WIDTH ?? null,
+              strokeColor,
+              strokeWidth,
               strokeSeq
             );
 
+            console.log('[replay] matched addEvent', addEvent);
+
+            console.log('[replay] decode result', {
+              pageNo,
+              filename: part.filename,
+              eventSno,
+              strokeSeq,
+              blobLength: part.body.length,
+              strokeColor,
+              strokeWidth,
+              decoded,
+            });
+
+            const safeStrokeSeq = strokeSeq ?? eventSno;
+
             if (decoded) {
-              nextStrokePathByPage[pageNo][strokeSeq] = decoded;
+              nextStrokePathByPage[pageNo][safeStrokeSeq] = {
+                ...decoded,
+                id: safeStrokeSeq,
+              };
             }
           }
         }
 
+        // console
+        console.log('[replay] nextStrokePathByPage', nextStrokePathByPage);
         setStrokePathByPage(nextStrokePathByPage);
       } catch (err) {
         console.error('[ReplayViewerPage] load failed', err);
@@ -425,6 +540,31 @@ export function ReplayViewerPage() {
       }
     }
   }, [basePages, events, playheadIndex, buildReplayState, pageInfo.currentPage]);
+
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    if (playheadIndex < 0) return;
+    if (!events.length) return;
+    if (!logicalPages.length) return;
+
+    const currentEvent = events[playheadIndex];
+    if (!currentEvent) return;
+
+    const targetPage = Number(currentEvent.PAGE_CNT);
+    if (!Number.isFinite(targetPage) || targetPage <= 0) return;
+
+    const exists = logicalPages.some(
+      page => Number(page.page) === targetPage
+    );
+
+    if (!exists) return;
+
+    if (pageInfo.currentPage !== targetPage) {
+      wsRef.current?.goToPage(targetPage);
+    }
+  }, [isPlaying, playheadIndex, events, logicalPages, pageInfo.currentPage]);
+
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -485,7 +625,7 @@ export function ReplayViewerPage() {
 
   const currentEventTime =
     playheadIndex >= 0 && events[playheadIndex]
-      ? events[playheadIndex].EVENT_DT
+      ? events[playheadIndex].EVENT_CRTE_DT
       : '-';
 
   const totalEvents = events.length;
