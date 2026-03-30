@@ -148,16 +148,16 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: bindHost,
-      port: port || 4006,
+      port: port || 4008,
       strictPort: true,
       proxy: {
         "/api": {
-          target: "http://localhost:8084",
+          target: "http://localhost:8484",
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ""),
         },
         "/proxy": {
-          target: "http://localhost:8084",
+          target: "http://localhost:8484",
           changeOrigin: true,
         },
       },
