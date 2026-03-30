@@ -83,12 +83,12 @@ public class PelsImageApiController {
         // meta json 검증
         TstEventMeta eventImageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### saveTstEventImage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} IMAGE_SEQ={}, Start",
-                eventImageMeta.getTstUnqKyVal(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
+                eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
 
         // 사진 저장
         pelsEventService.saveTstEventImage(eventImageMeta);
         logger.info("### saveTstEventImage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} IMAGE_SEQ={}, Completed save stroke",
-                eventImageMeta.getTstUnqKyVal(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
+                eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -104,12 +104,12 @@ public class PelsImageApiController {
     ) {
         TstEventMeta eventImageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### deleteTstEventImage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} IMAGE_SEQ={}, Start",
-                eventImageMeta.getTstUnqKyVal(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
+                eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
 
         // 사진 삭제
         pelsEventService.deleteTstEventImage(eventImageMeta);
         logger.info("### deleteTstEventImage() TST_UNQ_KY_VAL={} PAGE_NO={} PAGE_ADD_SEQ={} IMAGE_SEQ={}, Completed save stroke",
-                eventImageMeta.getTstUnqKyVal(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
+                eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImageSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }

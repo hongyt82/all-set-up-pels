@@ -14,27 +14,27 @@ import javax.validation.constraints.*;
 @AllArgsConstructor
 public class TstEventImageMeta {
 
-    @JsonProperty("POS_X")
+    @JsonProperty("X_CRDNT")
     @NotNull
     @Min(1) @Max(999999)
     private Integer posX;
 
-    @JsonProperty("POS_Y")
+    @JsonProperty("Y_CRDNT")
     @NotNull
     @Min(1) @Max(999999)
     private Integer posY;
 
-    @JsonProperty("WIDTH")
+    @JsonProperty("WDTH_NUMV")
     @NotNull
     @Min(1) @Max(999999)
     private Integer width;
 
-    @JsonProperty("HEIGHT")
+    @JsonProperty("HDTH_NUMV")
     @NotNull
     @Min(1) @Max(999999)
     private Integer height;
 
-    @JsonProperty("FILE_URL")
+    @JsonProperty("URL_INFO")
     @NotBlank
     @Size(max = 500)
     private String fileUrl;

@@ -8,10 +8,10 @@ public interface PelsEventDao {
 
 	/**
 	 * 이벤트 목록 조회
-	 * @param tstUnqKyVal 시험고유키값
+	 * @param chckSno 시험고유키값
 	 * @return 이벤트 목록
 	 */
-	List<TstEventResponse> selectTstEventList(Long tstUnqKyVal);
+	List<TstEventResponse> selectTstEventList(Long chckSno);
 
 	/**
 	 * 페이지별 이벤트 스트로크 목록 조회

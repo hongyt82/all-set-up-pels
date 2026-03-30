@@ -104,7 +104,7 @@ export function ViewerPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   const params = new URLSearchParams(window.location.search);
-  const isDbMode = !!params.get('TST_UNQ_KY_VAL');
+  const isDbMode = !!params.get('CHCK_SNO');
   const hasPdf = !!pdfFile;
 
   // 줌 / 스케일
@@ -338,7 +338,7 @@ export function ViewerPage() {
     params.get('DOC_ID') ||
     params.get('docId') ||
     params.get('DOC') ||
-    params.get('TST_UNQ_KY_VAL') ||
+    params.get('CHCK_SNO') ||
     'UNKNOWN';
 
   const roomId = `DOC${DOC_ID}`;
@@ -951,14 +951,14 @@ export function ViewerPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const TST_UNQ_KY_VAL = params.get('TST_UNQ_KY_VAL');
-    if (!TST_UNQ_KY_VAL) return;
+    const CHCK_SNO = params.get('CHCK_SNO');
+    if (!CHCK_SNO) return;
 
     const isProd = import.meta.env.PROD;
 
     const load = async () => {
       const metaRes = await axios.get('/api/Exam_Json_M.do', {
-        params: { TST_UNQ_KY_VAL },
+        params: { CHCK_SNO },
         withCredentials: true,
       });
 

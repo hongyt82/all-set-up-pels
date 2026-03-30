@@ -184,6 +184,12 @@
 			#{PJB_PLC_NM},
 			SYSDATE
 		)
-	</insert>	
+	</insert>
+		
+	<select id="GetUserInfo" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		SELECT *
+		  FROM GE_PL_USER_M
+		 WHERE USER_ID = #{USER_ID}
+	</select>
         
 </mapper>

@@ -6,7 +6,7 @@ import lombok.Value;
 
 @Value
 public class StrokeFilename {
-    long tstUnqKyVal;
+    long chckSno;
     int pageNo;
     int pageAddSeq;
     int strokeSeq;
@@ -60,7 +60,7 @@ public class StrokeFilename {
     }
 
     public String toFilename() {
-        return "stroke_" + tstUnqKyVal
+        return "stroke_" + chckSno
                 + "_" + pageNo
                 + "_" + pageAddSeq
                 + "_" + strokeSeq
@@ -68,7 +68,7 @@ public class StrokeFilename {
     }
 
     public static String toFilename(TstEventMeta eventMeta) {
-        return "stroke_" + eventMeta.getTstUnqKyVal()
+        return "stroke_" + eventMeta.getChckSno()
                 + "_" + eventMeta.getPageNo()
                 + "_" + eventMeta.getPageAddSeq()
                 + "_" + eventMeta.getStrokeSeq()

@@ -19,12 +19,12 @@ public class PelsEventDaoImpl implements PelsEventDao {
 
 	/**
 	 * 이벤트 목록 조회
-	 * @param tstUnqKyVal 시험고유키값
+	 * @param chckSno 시험고유키값
 	 * @return 이벤트 목록
 	 */
 	@Override
-	public List<TstEventResponse> selectTstEventList(Long tstUnqKyVal) {
-		return sqlSession.selectList("TstEventSelectList", tstUnqKyVal);
+	public List<TstEventResponse> selectTstEventList(Long chckSno) {
+		return sqlSession.selectList("TstEventSelectList", chckSno);
 	}
 
 	/**

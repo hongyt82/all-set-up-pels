@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.net.URLEncoder;
+import java.sql.Clob;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletException;
@@ -45,8 +46,7 @@ import com.google.gson.JsonObject;
 import com.khnp.pels.common.dto.CommonFileDTO;
 import com.khnp.pels.common.enums.AtflGrupNm;
 import com.khnp.pels.common.service.PELSFileLogicService;
-import com.khnp.pels.form.service.PELSFormLogicService;
-import com.khnp.pels.form.service.PELSFormService;
+import com.khnp.pels.common.service.PELSFileService;
 
 import common.xss.JsonXssFilter;
 import common.util.*;
@@ -59,10 +59,7 @@ public class PELSLoginController {
 	private PELSFileLogicService pelsFileLogicService;
 	
 	@Autowired
-	private PELSFormLogicService pelsFormLogicService;
-	
-	@Autowired
-	private PELSFormService pelsFormService;	
+	private PELSFileService pelsFileService;
 
 	@Resource(name = "utilProperties")
 	private Properties utilProperties;
@@ -89,7 +86,8 @@ public class PELSLoginController {
 		String LOGIN_ID = StringUtil.nvl(request.getParameter("LOGIN_ID"), "");
 		
 		// 임시
-		if(1 == 1) {
+		/*
+		if(1 == 0) {
 			HttpSession session = request.getSession();
 			session.setAttribute("LOGIN_USER_ID", "M1EU0001");
 			session.setAttribute("LOGIN_USER_NM", "개발자");
@@ -100,37 +98,24 @@ public class PELSLoginController {
 			
 			return resultMap;
 		}
+		*/
 		
 		HashMap paramMap = new HashMap<String, Object>();
-		paramMap.put("LOGIN_ID", LOGIN_ID);
-		HttpConnectionUtil HUtil = new HttpConnectionUtil();
-	    String result = HUtil.postRequest(WMSS_URL + "/LoginJson.do", paramMap);	
+		paramMap.put("USER_ID", LOGIN_ID);
 	    
-	    JSONParser parser = new JSONParser();
-	    JSONArray jsonArr = null;
-	    JSONObject userInfo = null;
-	    try {
-		    Object obj = parser.parse(result);
-		    userInfo = (JSONObject) obj;
-	    } catch (Exception ex) {
-	    }
-	    
+		Map<String, Object> userInfo = pelsFileService.getDetail("GetUserInfo", paramMap);
 		if (userInfo != null) {
 			HttpSession session = request.getSession();
 			session.setAttribute("LOGIN_USER_ID", userInfo.get("USER_ID"));
 			session.setAttribute("LOGIN_USER_NM", userInfo.get("USER_NAME"));
-			session.setAttribute("LOGIN_USER_ENG_NM", userInfo.get("ENG_NAME"));
 			session.setAttribute("LOGIN_USER_DEPT_CD", userInfo.get("DEPT_CD"));
 			session.setAttribute("LOGIN_USER_DEPT_NM", userInfo.get("DEPT_NM"));
-			session.setAttribute("LOGIN_USER_EMGRD", userInfo.get("EMGRD"));
-			session.setAttribute("LOGIN_USER_EMGRD_NM", userInfo.get("EMGRD_NM"));
 			session.setAttribute("LOGIN_USER_JIKWI", userInfo.get("JIKWI"));
 			session.setAttribute("LOGIN_USER_PLANT_TYPE", userInfo.get("TYPE_CD"));
 			session.setAttribute("LOGIN_USER_PLANT_TYPE_NM", userInfo.get("TYPE_DESC"));
 			session.setAttribute("LOGIN_USER_PLANT_CD", userInfo.get("PLANT"));
 			session.setAttribute("LOGIN_USER_PLANT_NM", userInfo.get("PLANT_DESC"));
 			session.setAttribute("LOGIN_USER_UNIT_TYPE", userInfo.get("UNIT_TYPE"));
-			session.setAttribute("LOGIN_USER_BONSA_GUBUN", userInfo.get("BONSA_GUBUN"));
 			session.setAttribute("LOGIN_USER_JIKJE1", userInfo.get("JIKJE1"));
 			session.setAttribute("LOGIN_USER_JIKJE2", userInfo.get("JIKJE2"));
 			session.setAttribute("LOGIN_USER_JIKJE3", userInfo.get("JIKJE3"));
@@ -154,32 +139,7 @@ public class PELSLoginController {
 			//if ( LOGIN_ID.equals("M1EU0004")) AUTH_CD = "ZLEG_GE_WMSS_001";
 			//session.setAttribute("LOGIN_USER_AUTH", AUTH_CD);
 			
-			// 권한을 가져온다.
-			paramMap.put("USER_ID", userInfo.get("USER_ID"));
-			Map<String, String> gradeDetail = pelsFormService.getDetail("GradeDetail", paramMap);
-			if(gradeDetail != null) {
-				session.setAttribute("GRADE",  gradeDetail.get("ATTY_CFY"));
-			}
-			else {
-				session.setAttribute("GRADE", "");
-			}
-			
 			session.setMaxInactiveInterval(60*60*100);
-			
-			String sIP = request.getRemoteAddr();
-			HashMap<String, Object> map = new HashMap<String, Object>();
-			map.put("PPCD", userInfo.get("PLANT"));
-			map.put("TYPE_CD", "LOGIN");
-			map.put("RG_SCCD", LOGIN_USER_JIKJE);
-			map.put("HOLD_SCCD", userInfo.get("DEPT_CD"));
-			map.put("DOC_UNQ_ID", "");
-			map.put("SYS_ACSS_CFY_CD", "WEB");
-			map.put("RMK", "");
-			map.put("REGPR_IP_ADDR", sIP);
-			map.put("REGPR_ID", userInfo.get("USER_ID"));
-			map.put("REGPR_NM", userInfo.get("USER_NAME"));
-
-			pelsFormService.insert("SetUsecase", map);
 			
 			resultMap.put("result", "success");
 		} else {
@@ -202,14 +162,7 @@ public class PELSLoginController {
 		HttpConnectionUtil HUtil = new HttpConnectionUtil();
 	    String result = HUtil.postRequest(WMSS_URL + "/LoginJson.do", paramMap);	
 	    
-	    JSONParser parser = new JSONParser();
-	    JSONArray jsonArr = null;
-	    JSONObject userInfo = null;
-	    try {
-		    Object obj = parser.parse(result);
-		    userInfo = (JSONObject) obj;
-	    } catch (Exception ex) {
-	    }
+		Map<String, Object> userInfo = pelsFileService.getDetail("GetUserInfo", paramMap);
 		if (userInfo != null) {
 			session.setAttribute("LOGIN_USER_ID", userInfo.get("USER_ID"));
 			session.setAttribute("LOGIN_USER_NM", userInfo.get("USER_NAME"));
@@ -249,7 +202,7 @@ public class PELSLoginController {
 			
 			// 권한을 가져온다.
 			paramMap.put("USER_ID", userInfo.get("USER_ID"));
-			Map<String, String> gradeDetail = pelsFormService.getDetail("GradeDetail", paramMap);
+			Map<String, String> gradeDetail = pelsFileService.getDetail("GradeDetail", paramMap);
 			if(gradeDetail != null) {
 				session.setAttribute("GRADE",  gradeDetail.get("ATTY_CFY"));
 			}
@@ -272,7 +225,7 @@ public class PELSLoginController {
 			map.put("REGPR_ID", userInfo.get("USER_ID"));
 			map.put("REGPR_NM", userInfo.get("USER_NAME"));
 
-			pelsFormService.insert("SetUsecase", map);			
+			pelsFileService.insert("SetUsecase", map);			
 			
 			mav.setViewName("redirect:/index.do");
 		} else {
@@ -282,5 +235,21 @@ public class PELSLoginController {
 		
 		return mav;
 	}
+	
+	@RequestMapping(value = "Login_M", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+	@ResponseBody
+	public Map<String, Object> Exam_Json_M_API(HttpServletRequest request) throws Exception {
+
+		String USER_ID = StringUtil.nvl(request.getParameter("USER_ID"), "");
+
+		Map<String, Object> result = new HashMap<>();
 		
+		HashMap<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put("USER_ID", USER_ID);
+		
+		Map<String, Object> mapTemp = pelsFileService.getDetail("GetUserInfo", paramMap);
+
+		return mapTemp;
+	}
+	
 }

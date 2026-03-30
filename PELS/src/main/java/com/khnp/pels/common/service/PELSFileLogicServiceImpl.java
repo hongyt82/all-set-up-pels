@@ -77,17 +77,6 @@ public class PELSFileLogicServiceImpl implements PELSFileLogicService {
 				ATFL_ORSRC_NM = (String) uploadFileResultMap.get("ATFL_ORSRC_NM"); 	// 첨부파일원래명
 				ATFL_PHCL_NM = (String) uploadFileResultMap.get("ATFL_PHCL_NM"); 	// 첨부파일명
 
-				if("ozr".contentEquals(ATFL_FEXT_NM)) {
-					//
-					// OZD로 만든다.
-					//
-					HashMap paramsMap = new HashMap();
-					HttpConnectionUtil HUtil = new HttpConnectionUtil();
-				    paramsMap.put("ozrName", ATFL_GRUP_NM + "/" + ATFL_PHCL_NM + ".ozr");
-				    paramsMap.put("ozdName", ATFL_GRUP_NM + "/" + ATFL_PHCL_NM + ".ozd");
-				    String result2 = HUtil.postRequest(OZ_HOME + "/pels/ozr_ozd.jsp", paramsMap);	
-				}
-				
 				HashMap<String, Object> saveMap = new HashMap<String, Object>();
 				saveMap.put("ATFL_UNQ_NO", ""); // 첨부파일고유번호
 				saveMap.put("ATFL_GRUP_NM", ATFL_GRUP_NM);
@@ -210,7 +199,7 @@ public class PELSFileLogicServiceImpl implements PELSFileLogicService {
 
 					    HashMap<String, Object> fileUpdateMap = new HashMap<String, Object>();
 						
-						fileUpdateMap.put("ATFL_UNQ_NO", ""); // 첨부파일고유번호
+						fileUpdateMap.put("ATFL_UNQ_NO", "");
 						fileUpdateMap.put("ATFL_GRUP_NM", ATFL_GRUP_NM);
 						fileUpdateMap.put("UNQ_NO", UNQ_NO);
 						fileUpdateMap.put("ATFL_ID", ATFL_ID);

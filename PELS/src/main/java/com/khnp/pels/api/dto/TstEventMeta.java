@@ -24,27 +24,33 @@ import javax.validation.constraints.*;
 @ValidEventTypeCondition
 public class TstEventMeta {
 
-    @JsonProperty("EVENT_TYP")
+
+    @JsonProperty("PWPL_ID")
+    @NotBlank
+    @Size(max=20)
+    private String pwplId;
+    
+    @JsonProperty("EVENT_SQNO")
     @NotNull
     private EventType eventTyp;
 
-    @JsonProperty("TST_UNQ_KY_VAL")
+    @JsonProperty("CHCK_SNO")
     @NotNull
     @Min(1)
-    private Long tstUnqKyVal;
+    private Long chckSno;
 
-    @JsonProperty("PAGE_NO")
+    @JsonProperty("PAGE_CNT")
     @NotNull
     @Min(1) @Max(99999)
     private Integer pageNo;
 
-    @JsonProperty("PAGE_ADD_SEQ")
+    @JsonProperty("INSRTN_PAGE_CNT")
     @NotNull
     @Min(0) @Max(99999)
     private Integer pageAddSeq;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("PDF_PAGE_NO")
+    @JsonProperty("PDF_PAGE_CNT")
     @Min(1) @Max(99999)
     private Integer pdfPageNo;
 
@@ -63,7 +69,7 @@ public class TstEventMeta {
     @Size(max=20)
     private String userId;
 
-    @JsonProperty("EVENT_DT")
+    @JsonProperty("EVENT_CRTE_DT")
     @NotNull
     @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$", message = "yyyy-MM-dd'T'HH:mm:ss.SSS와 일치해야 합니다")
     private String eventDt;

@@ -15,22 +15,22 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class TstEventStrokeMeta {
 
-    @JsonProperty("POS_X")
+    @JsonProperty("X_CRDNT")
     @NotNull
     @Min(1) @Max(999999)
     private Integer posX;
 
-    @JsonProperty("POS_Y")
+    @JsonProperty("Y_CRDNT")
     @NotNull
     @Min(1) @Max(999999)
     private Integer posY;
 
-    @JsonProperty("STROKE_COLOR")
+    @JsonProperty("LINE_SNO")
     @NotNull
     @Min(Integer.MIN_VALUE) @Max(9999999999L)
     private Long strokeColor;
 
-    @JsonProperty("STROKE_WIDTH")
+    @JsonProperty("LINE_ETT")
     @NotNull
     @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax(value = "9999.99")
