@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "local": "vite --mode localdev --host 0.0.0.0 --port 4006",
+    "local": "vite --mode localdev --host 0.0.0.0 --port 4008",
     "dev": "vite --mode dev",
     "prod_test:run": "vite --mode production",
     "build:prod": "vite build --mode production",
