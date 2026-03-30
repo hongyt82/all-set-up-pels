@@ -12,15 +12,18 @@
         <result property="pageNo" column="PAGE_CNT"/>
         <result property="pageAddSeq" column="INSRTN_PAGE_CNT"/>
         <result property="pdfPageNo" column="PDF_PAGE_CNT"/>
-        <result property="eventTrgtSeq" column="EVENT_DOC_SQNO"/>
+        <result property="strokeSeq" column="STROKE_SEQ"/>
+        <result property="imageSeq" column="IMAGE_SEQ"/>
         <result property="userId" column="USER_ID"/>
         <result property="eventDt" column="EVENT_CRTE_DT"/>
+
         <association property="stroke" javaType="com.khnp.pels.api.dto.TstEventStrokeMeta">
             <result property="posX" column="STRK_POS_X"/>
             <result property="posY" column="STRK_POS_Y"/>
             <result property="strokeColor" column="LINE_SNO"/>
             <result property="strokeWidth" column="LINE_ETT"/>
         </association>
+
         <association property="image" javaType="com.khnp.pels.api.dto.TstEventImageMeta">
             <result property="posX" column="IMG_POS_X"/>
             <result property="posY" column="IMG_POS_Y"/>

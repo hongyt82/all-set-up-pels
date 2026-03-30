@@ -28,7 +28,7 @@ import LodashTestPage from './pages/LodashTestPage';
 import MomentTestPage from './pages/MomentTestPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ViewerPage } from './pages/ViewerPage';
-import {ReplayViewerPage} from "./pages/ReplayViewerPage.tsx";
+import { ReplayViewerPage } from './pages/ReplayViewerPage.tsx';
 import { getBrowserInfo, logBrowserInfo } from './utils';
 import { globalErrorHandler } from './utils/errorHandler';
 import NetworkTestPage from './pages/NetworkTestPage.tsx';
