@@ -30,8 +30,13 @@ class RestExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleAny(Exception e) {
         String msg = Optional.ofNullable(e.getMessage()).orElse("");
+        // msg 에서 응답 실패 body 전달전에 반드시 찍고 넘어가게 처리함
+        // NPE 방지 차원에서 300 자 정도 자른 문자열로 넣는데 이건 상황에 따라...
+        // 기타 예외 내용 찍음
+        log.warn("Unhandled exception: {} — {}", e.getClass().getSimpleName(), msg, e);
+        String truncated = msg.length() <= 300 ? msg : msg.substring(0, 300);
         return ResponseEntity
                 .status(500)
-                .body(ApiResponse.fail(e.getMessage().substring(0, Math.min(msg.length(), 300))));
+                .body(ApiResponse.fail(truncated));
     }
 }
