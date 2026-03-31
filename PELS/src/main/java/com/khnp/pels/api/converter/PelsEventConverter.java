@@ -27,17 +27,17 @@ public class PelsEventConverter {
      * @return 이벤트 엔터티
      */
     public TstEventEntity toEventEntity(TstEventMeta dto) {
-        Integer eventTrgtSeq;
+        String eventTrgtSeq;
         switch (dto.getEventTyp()){
             case STROKE_ADD:
             case STROKE_DELETE:
-                eventTrgtSeq = dto.getStrkSeq();
+                eventTrgtSeq = dto.getStrkSeq().toString();
                 break;
             case IMAGE_ADD:
             case IMAGE_DELETE:
             case IMAGE_MODIFY:
             case IMAGE_RESIZE:
-                eventTrgtSeq = dto.getImgSeq();
+                eventTrgtSeq = dto.getImgId();
                 break;
             default: eventTrgtSeq = null;
         }

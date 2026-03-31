@@ -16,7 +16,7 @@ public class TstEventEntity {
     private Integer pageNo;        //페이지번호
     private Integer pageAddSeq;    //페이지추가순번
     private Integer pdfPageNo;     //PDF페이지번호
-    private Integer eventTrgtSeq;  //이벤트대상순번(스트로크순번 or 이미지순번)
+    private String eventTrgtSeq;   //이벤트대상ID(스트로크SEQ or 이미지ID)
     private String userId;         //사용자ID
     private String eventDt;        //이벤트일시
 }

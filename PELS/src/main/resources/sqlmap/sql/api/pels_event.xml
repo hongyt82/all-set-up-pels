@@ -14,7 +14,7 @@
         <result property="pageAddSeq" column="INSRTN_PAGE_CNT"/>
         <result property="pdfPageNo" column="PDF_PAGE_CNT"/>
         <result property="strkSeq" column="STRK_SEQ"/>
-        <result property="imgSeq" column="IMG_SEQ"/>
+        <result property="imgId" column="IMG_ID"/>
         <result property="userId" column="USER_ID"/>
         <result property="eventDt" column="EVENT_CRTE_DT"/>
 
@@ -44,8 +44,8 @@
                T1.PAGE_CNT,
                T1.INSRTN_PAGE_CNT,
                T1.PDF_PAGE_CNT,
-               CASE WHEN T1.EVENT_TYP_SQNO IN (3,4) THEN T1.EVENT_DOC_SQNO ELSE NULL END AS STRK_SEQ,
-               CASE WHEN T1.EVENT_TYP_SQNO IN (5,6,7,8) THEN T1.EVENT_DOC_SQNO ELSE NULL END AS IMG_SEQ,
+               CASE WHEN T1.EVENT_TYP_SQNO IN (3,4) THEN T1.EVENT_TRGT_ID ELSE NULL END AS STRK_SEQ,
+               CASE WHEN T1.EVENT_TYP_SQNO IN (5,6,7,8) THEN T1.EVENT_TRGT_ID ELSE NULL END AS IMG_ID,
                T1.USER_ID,
                TO_CHAR(T1.EVENT_CRTE_DT, 'YYYY-MM-DD"T"HH24:MI:SS.FF3') AS EVENT_CRTE_DT,
                T2.X_CRDNT AS STRK_POS_X,
@@ -62,7 +62,7 @@
                          ON T1.EVENT_SNO = T2.EVENT_SNO
                LEFT JOIN GE_PL_EVNT0102_D T3
                          ON T1.EVENT_SNO = T3.EVENT_SNO
-         WHERE T1.PWPL_ID = #{pwplId, jdbcType=BIGINT}
+         WHERE T1.PWPL_ID = #{pwplId, jdbcType=VARCHAR}
            AND T1.CHCK_SNO = #{chckSno, jdbcType=BIGINT}
          ORDER
             BY T1.EVENT_CRTE_DT
@@ -83,7 +83,7 @@
           FROM GE_PL_EVNT01_M T1
                JOIN GE_PL_EVNT0101_D T2
                     ON T1.EVENT_SNO = T2.EVENT_SNO
-         WHERE T1.PWPL_ID = #{pwplId, jdbcType=BIGINT}
+         WHERE T1.PWPL_ID = #{pwplId, jdbcType=VARCHAR}
            AND T1.CHCK_SNO = #{chckSno, jdbcType=BIGINT}
            AND T1.PAGE_CNT = #{pageNo, jdbcType=INTEGER}
          ORDER
@@ -110,7 +110,7 @@
              , PAGE_CNT
              , INSRTN_PAGE_CNT
              , PDF_PAGE_CNT
-             , EVENT_DOC_SQNO
+             , EVENT_TRGT_ID
              , USER_ID
              , EVENT_CRTE_DT
              )
@@ -143,7 +143,7 @@
              , PAGE_CNT
              , INSRTN_PAGE_CNT
              , PDF_PAGE_CNT
-             , EVENT_DOC_SQNO
+             , EVENT_TRGT_ID
              , USER_ID
              , EVENT_CRTE_DT
              )
@@ -175,8 +175,8 @@
              )
         VALUES
              ( #{eventSno, jdbcType=BIGINT}
-             , #{posX, jdbcType=INTEGER}
-             , #{posY, jdbcType=INTEGER}
+             , #{posX, jdbcType=NUMERIC}
+             , #{posY, jdbcType=NUMERIC}
              , #{pointPath, jdbcType=BLOB}
              , #{strokeColor, jdbcType=INTEGER}
              , #{strokeWidth, jdbcType=NUMERIC}
@@ -197,10 +197,10 @@
              )
         VALUES
              ( #{eventSno, jdbcType=BIGINT}
-             , #{posX, jdbcType=INTEGER}
-             , #{posY, jdbcType=INTEGER}
-             , #{width, jdbcType=INTEGER}
-             , #{height, jdbcType=INTEGER}
+             , #{posX, jdbcType=NUMERIC}
+             , #{posY, jdbcType=NUMERIC}
+             , #{width, jdbcType=NUMERIC}
+             , #{height, jdbcType=NUMERIC}
              , #{fileUrl, jdbcType=VARCHAR}
              )
     </insert>
