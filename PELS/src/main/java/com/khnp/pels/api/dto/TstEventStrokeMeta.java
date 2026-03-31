@@ -17,13 +17,15 @@ public class TstEventStrokeMeta {
 
     @JsonProperty("X_CRDNT")
     @NotNull
-    @Min(1) @Max(999999)
-    private Integer posX;
+    @DecimalMin(value = "0.00", inclusive = false)
+    @DecimalMax(value = "9999.99")
+    private BigDecimal posX;
 
     @JsonProperty("Y_CRDNT")
     @NotNull
-    @Min(1) @Max(999999)
-    private Integer posY;
+    @DecimalMin(value = "0.00", inclusive = false)
+    @DecimalMax(value = "9999.99")
+    private BigDecimal posY;
 
     @JsonProperty("LINE_SNO")
     @NotNull

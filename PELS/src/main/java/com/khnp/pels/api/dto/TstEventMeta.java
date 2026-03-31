@@ -24,7 +24,6 @@ import javax.validation.constraints.*;
 @ValidEventTypeCondition
 public class TstEventMeta {
 
-
     @JsonProperty("EVENT_TYP_SQNO")
     @NotNull
     private EventType eventTyp;
@@ -60,9 +59,9 @@ public class TstEventMeta {
     private Integer strkSeq;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("IMG_SEQ")
-    @Min(1) @Max(99999)
-    private Integer imgSeq;
+    @JsonProperty("IMG_ID")
+    @Size(max=50)
+    private String imgId;
 
     @JsonProperty("USER_ID")
     @NotBlank

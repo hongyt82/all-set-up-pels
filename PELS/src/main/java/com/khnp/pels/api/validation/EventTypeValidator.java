@@ -29,7 +29,7 @@ public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCon
             case PAGE_DELETE:
                 valid &= require(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
                 valid &= forbidden(context, dto.getStrkSeq(), "STRK_SEQ");
-                valid &= forbidden(context, dto.getImgSeq(), "IMG_SEQ");
+                valid &= forbidden(context, dto.getImgId(), "IMG_ID");
                 valid &= forbidden(context, dto.getStroke(), "STROKE");
                 valid &= forbidden(context, dto.getImage(), "IMAGE");
                 break;
@@ -46,7 +46,7 @@ public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCon
             case IMAGE_RESIZE:
                 valid &= require(context, dto.getImage(), "IMAGE");
             case IMAGE_DELETE:
-                valid &= require(context, dto.getImgSeq(), "IMG_SEQ");
+                valid &= require(context, dto.getImgId(), "IMG_ID");
                 valid &= forbidden(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
                 break;
             default:

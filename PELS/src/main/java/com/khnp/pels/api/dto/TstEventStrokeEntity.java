@@ -13,8 +13,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class TstEventStrokeEntity {
     private Long eventSno;          //이벤트일련번호
-    private Integer posX;           //좌표X
-    private Integer posY;           //좌표Y
+    private BigDecimal posX;        //좌표X
+    private BigDecimal posY;        //좌표Y
     private byte[] pointPath;       //포인트경로
     private Long strokeColor;       //스트로크색상
     private BigDecimal strokeWidth; //스트로크폭

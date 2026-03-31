@@ -12,10 +12,10 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TstEventImageEntity {
-    private Long    eventSno;  //이벤트일련번호
-    private Integer posX;      //좌표X
-    private Integer posY;      //좌표Y
-    private Integer width;     //가로크기
-    private Integer height;    //세로크기
-    private String fileUrl;    //파일URL
+    private Long    eventSno;   //이벤트일련번호
+    private BigDecimal posX;    //좌표X
+    private BigDecimal posY;    //좌표Y
+    private BigDecimal width;   //가로크기
+    private BigDecimal height;  //세로크기
+    private String fileUrl;     //파일URL
 }

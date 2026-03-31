@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.*;
+import java.math.BigDecimal;
 
 @Data
 @Builder
@@ -16,23 +17,27 @@ public class TstEventImageMeta {
 
     @JsonProperty("X_CRDNT")
     @NotNull
-    @Min(1) @Max(999999)
-    private Integer posX;
+    @DecimalMin(value = "0.00", inclusive = false)
+    @DecimalMax(value = "9999.99")
+    private BigDecimal posX;
 
     @JsonProperty("Y_CRDNT")
     @NotNull
-    @Min(1) @Max(999999)
-    private Integer posY;
+    @DecimalMin(value = "0.00", inclusive = false)
+    @DecimalMax(value = "9999.99")
+    private BigDecimal posY;
 
     @JsonProperty("WDTH_NUMV")
     @NotNull
-    @Min(1) @Max(999999)
-    private Integer width;
+    @DecimalMin(value = "0.00", inclusive = false)
+    @DecimalMax(value = "9999.99")
+    private BigDecimal width;
 
     @JsonProperty("HDTH_NUMV")
     @NotNull
-    @Min(1) @Max(999999)
-    private Integer height;
+    @DecimalMin(value = "0.00", inclusive = false)
+    @DecimalMax(value = "9999.99")
+    private BigDecimal height;
 
     @JsonProperty("URL_INFO")
     @NotBlank
