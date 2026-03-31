@@ -48,7 +48,7 @@ public class StrokeFilename {
 
         String core = name.substring("stroke_".length(), name.length() - ".bin".length());
         String[] parts = core.split("_");
-        if (parts.length != 4){
+        if (parts.length != 5){
             throw new RestBadRequestException("Invalid stroke filename: " + filename);
         }
 
