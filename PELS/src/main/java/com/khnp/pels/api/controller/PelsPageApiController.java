@@ -25,7 +25,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/pages")
+@RequestMapping("/api/pages")
 public class PelsPageApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(PelsPageApiController.class);

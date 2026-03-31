@@ -32,7 +32,7 @@ import java.util.UUID;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/events")
+@RequestMapping("/api/events")
 public class PelsEventApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(PelsEventApiController.class);

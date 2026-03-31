@@ -32,7 +32,7 @@ import java.util.Map;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/images")
+@RequestMapping("/api/images")
 public class PelsImageApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(PelsImageApiController.class);

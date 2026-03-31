@@ -36,7 +36,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/strokes")
+@RequestMapping("/api/strokes")
 public class PelsStrokeApiController {
 
     private static final Logger logger = LoggerFactory.getLogger(PelsStrokeApiController.class);
