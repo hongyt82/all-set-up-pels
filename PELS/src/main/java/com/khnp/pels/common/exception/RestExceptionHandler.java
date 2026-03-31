@@ -1,6 +1,8 @@
 package com.khnp.pels.common.exception;
 
 import com.khnp.pels.api.dto.ApiResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
@@ -13,8 +15,15 @@ import java.util.Optional;
 @RestControllerAdvice(basePackages = "com.khnp.pels.api")
 class RestExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(RestExceptionHandler.class);
+
     @ExceptionHandler(RestBadRequestException.class)
     public ResponseEntity<ApiResponse<Object>> handleBad(RestBadRequestException e) {
+        if (e.getData() != null) {
+            log.warn("Bad request: {} | data={}", e.getMessage(), e.getData());
+        } else {
+            log.warn("Bad request: {}", e.getMessage());
+        }
         return ResponseEntity.badRequest().body(ApiResponse.fail(e.getMessage(), e.getData()));
     }
 
