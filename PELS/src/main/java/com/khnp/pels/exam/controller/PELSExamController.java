@@ -1,8 +1,8 @@
 package com.khnp.pels.exam.controller;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.Reader;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,6 +22,7 @@ import java.util.Properties;
 import javax.annotation.Resource;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.pdfbox.Loader;
@@ -35,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -806,44 +808,6 @@ public class PELSExamController {
      * @return
      */
     /*@RequestMapping(value= {"/Exam_Json_M.do"}, method = {RequestMethod.GET, RequestMethod.POST})
-    public ModelAndView Exam_Json_M (HttpServletRequest request) {
-        ModelAndView mav = new ModelAndView();
-        HashMap<String, Object> paramMap = new HashMap<String, Object>();
-
-        String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
-        String ATFL_NO = StringUtil.nvl(request.getParameter("ATFL_NO"), "1");
-
-        paramMap.put("CHCK_SNO", CHCK_SNO);
-        paramMap.put("ATFL_NO", ATFL_NO);
-
-        Map<String, String> MapTemp =  pelsExamService.getDetail("ExamJsonDetail", paramMap);
-
-        HashMap<String, Object> paramMap2 = new HashMap<String, Object>();
-        paramMap2.put("PDF_PATH", URL + "upload/" + MapTemp.get("ATFL_PHCL_NM"));
-
-        Object clobObj = MapTemp.get("FRM_OVER_JSON");
-        String json = "";
-        try {
-            json = clobToString((Clob) clobObj);
-        }
-        catch(Exception e) {}
-        paramMap2.put("FRM_OVER_JSON", json);
-
-        clobObj = MapTemp.get("FRM_CONS_JSON");
-        try {
-            json = clobToString((Clob) clobObj);
-        }
-        catch(Exception e) {}
-        paramMap2.put("FRM_CONS_JSON", json);
-
-        JSONObject JSONDATA = new JSONObject(paramMap2);
-        mav.addObject("JSONDATA", JSONDATA);
-        mav.setViewName("/mpps/Json");
-
-        return mav;
-    }*/
-
-    @RequestMapping(value= {"/Exam_Json_M.do"}, method = {RequestMethod.GET, RequestMethod.POST})
     public ModelAndView Exam_Json_M(HttpServletRequest request) {
         ModelAndView mav = new ModelAndView();
 
@@ -874,16 +838,14 @@ public class PELSExamController {
         mav.setViewName("/pels/Json");
 
         return mav;
-    }
-
-
+    }*/
 
     /* 추가시작 */
     @RequestMapping(value = "/api/Exam_Json_M", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
     @ResponseBody
     public Map<String, Object> Exam_Json_M_API(HttpServletRequest request) throws Exception {
 
-        String PELS_IP_URL = utilProperties.getProperty("PELS_IP_URL");
+//        String PELS_IP_URL = utilProperties.getProperty("PELS_IP_URL");
 
         HttpSession session = request.getSession();
         String USER_ID = (String) session.getAttribute("LOGIN_USER_ID");
@@ -914,27 +876,29 @@ public class PELSExamController {
         /*
          * ========================= 2. PDF 경로 =========================
          */
-        result.put("PDF_PATH", PELS_IP_URL + "/upload/" + mapTemp.get("ATFL_PHCL_NM"));
+//        result.put("PDF_PATH", PELS_IP_URL + "/upload/" + mapTemp.get("ATFL_PHCL_NM"));
+        result.put("PDF_PATH", URL + "upload/" + mapTemp.get("ATFL_PHCL_NM"));
 
         /*
          * ========================= 3. Overlay JSON =========================
          */
-        Object overClob = mapTemp.get("FRM_OVER_JSON");
-        if (overClob instanceof Clob) {
-            result.put("FRM_OVER_JSON", clobToString((Clob) overClob));
-        } else {
-            result.put("FRM_OVER_JSON", null);
-        }
+        Object overClob = mapTemp.get("WRTE_JSON_DCR");
+        String json = "";
+        try {
+            json = clobToString((Clob) overClob);
+        } catch (Exception e) {}
+        result.put("FRM_OVER_JSON", json);
 
         /*
          * ========================= 4. Rule JSON =========================
          */
-        Object consClob = mapTemp.get("FRM_CONS_JSON");
-        if (consClob instanceof Clob) {
-            result.put("FRM_CONS_JSON", clobToString((Clob) consClob));
-        } else {
-            result.put("FRM_CONS_JSON", null);
-        }
+        Object consClob = mapTemp.get("CMP_JSON_DCR");
+        json = "";
+        try {
+            json = clobToString((Clob) consClob);
+        } catch (Exception e) {}
+        result.put("FRM_CONS_JSON", json);
+
 
         return result;
     }
@@ -964,10 +928,12 @@ public class PELSExamController {
 		
 		
 		String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
+        String PWPL_ID = StringUtil.nvl(request.getParameter("PWPL_ID"), "");
 		String PRCDOC_NO = StringUtil.nvl(request.getParameter("PRCDOC_NO"), "");
 		String PRCDOC_NM = StringUtil.nvl(request.getParameter("PRCDOC_NM"), "");
 		String CHCK_TITL = StringUtil.nvl(request.getParameter("CHCK_TITL"), "");
 		mav.addObject("CHCK_SNO", CHCK_SNO);
+        mav.addObject("PWPL_ID", PWPL_ID);
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);

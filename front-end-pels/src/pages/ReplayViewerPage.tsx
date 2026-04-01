@@ -25,12 +25,12 @@ const BASE_H = Math.round((PDF_BOUNDARY.height / PDF_BOUNDARY.width) * BASE_W);
 
 type ReplayEventItem = {
   EVENT_SNO: number;
-  EVENT_SQNO: number;
+  EVENT_TYP_SQNO: number;
   CHCK_SNO: number;
   PAGE_CNT: number;
   INSRTN_PAGE_CNT: number | null;
   PDF_PAGE_CNT: number | null;
-  STROKE_SEQ: number | null;
+  STRK_SEQ: number | null;
   IMAGE_SEQ: number | null;
   USER_ID: string;
   EVENT_CRTE_DT: string;
@@ -165,6 +165,7 @@ function decodeStrokeBinary(
 export function ReplayViewerPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const chckSno = params.get('CHCK_SNO') || '';
+  const pwplId = params.get('PWPL_ID') || '';
 
   const [currentFile, setCurrentFile] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | undefined>();
@@ -174,9 +175,6 @@ export function ReplayViewerPage() {
   const [zoomLevel, setZoomLevel] = useState(100);
   const [pageScale, setPageScale] = useState(1);
 
-  const [baseTemplateDoc, setBaseTemplateDoc] = useState<TemplateDoc | null>(
-    null
-  );
   const [basePages, setBasePages] = useState<TemplateDoc['pages']>([]);
   const [attachmentsByPage, setAttachmentsByPage] = useState<
     Record<number, any[]>
@@ -255,11 +253,11 @@ export function ReplayViewerPage() {
         const ev = sourceEvents[i];
         if (!ev) continue;
 
-        const eventType = Number(ev.EVENT_SQNO);
+        const eventType = Number(ev.EVENT_TYP_SQNO);
         const pageNo = Number(ev.PAGE_CNT);
         const pdfPageNo =
           ev.PDF_PAGE_CNT == null ? null : Number(ev.PDF_PAGE_CNT);
-        const strokeSeq = ev.STROKE_SEQ == null ? null : Number(ev.STROKE_SEQ);
+        const strokeSeq = ev.STRK_SEQ == null ? null : Number(ev.STRK_SEQ);
 
         if (eventType === 1) {
           const insertIdx = Math.max(
@@ -362,16 +360,23 @@ export function ReplayViewerPage() {
 
   useEffect(() => {
     if (!chckSno) return;
+    // if (!chckSno || !pwplId) return;
 
     const load = async () => {
       setLoading(true);
       try {
-        const metaRes = await axios.get('/api/Exam_Json_M.do', {
+
+
+        const metaRes = await axios.get('/api/Exam_Json_M', {
           params: { CHCK_SNO: chckSno },
           withCredentials: true,
         });
 
         const { PDF_PATH, FRM_OVER_JSON } = metaRes.data;
+        console.log('[replay] PDF_PATH=', PDF_PATH);
+        console.log('[replay] has FRM_OVER_JSON=', !!FRM_OVER_JSON);
+
+
         if (!PDF_PATH) return;
 
         const isProd = import.meta.env.PROD;
@@ -392,6 +397,15 @@ export function ReplayViewerPage() {
             responseType: 'blob',
             withCredentials: true,
           });
+
+
+          console.log('[replay] pdfRes.status=', pdfRes.status);
+          console.log('[replay] pdfRes.content-type=', pdfRes.headers['content-type']);
+          console.log('[replay] pdfRes.size=', pdfRes.data?.size);
+
+
+
+
           const file = new File([pdfRes.data], 'replay_viewer.pdf', {
             type: 'application/pdf',
           });
@@ -409,7 +423,6 @@ export function ReplayViewerPage() {
             pages: parsed.pages || [],
           } as TemplateDoc;
 
-          setBaseTemplateDoc(templateJson);
           setBasePages(templateJson.pages || []);
 
           const attachmentMap: Record<number, any[]> = {};
@@ -422,18 +435,24 @@ export function ReplayViewerPage() {
         }
 
         const eventRes = await axios.get('/api/events', {
-          params: { chckSno: chckSno },
+          params: {
+            pwplId,
+            chckSno: chckSno,
+          },
           withCredentials: true,
         });
 
+        console.log('[replay] eventRes.status=', eventRes.status);
+        console.log('[replay] eventRes.data=', eventRes.data);
+
         const nextEvents: ReplayEventItem[] = Array.isArray(eventRes.data?.data)
           ? [...eventRes.data.data].sort((a, b) => {
-              const ta = new Date(a.EVENT_CRTE_DT).getTime();
-              const tb = new Date(b.EVENT_CRTE_DT).getTime();
+            const ta = new Date(a.EVENT_CRTE_DT).getTime();
+            const tb = new Date(b.EVENT_CRTE_DT).getTime();
 
-              if (ta !== tb) return ta - tb;
-              return Number(a.EVENT_SNO) - Number(b.EVENT_SNO);
-            })
+            if (ta !== tb) return ta - tb;
+            return Number(a.EVENT_SNO) - Number(b.EVENT_SNO);
+          })
           : [];
 
         setEvents(nextEvents);
@@ -443,7 +462,7 @@ export function ReplayViewerPage() {
           new Set(
             nextEvents
               .filter(
-                ev => Number(ev.EVENT_SQNO) === 3 || Number(ev.EVENT_SQNO) === 4
+                ev => Number(ev.EVENT_TYP_SQNO) === 3 || Number(ev.EVENT_TYP_SQNO) === 4
               )
               .map(ev => Number(ev.PAGE_CNT))
               .filter(pageNo => Number.isFinite(pageNo) && pageNo > 0)
@@ -456,20 +475,22 @@ export function ReplayViewerPage() {
         > = {};
 
         for (const pageNo of pageNos) {
-          const strokeRes = await fetch(
-            `/api/events/strokes?chckSno=${encodeURIComponent(
-              chckSno
-            )}&pageNo=${pageNo}`,
-            { credentials: 'include' }
-          );
+          const strokeRes = await axios.get('/api/events/strokes', {
+            params: {
+              pwplId,
+              chckSno,
+              pageCnt: pageNo,
+            },
+            responseType: 'arraybuffer',
+            withCredentials: true,
+          });
 
-          if (!strokeRes.ok) continue;
-
-          const contentType = strokeRes.headers.get('content-type') || '';
+          const contentType = strokeRes.headers['content-type'] || '';
           const boundary = extractBoundary(contentType);
           if (!boundary) continue;
 
-          const rawBuffer = await strokeRes.arrayBuffer();
+          const rawBuffer = strokeRes.data as ArrayBuffer;
+
           const parts = parseMultipartMixedBinary(rawBuffer, boundary);
 
           const pageEvents = nextEvents.filter(
@@ -486,14 +507,14 @@ export function ReplayViewerPage() {
               .reverse()
               .find(
                 ev =>
-                  Number(ev.EVENT_SQNO) === 3 &&
+                  Number(ev.EVENT_TYP_SQNO) === 3 &&
                   Number(ev.EVENT_SNO) === Number(eventSno)
               );
 
             if (!addEvent) continue;
 
             const strokeSeq =
-              addEvent.STROKE_SEQ == null ? null : Number(addEvent.STROKE_SEQ);
+              addEvent.STRK_SEQ == null ? null : Number(addEvent.STRK_SEQ);
 
             // const strokeColor = addEvent.STROKE?.strokeColor ?? null;
             // const strokeWidth = addEvent.STROKE?.strokeWidth ?? null;
@@ -542,7 +563,7 @@ export function ReplayViewerPage() {
     };
 
     void load();
-  }, [chckSno]);
+  }, [chckSno, pwplId]);
 
   useEffect(() => {
     if (!basePages.length) return;
