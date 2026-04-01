@@ -10,6 +10,7 @@ public class StrokeFilename {
     long chckSno;       //시험순번
     int pageCnt;        //페이지번호
     int insrtnPageCnt;  //추가페이지SEQ
+    int pdfPageCnt;     //PDF페이지번호
     int strkSeq;        //스트로크SEQ
 
     /**
@@ -48,7 +49,7 @@ public class StrokeFilename {
 
         String core = name.substring("stroke_".length(), name.length() - ".bin".length());
         String[] parts = core.split("_");
-        if (parts.length != 5){
+        if (parts.length != 6){
             throw new RestBadRequestException("Invalid stroke filename: " + filename);
         }
 
@@ -56,9 +57,10 @@ public class StrokeFilename {
         int c = Integer.parseInt(parts[1]);
         int p = Integer.parseInt(parts[2]);
         int ps = Integer.parseInt(parts[3]);
-        int s = Integer.parseInt(parts[4]);
+        int pn = Integer.parseInt(parts[4]);
+        int s = Integer.parseInt(parts[5]);
 
-        return new StrokeFilename(pw, c, p, ps, s);
+        return new StrokeFilename(pw, c, p, ps, pn, s);
     }
 
     public String toFilename() {
@@ -66,6 +68,7 @@ public class StrokeFilename {
                 + "_"  + chckSno
                 + "_" + pageCnt
                 + "_" + insrtnPageCnt
+                + "_" + pdfPageCnt
                 + "_" + strkSeq
                 + ".bin";
     }
@@ -75,6 +78,7 @@ public class StrokeFilename {
                 + "_" + eventMeta.getChckSno()
                 + "_" + eventMeta.getPageCnt()
                 + "_" + eventMeta.getInsrtnPageCnt()
+                + "_" + eventMeta.getPdfPageCnt()
                 + "_" + eventMeta.getStrkSeq()
                 + ".bin";
     }
