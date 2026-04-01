@@ -76,12 +76,12 @@ public class PelsPageApiController {
         // meta json 검증
         TstEventMeta eventPageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### saveTstEventPage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} Start",
-                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
+                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageCnt(), eventPageMeta.getInsrtnPageCnt());
 
         // 이벤트 페이지 저장
         pelsEventService.saveTstEventPage(eventPageMeta);
         logger.info("### saveTstEventPage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={}, Completed save page",
-                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
+                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageCnt(), eventPageMeta.getInsrtnPageCnt());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -98,12 +98,12 @@ public class PelsPageApiController {
         // meta json 파싱 검증
         TstEventMeta eventPageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### deleteTstEventPage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} Start",
-                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
+                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageCnt(), eventPageMeta.getInsrtnPageCnt());
 
         // 이벤트 페이지 삭제
         int prcsCnt = pelsEventService.deleteTstEventPage(eventPageMeta);
         logger.info("### deleteTstEventPage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} End",
-                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageNo(), eventPageMeta.getPageAddSeq());
+                eventPageMeta.getPwplId(), eventPageMeta.getChckSno(), eventPageMeta.getPageCnt(), eventPageMeta.getInsrtnPageCnt());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }

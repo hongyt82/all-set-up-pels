@@ -114,7 +114,7 @@ public class PelsStrokeApiController {
         // meta json 검증
         TstEventMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### saveTstStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={} Start",
-                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageCnt(), eventStrokeMeta.getInsrtnPageCnt(), eventStrokeMeta.getStrkSeq());
 
         // stroke path files 검증
         if(mpFile==null || mpFile.isEmpty()){
@@ -136,12 +136,12 @@ public class PelsStrokeApiController {
             throw new RestBadRequestException("Failed to read file");
         }
         logger.info("### saveTstStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={}, Checked stroke file",
-                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageCnt(), eventStrokeMeta.getInsrtnPageCnt(), eventStrokeMeta.getStrkSeq());
 
         // 스트로크 저장
         pelsEventService.saveTstEventStroke(eventStrokeMeta, strokeFile);
         logger.info("### saveTstStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={}, Completed save stroke",
-                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageCnt(), eventStrokeMeta.getInsrtnPageCnt(), eventStrokeMeta.getStrkSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -158,12 +158,12 @@ public class PelsStrokeApiController {
         // meta json 파싱 검증
         TstEventMeta eventStrokeMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### deleteTstEventStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={}, Start",
-                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageCnt(), eventStrokeMeta.getInsrtnPageCnt(), eventStrokeMeta.getStrkSeq());
 
         // 스트로크 삭제
         pelsEventService.deleteTstEventStroke(eventStrokeMeta);
         logger.info("### deleteTstEventStroke() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} STRK_SEQ={}, End",
-                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageNo(), eventStrokeMeta.getPageAddSeq(), eventStrokeMeta.getStrkSeq());
+                eventStrokeMeta.getPwplId(), eventStrokeMeta.getChckSno(), eventStrokeMeta.getPageCnt(), eventStrokeMeta.getInsrtnPageCnt(), eventStrokeMeta.getStrkSeq());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }

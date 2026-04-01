@@ -83,12 +83,12 @@ public class PelsImageApiController {
         // meta json 검증
         TstEventMeta eventImageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### saveTstEventImage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} IMG_ID={} Start",
-                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImgId());
+                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageCnt(), eventImageMeta.getInsrtnPageCnt(), eventImageMeta.getImgId());
 
         // 사진 저장
         pelsEventService.saveTstEventImage(eventImageMeta);
         logger.info("### saveTstEventImage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} IMG_ID={}, Completed save stroke",
-                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImgId());
+                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageCnt(), eventImageMeta.getInsrtnPageCnt(), eventImageMeta.getImgId());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }
@@ -104,12 +104,12 @@ public class PelsImageApiController {
     ) {
         TstEventMeta eventImageMeta = jsonMetaBinder.bindAndValidate(metaJson, jsonTypeFactory.objectType(TstEventMeta.class));
         logger.info("### deleteTstEventImage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} IMG_ID={} Start",
-                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImgId());
+                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageCnt(), eventImageMeta.getInsrtnPageCnt(), eventImageMeta.getImgId());
 
         // 사진 삭제
         pelsEventService.deleteTstEventImage(eventImageMeta);
         logger.info("### deleteTstEventImage() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} INSRTN_PAGE_CNT={} IMG_ID={}, Completed save stroke",
-                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageNo(), eventImageMeta.getPageAddSeq(), eventImageMeta.getImgId());
+                eventImageMeta.getPwplId(), eventImageMeta.getChckSno(), eventImageMeta.getPageCnt(), eventImageMeta.getInsrtnPageCnt(), eventImageMeta.getImgId());
 
         return ResponseEntity.ok().body(ApiResponse.success());
     }

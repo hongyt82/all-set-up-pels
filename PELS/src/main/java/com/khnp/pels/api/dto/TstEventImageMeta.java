@@ -1,5 +1,6 @@
 package com.khnp.pels.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,28 +20,29 @@ public class TstEventImageMeta {
     @NotNull
     @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax(value = "9999.99")
-    private BigDecimal posX;
+    private BigDecimal xCrdnt;
 
     @JsonProperty("Y_CRDNT")
     @NotNull
     @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax(value = "9999.99")
-    private BigDecimal posY;
+    private BigDecimal yCrdnt;
 
     @JsonProperty("WDTH_NUMV")
     @NotNull
     @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax(value = "9999.99")
-    private BigDecimal width;
+    private BigDecimal wdthNumv;
 
     @JsonProperty("HDTH_NUMV")
     @NotNull
     @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax(value = "9999.99")
-    private BigDecimal height;
+    private BigDecimal hdthNumv;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("URL_INFO")
     @Size(max = 500)
-    private String fileUrl;
+    private String urlInfo;
 
 }

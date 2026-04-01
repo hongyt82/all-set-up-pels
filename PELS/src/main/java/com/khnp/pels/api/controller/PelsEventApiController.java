@@ -82,7 +82,7 @@ public class PelsEventApiController {
         TstEventEntity paramEntity = new TstEventEntity();
         paramEntity.setPwplId(pwplId);
         paramEntity.setChckSno(chckSno);
-        paramEntity.setPageNo(pageCnt);
+        paramEntity.setPageCnt(pageCnt);
         List<TstEventStrokeEntity> tstStrokeEntityList = pelsEventService.getTstEventStrokeByPageList(paramEntity);
         logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={}, strokes={}",
                 pwplId, chckSno, pageCnt, tstStrokeEntityList.size());
@@ -95,7 +95,7 @@ public class PelsEventApiController {
             int makeFileCnt = 0;
             for (TstEventStrokeEntity e : tstStrokeEntityList) {
                 MultipartMixedWriter.writeBinaryPart(os, boundary,
-                        StrokeFilename.responseFilename(e.getEventSno()), e.getPointPath());
+                        StrokeFilename.responseFilename(e.getEventSno()), e.getLinePthDcr());
                 makeFileCnt++;
             }
             logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={}, Write files={}",

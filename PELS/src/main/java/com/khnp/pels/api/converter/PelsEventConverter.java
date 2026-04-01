@@ -27,31 +27,31 @@ public class PelsEventConverter {
      * @return 이벤트 엔터티
      */
     public TstEventEntity toEventEntity(TstEventMeta dto) {
-        String eventTrgtSeq;
-        switch (dto.getEventTyp()){
+        String eventTrgtId;
+        switch (dto.getEventTypSqno()){
             case STROKE_ADD:
             case STROKE_DELETE:
-                eventTrgtSeq = dto.getStrkSeq().toString();
+                eventTrgtId = dto.getStrkSeq().toString();
                 break;
             case IMAGE_CONTAINER_ADD:
             case IMAGE_UPSERT:
             case IMAGE_RESIZE:
             case IMAGE_DELETE:
-                eventTrgtSeq = dto.getImgId();
+                eventTrgtId = dto.getImgId();
                 break;
-            default: eventTrgtSeq = null;
+            default: eventTrgtId = null;
         }
 
         return TstEventEntity.builder()
-                .eventTyp(dto.getEventTyp().getValue())
+                .eventTypSqno(dto.getEventTypSqno().getValue())
                 .pwplId(dto.getPwplId())
                 .chckSno(dto.getChckSno())
-                .pageNo(dto.getPageNo())
-                .pageAddSeq(dto.getPageAddSeq())
-                .pdfPageNo(dto.getPdfPageNo())
-                .eventTrgtSeq(eventTrgtSeq)
+                .pageCnt(dto.getPageCnt())
+                .insrtnPageCnt(dto.getInsrtnPageCnt())
+                .pdfPageCnt(dto.getPdfPageCnt())
+                .eventTrgtId(eventTrgtId)
                 .userId(dto.getUserId())
-                .eventDt(dto.getEventDt())
+                .eventCrteDt(dto.getEventCrteDt())
                 .build();
     }
 
@@ -73,10 +73,10 @@ public class PelsEventConverter {
      */
     public TstEventStrokeEntity toEventStrokeEntity(TstEventMeta dto) {
         return TstEventStrokeEntity.builder()
-                .posX(dto.getStroke().getPosX())
-                .posY(dto.getStroke().getPosY())
-                .strokeColor(dto.getStroke().getStrokeColor())
-                .strokeWidth(dto.getStroke().getStrokeWidth())
+                .xCrdnt(dto.getStroke().getXCrdnt())
+                .yCrdnt(dto.getStroke().getYCrdnt())
+                .lineSno(dto.getStroke().getLineSno())
+                .lineEtt(dto.getStroke().getLineEtt())
                 .build();
     }
 
@@ -87,7 +87,7 @@ public class PelsEventConverter {
      */
     public List<TstEventImageEntity> toEventImageList(List<TstEventMeta> list) {
         return list.stream().map(
-                this::toEventImageEntiry
+                this::toEventImageEntity
         ).collect(Collectors.toList());
     }
 
@@ -96,13 +96,13 @@ public class PelsEventConverter {
      * @param dto 이벤트 메타
      * @return 이벤트 사진 엔터티
      */
-    public TstEventImageEntity toEventImageEntiry(TstEventMeta dto) {
+    public TstEventImageEntity toEventImageEntity(TstEventMeta dto) {
         return TstEventImageEntity.builder()
-            .posX(dto.getImage().getPosX())
-            .posY(dto.getImage().getPosY())
-            .width(dto.getImage().getWidth())
-            .height(dto.getImage().getHeight())
-            .fileUrl(dto.getImage().getFileUrl())
+            .xCrdnt(dto.getImage().getXCrdnt())
+            .yCrdnt(dto.getImage().getYCrdnt())
+            .wdthNumv(dto.getImage().getWdthNumv())
+            .hdthNumv(dto.getImage().getHdthNumv())
+            .urlInfo(dto.getImage().getUrlInfo())
             .build();
     }
 

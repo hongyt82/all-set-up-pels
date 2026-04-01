@@ -19,23 +19,23 @@ public class TstEventStrokeMeta {
     @NotNull
     @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax(value = "9999.99")
-    private BigDecimal posX;
+    private BigDecimal xCrdnt;
 
     @JsonProperty("Y_CRDNT")
     @NotNull
     @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax(value = "9999.99")
-    private BigDecimal posY;
+    private BigDecimal yCrdnt;
 
     @JsonProperty("LINE_SNO")
     @NotNull
     @Min(Integer.MIN_VALUE) @Max(9999999999L)
-    private Long strokeColor;
+    private Long lineSno;
 
     @JsonProperty("LINE_ETT")
     @NotNull
     @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax(value = "9999.99")
-    private BigDecimal strokeWidth;
+    private BigDecimal lineEtt;
 
 }

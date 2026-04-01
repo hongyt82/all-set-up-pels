@@ -6,11 +6,11 @@ import lombok.Value;
 
 @Value
 public class StrokeFilename {
-    long pwplId;    //발전소ID
-    long chckSno;   //시험순번
-    int pageNo;     //페이지번호
-    int pageAddSeq; //추가페이지SEQ
-    int strokeSeq;  //스트로크SEQ
+    long pwplId;        //발전소ID
+    long chckSno;       //시험순번
+    int pageCnt;        //페이지번호
+    int insrtnPageCnt;  //추가페이지SEQ
+    int strkSeq;        //스트로크SEQ
 
     /**
      * 순수 바이너리 파일명 얻기
@@ -64,17 +64,17 @@ public class StrokeFilename {
     public String toFilename() {
         return "stroke_" + pwplId
                 + "_"  + chckSno
-                + "_" + pageNo
-                + "_" + pageAddSeq
-                + "_" + strokeSeq
+                + "_" + pageCnt
+                + "_" + insrtnPageCnt
+                + "_" + strkSeq
                 + ".bin";
     }
 
     public static String toFilename(TstEventMeta eventMeta) {
         return "stroke_" + eventMeta.getPwplId()
                 + "_" + eventMeta.getChckSno()
-                + "_" + eventMeta.getPageNo()
-                + "_" + eventMeta.getPageAddSeq()
+                + "_" + eventMeta.getPageCnt()
+                + "_" + eventMeta.getInsrtnPageCnt()
                 + "_" + eventMeta.getStrkSeq()
                 + ".bin";
     }

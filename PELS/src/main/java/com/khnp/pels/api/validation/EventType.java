@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  *  - 페이지삭제
  *  - 스트로크추가
  *  - 스트로크삭제
- *  - 사진컨트롤러추가
+ *  - 사진컨테이너추가
  *  - 사진추가/변경
  *  - 사진사이즈변경
  *  - 사진삭제

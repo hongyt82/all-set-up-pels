@@ -12,10 +12,10 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TstEventStrokeEntity {
-    private Long eventSno;          //이벤트일련번호
-    private BigDecimal posX;        //좌표X
-    private BigDecimal posY;        //좌표Y
-    private byte[] pointPath;       //포인트경로
-    private Long strokeColor;       //스트로크색상
-    private BigDecimal strokeWidth; //스트로크폭
+    private Long eventSno;       //이벤트일련번호
+    private BigDecimal xCrdnt;   //좌표X
+    private BigDecimal yCrdnt;   //좌표Y
+    private byte[] linePthDcr;   //포인트경로
+    private Long lineSno;        //스트로크색상
+    private BigDecimal lineEtt;  //스트로크폭
 }

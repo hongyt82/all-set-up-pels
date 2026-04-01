@@ -129,7 +129,7 @@ public class PelsEventServiceImpl implements PelsEventService {
 		// Event Stroke Entity로 변환
 		TstEventStrokeEntity eventStrokeEntity = pelsEventConverter.toEventStrokeEntity(eventStrokeMeta);
 		eventStrokeEntity.setEventSno(eventEntity.getEventSno());  // 이벤트 일련번호
-		eventStrokeEntity.setPointPath(strokeFile);  // 스트로크 바이너리 파일
+		eventStrokeEntity.setLinePthDcr(strokeFile);  // 스트로크 바이너리 파일
 		// 이벤트 스트로크 저장
 		int prcsCnt2 = pelsEventDao.insertTstEventStroke(eventStrokeEntity);
 
@@ -176,7 +176,7 @@ public class PelsEventServiceImpl implements PelsEventService {
 		int prcsCnt = pelsEventDao.insertTstEvent(eventEntity);
 
 		// Event Image Entity로 변환
-		TstEventImageEntity eventImageEntity = pelsEventConverter.toEventImageEntiry(eventImageMeta);
+		TstEventImageEntity eventImageEntity = pelsEventConverter.toEventImageEntity(eventImageMeta);
 		eventImageEntity.setEventSno(eventEntity.getEventSno());  // 이벤트 일련번호
 		// 이벤트 사진 저장
 		int prcsCnt2 = pelsEventDao.insertTstEventImage(eventImageEntity);

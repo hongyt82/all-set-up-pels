@@ -5,32 +5,32 @@
 
     <resultMap id="tstEventResultMap" type="com.khnp.pels.api.dto.TstEventResponse">
         <id property="eventSno" column="EVENT_SNO"/>
-        <result property="eventTyp" column="EVENT_TYP_SQNO"
+        <result property="eventTypSqno" column="EVENT_TYP_SQNO"
                 jdbcType="INTEGER" javaType="com.khnp.pels.api.validation.EventType"
                 typeHandler="com.khnp.pels.api.converter.EventTypeHandler"/>
         <result property="pwplId" column="PWPL_ID"/>
         <result property="chckSno" column="CHCK_SNO"/>
-        <result property="pageNo" column="PAGE_CNT"/>
-        <result property="pageAddSeq" column="INSRTN_PAGE_CNT"/>
-        <result property="pdfPageNo" column="PDF_PAGE_CNT"/>
+        <result property="pageCnt" column="PAGE_CNT"/>
+        <result property="insrtnPageCnt" column="INSRTN_PAGE_CNT"/>
+        <result property="pdfPageCnt" column="PDF_PAGE_CNT"/>
         <result property="strkSeq" column="STRK_SEQ"/>
         <result property="imgId" column="IMG_ID"/>
         <result property="userId" column="USER_ID"/>
-        <result property="eventDt" column="EVENT_CRTE_DT"/>
+        <result property="eventCrteDt" column="EVENT_CRTE_DT"/>
 
         <association property="stroke" javaType="com.khnp.pels.api.dto.TstEventStrokeMeta">
-            <result property="posX" column="STRK_POS_X"/>
-            <result property="posY" column="STRK_POS_Y"/>
-            <result property="strokeColor" column="LINE_SNO"/>
-            <result property="strokeWidth" column="LINE_ETT"/>
+            <result property="xCrdnt" column="STRK_X_CRDNT"/>
+            <result property="yCrdnt" column="STRK_Y_CRDNT"/>
+            <result property="lineSno" column="LINE_SNO"/>
+            <result property="lineEtt" column="LINE_ETT"/>
         </association>
 
         <association property="image" javaType="com.khnp.pels.api.dto.TstEventImageMeta">
-            <result property="posX" column="IMG_POS_X"/>
-            <result property="posY" column="IMG_POS_Y"/>
-            <result property="width" column="WDTH_NUMV"/>
-            <result property="height" column="HDTH_NUMV"/>
-            <result property="fileUrl" column="URL_INFO"/>
+            <result property="xCrdnt" column="IMG_X_CRDNT"/>
+            <result property="yCrdnt" column="IMG_Y_CRDNT"/>
+            <result property="wdthNumv" column="WDTH_NUMV"/>
+            <result property="hdthNumv" column="HDTH_NUMV"/>
+            <result property="urlInfo" column="URL_INFO"/>
         </association>
     </resultMap>
 
@@ -48,12 +48,12 @@
                CASE WHEN T1.EVENT_TYP_SQNO IN (5,6,7,8) THEN T1.EVENT_TRGT_ID ELSE NULL END AS IMG_ID,
                T1.USER_ID,
                TO_CHAR(T1.EVENT_CRTE_DT, 'YYYY-MM-DD"T"HH24:MI:SS.FF3') AS EVENT_CRTE_DT,
-               T2.X_CRDNT AS STRK_POS_X,
-               T2.Y_CRDNT AS STRK_POS_Y,
+               T2.X_CRDNT AS STRK_X_CRDNT,
+               T2.Y_CRDNT AS STRK_Y_CRDNT,
                T2.LINE_SNO,
                T2.LINE_ETT,
-               T3.X_CRDNT AS IMG_POS_X,
-               T3.Y_CRDNT AS IMG_POS_Y,
+               T3.X_CRDNT AS IMG_X_CRDNT,
+               T3.Y_CRDNT AS IMG_Y_CRDNT,
                T3.WDTH_NUMV,
                T3.HDTH_NUMV,
                T3.URL_INFO
@@ -71,7 +71,7 @@
 
     <resultMap id="tstEventStrokeResultMap" type="com.khnp.pels.api.dto.TstEventStrokeEntity">
         <id property="eventSno" column="EVENT_SNO"/>
-        <result property="pointPath" column="LINE_PTH_DCR"
+        <result property="linePthDcr" column="LINE_PTH_DCR"
                 jdbcType="BLOB" javaType="byte[]" typeHandler="org.apache.ibatis.type.BlobTypeHandler"/>
     </resultMap>
 
@@ -85,7 +85,7 @@
                     ON T1.EVENT_SNO = T2.EVENT_SNO
          WHERE T1.PWPL_ID = #{pwplId, jdbcType=VARCHAR}
            AND T1.CHCK_SNO = #{chckSno, jdbcType=BIGINT}
-           AND T1.PAGE_CNT = #{pageNo, jdbcType=INTEGER}
+           AND T1.PAGE_CNT = #{pageCnt, jdbcType=INTEGER}
          ORDER
             BY T1.EVENT_CRTE_DT
              , T1.EVENT_SNO
@@ -116,15 +116,15 @@
              )
         VALUES
              ( #{eventSno, jdbcType=BIGINT}
-             , #{eventTyp, jdbcType=INTEGER}
+             , #{eventTypSqno, jdbcType=INTEGER}
              , #{pwplId, jdbcType=VARCHAR}
              , #{chckSno, jdbcType=BIGINT}
-             , #{pageNo, jdbcType=INTEGER}
-             , #{pageAddSeq, jdbcType=INTEGER}
-             , #{pdfPageNo, jdbcType=INTEGER}
-             , #{eventTrgtSeq, jdbcType=INTEGER}
+             , #{pageCnt, jdbcType=INTEGER}
+             , #{insrtnPageCnt, jdbcType=INTEGER}
+             , #{pdfPageCnt, jdbcType=INTEGER}
+             , #{eventTrgtId, jdbcType=VARCHAR}
              , #{userId, jdbcType=VARCHAR}
-             , TO_TIMESTAMP(#{eventDt, jdbcType=VARCHAR},'YYYY-MM-DD"T"HH24:MI:SS.FF3')
+             , TO_TIMESTAMP(#{eventCrteDt, jdbcType=VARCHAR},'YYYY-MM-DD"T"HH24:MI:SS.FF3')
              )
     </insert>
 
@@ -149,15 +149,15 @@
              )
         VALUES
              ( #{eventSno, jdbcType=BIGINT}
-             , #{eventTyp, jdbcType=INTEGER}
+             , #{eventTypSqno, jdbcType=INTEGER}
              , #{pwplId, jdbcType=VARCHAR}
              , #{chckSno, jdbcType=BIGINT}
-             , #{pageNo, jdbcType=INTEGER}
-             , #{pageAddSeq, jdbcType=INTEGER}
-             , #{pdfPageNo, jdbcType=INTEGER}
-             , #{eventTrgtSeq, jdbcType=INTEGER}
+             , #{pageCnt, jdbcType=INTEGER}
+             , #{insrtnPageCnt, jdbcType=INTEGER}
+             , #{pdfPageCnt, jdbcType=INTEGER}
+             , #{eventTrgtId, jdbcType=VARCHAR}
              , #{userId, jdbcType=VARCHAR}
-             , TO_TIMESTAMP(#{eventDt, jdbcType=VARCHAR},'YYYY-MM-DD"T"HH24:MI:SS.FF3')
+             , TO_TIMESTAMP(#{eventCrteDt, jdbcType=VARCHAR},'YYYY-MM-DD"T"HH24:MI:SS.FF3')
              )
     </insert>
 
@@ -175,11 +175,11 @@
              )
         VALUES
              ( #{eventSno, jdbcType=BIGINT}
-             , #{posX, jdbcType=NUMERIC}
-             , #{posY, jdbcType=NUMERIC}
-             , #{pointPath, jdbcType=BLOB}
-             , #{strokeColor, jdbcType=INTEGER}
-             , #{strokeWidth, jdbcType=NUMERIC}
+             , #{xCrdnt, jdbcType=NUMERIC}
+             , #{yCrdnt, jdbcType=NUMERIC}
+             , #{linePthDcr, jdbcType=BLOB}
+             , #{lineSno, jdbcType=INTEGER}
+             , #{lineEtt, jdbcType=NUMERIC}
              )
     </insert>
 
@@ -197,11 +197,11 @@
              )
         VALUES
              ( #{eventSno, jdbcType=BIGINT}
-             , #{posX, jdbcType=NUMERIC}
-             , #{posY, jdbcType=NUMERIC}
-             , #{width, jdbcType=NUMERIC}
-             , #{height, jdbcType=NUMERIC}
-             , #{fileUrl, jdbcType=VARCHAR}
+             , #{xCrdnt, jdbcType=NUMERIC}
+             , #{yCrdnt, jdbcType=NUMERIC}
+             , #{wdthNumv, jdbcType=NUMERIC}
+             , #{hdthNumv, jdbcType=NUMERIC}
+             , #{urlInfo, jdbcType=VARCHAR}
              )
     </insert>
 

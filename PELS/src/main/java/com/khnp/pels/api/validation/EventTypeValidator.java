@@ -19,51 +19,53 @@ public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCon
 
         if (dto == null) return true;
 
-        if (dto.getEventTyp() == null) return false;
+        if (dto.getEventTypSqno() == null) return false;
 
         boolean valid = true;
 
         context.disableDefaultConstraintViolation();
 
-        TstEventImageMeta imageDto = dto.getImage();
-
-        switch (dto.getEventTyp()) {
+        // EVENT 메타 검증
+        switch (dto.getEventTypSqno()) {
             case PAGE_ADD:
             case PAGE_DELETE:
-                valid &= require(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
-                valid &= forbidden(context, dto.getStrkSeq(), "STRK_SEQ");
-                valid &= forbidden(context, dto.getImgId(), "IMG_ID");
-                valid &= forbidden(context, dto.getStroke(), "STROKE");
-                valid &= forbidden(context, dto.getImage(), "IMAGE");
+                valid &= require(context, dto.getPdfPageCnt(), "pdfPageNo");
+                valid &= forbidden(context, dto.getStrkSeq(), "strkSeq");
+                valid &= forbidden(context, dto.getImgId(), "imgId");
+                valid &= forbidden(context, dto.getStroke(), "stroke");
+                valid &= forbidden(context, dto.getImage(), "image");
                 break;
 
             case STROKE_ADD:
-                valid &= require(context, dto.getStroke(), "STROKE");
+                valid &= require(context, dto.getStroke(), "stroke");
             case STROKE_DELETE:
-                valid &= require(context, dto.getStrkSeq(), "STRK_SEQ");
-                valid &= forbidden(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
+                valid &= require(context, dto.getStrkSeq(), "strkSeq");
+                valid &= forbidden(context, dto.getPdfPageCnt(), "pdfPageNo");
                 break;
 
             case IMAGE_CONTAINER_ADD:
-                valid &= require(context, dto.getImage(), "IMAGE");
-                valid &= require(context, dto.getImgId(), "IMG_ID");
-                valid &= forbidden(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
-                if(imageDto != null){
-                    valid &= forbidden(context, imageDto.getFileUrl(), "IMAGE.URL_INFO");
-                }
-                break;
             case IMAGE_UPSERT:
-                if(imageDto != null){
-                    valid &= require(context, imageDto.getFileUrl(), "IMAGE.URL_INFO");
-                }
             case IMAGE_RESIZE:
-                valid &= require(context, dto.getImage(), "IMAGE");
+                valid &= require(context, dto.getImage(), "image");
             case IMAGE_DELETE:
-                valid &= require(context, dto.getImgId(), "IMG_ID");
-                valid &= forbidden(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
+                valid &= forbidden(context, dto.getPdfPageCnt(), "pdfPageNo");
+                valid &= require(context, dto.getImgId(), "imgId");
                 break;
             default:
-                return valid;
+        }
+
+        // IMAGE 메타 검증
+        TstEventImageMeta imageDto = dto.getImage();
+        if(imageDto != null){
+            switch (dto.getEventTypSqno()) {
+                case IMAGE_CONTAINER_ADD:
+                    valid &= forbidden(context, imageDto.getUrlInfo(), "image.urlInfo");
+                    break;
+                case IMAGE_UPSERT:
+                    valid &= require(context, imageDto.getUrlInfo(), "image.urlInfo");
+                    break;
+                default:
+            }
         }
 
         return valid;

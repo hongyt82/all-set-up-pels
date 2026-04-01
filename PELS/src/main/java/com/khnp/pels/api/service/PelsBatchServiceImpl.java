@@ -59,7 +59,7 @@ public class PelsBatchServiceImpl implements PelsBatchService {
 				pelsEventBatchDao.insertTstEventBatch(eventEntity);
 
 				// Event Stroke 입력
-				if(eventEntity.getEventTyp().equals(3)) {
+				if(eventEntity.getEventTypSqno().equals(3)) {
 					// Entity로 변환
 					TstEventStrokeEntity strokeEntity = pelsEventConverter.toEventStrokeEntity(eventMeta);
 
@@ -67,17 +67,17 @@ public class PelsBatchServiceImpl implements PelsBatchService {
 					strokeEntity.setEventSno(seq);
 					// Set stroke binary file
 					String key = StrokeFilename.toFilename(eventMeta);
-					strokeEntity.setPointPath(fileMap.get(key));
+					strokeEntity.setLinePthDcr(fileMap.get(key));
 
 					pelsEventBatchDao.insertTstEventStroke(strokeEntity);
 				}
 
 				// Event Image 입력
-				if(eventEntity.getEventTyp().equals(5)
-					|| eventEntity.getEventTyp().equals(6)
-				    || eventEntity.getEventTyp().equals(7)) {
+				if(eventEntity.getEventTypSqno().equals(5)
+					|| eventEntity.getEventTypSqno().equals(6)
+				    || eventEntity.getEventTypSqno().equals(7)) {
 					// Entity로 변환
-					TstEventImageEntity imageEntity = pelsEventConverter.toEventImageEntiry(eventMeta);
+					TstEventImageEntity imageEntity = pelsEventConverter.toEventImageEntity(eventMeta);
 
 					imageEntity.setEventSno(seq);  // 이벤트 Key
 					pelsEventBatchDao.insertTstEventImage(imageEntity);

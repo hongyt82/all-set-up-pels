@@ -108,9 +108,9 @@ public class PelsUnifiedBulkApiController {
      */
     private void validateStrokeFiles(List<TstEventMeta> metaList, Map<String, byte[]> fileMap) {
         for (TstEventMeta meta : metaList) {
-            if (meta == null || meta.getEventTyp() == null) continue;
+            if (meta == null || meta.getEventTypSqno() == null) continue;
 
-            if (meta.getEventTyp() == EventType.STROKE_ADD) {
+            if (meta.getEventTypSqno() == EventType.STROKE_ADD) {
                 String key = StrokeFilename.toFilename(meta);
                 byte[] bytes = fileMap.get(key);
                 if (bytes == null || bytes.length == 0) {
