@@ -33,10 +33,10 @@ public class PelsEventConverter {
             case STROKE_DELETE:
                 eventTrgtSeq = dto.getStrkSeq().toString();
                 break;
-            case IMAGE_ADD:
-            case IMAGE_DELETE:
-            case IMAGE_MODIFY:
+            case IMAGE_CONTAINER_ADD:
+            case IMAGE_UPSERT:
             case IMAGE_RESIZE:
+            case IMAGE_DELETE:
                 eventTrgtSeq = dto.getImgId();
                 break;
             default: eventTrgtSeq = null;

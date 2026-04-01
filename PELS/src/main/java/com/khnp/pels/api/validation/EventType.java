@@ -8,20 +8,20 @@ import com.fasterxml.jackson.annotation.JsonValue;
  *  - 페이지삭제
  *  - 스트로크추가
  *  - 스트로크삭제
- *  - 사진추가
- *  - 사진삭제
- *  - 사진변경
+ *  - 사진컨트롤러추가
+ *  - 사진추가/변경
  *  - 사진사이즈변경
+ *  - 사진삭제
  */
 public enum EventType {
     PAGE_ADD(1),
     PAGE_DELETE(2),
     STROKE_ADD(3),
     STROKE_DELETE(4),
-    IMAGE_ADD(5),
-    IMAGE_DELETE(6),
-    IMAGE_MODIFY(7),
-    IMAGE_RESIZE(8);
+    IMAGE_CONTAINER_ADD(5),
+    IMAGE_UPSERT(6),
+    IMAGE_RESIZE(7),
+    IMAGE_DELETE(8);
 
     private final int value;
     EventType(int value) {
