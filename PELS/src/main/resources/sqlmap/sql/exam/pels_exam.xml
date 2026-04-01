@@ -237,9 +237,9 @@
 			RG_DT,
 			TO_CHAR(RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
 		FROM GE_PL_CHCK0101_D A
-		WHERE CHCK_SNO = #{CHCK_SNO}
-		<if test='ATFL_NO != ""'>
-		   AND ATFL_NO  = #{ATFL_NO}
+		WHERE CHCK_SNO = #{CHCK_SNO, jdbcType=BIGINT}
+        <if test="ATFL_NO != null and ATFL_NO != ''">
+		   AND ATFL_NO  = #{ATFL_NO, jdbcType=VARCHAR}
 		</if>
 	</select>	
 	

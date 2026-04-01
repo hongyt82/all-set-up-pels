@@ -957,7 +957,7 @@ export function ViewerPage() {
     const isProd = import.meta.env.PROD;
 
     const load = async () => {
-      const metaRes = await axios.get('/api/Exam_Json_M.do', {
+      const metaRes = await axios.get('/api/Exam_Json_M', {
         params: { CHCK_SNO },
         withCredentials: true,
       });

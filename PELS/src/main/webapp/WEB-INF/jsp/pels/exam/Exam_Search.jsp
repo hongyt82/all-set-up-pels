@@ -14,43 +14,48 @@
 	
 	
 	// 리플레이
-	function fnExamReplay() {
-		const chkElements = $('#form input[name=CHK_ITEM]')
-		const chkElements1 = $('#form input[name=PRCDOC_NO]')
-		const chkElements2 = $('#form input[name=PRCDOC_NM]')
-		const chkElements3 = $('#form input[name=CHCK_TITL]')
-		let chkCnt = 0;
-		let chkParam = '';
-		let chkParam1 = '';
-		let chkParam2 = '';
-		let chkParam3 = '';
-		for (let i = 0; i < chkElements.length; i++) { 
-			if ($(chkElements[i]).is(':checked')) {
-				chkCnt++;
-				chkParam = $(chkElements[i]).val();
-				chkParam1 = $(chkElements1[i]).val();
-				chkParam2 = $(chkElements2[i]).val();
-				chkParam3 = $(chkElements3[i]).val();
-			}
-		}
-		
-		if (chkCnt == 0) {
-			alert('리플레이할 자료를 선택하여 주십시오.')
-			return
-		} else if (chkCnt != 1) {
-			alert('리플레이을 위해서는 하나만 선택해야 합니다.')
-			return
-		}
-		
-		let form = document.getElementById('formPopup');
-		form.CHCK_SNO.value = chkParam;
-		form.PRCDOC_NO.value = chkParam1;
-		form.PRCDOC_NM.value = chkParam2;
-		form.CHCK_TITL.value = chkParam3;
-		form.action = "Exam_KhnpReplayViewer.do";
-		form.target = "_self";
-		form.submit()
-	}
+    function fnExamReplay() {
+        const chkElements = $('#form input[name=CHK_ITEM]')
+        const chkPwplElements = $('#form input[name=PWPL_ID_ROW]')
+        const chkElements1 = $('#form input[name=PRCDOC_NO]')
+        const chkElements2 = $('#form input[name=PRCDOC_NM]')
+        const chkElements3 = $('#form input[name=CHCK_TITL]')
+        let chkCnt = 0;
+        let chkParam = '';
+        let chkPwplId = '';
+        let chkParam1 = '';
+        let chkParam2 = '';
+        let chkParam3 = '';
+
+        for (let i = 0; i < chkElements.length; i++) {
+            if ($(chkElements[i]).is(':checked')) {
+                chkCnt++;
+                chkParam = $(chkElements[i]).val();
+                chkPwplId = $(chkPwplElements[i]).val();
+                chkParam1 = $(chkElements1[i]).val();
+                chkParam2 = $(chkElements2[i]).val();
+                chkParam3 = $(chkElements3[i]).val();
+            }
+        }
+
+        if (chkCnt == 0) {
+            alert('리플레이할 자료를 선택하여 주십시오.')
+            return
+        } else if (chkCnt != 1) {
+            alert('리플레이을 위해서는 하나만 선택해야 합니다.')
+            return
+        }
+
+        let form = document.getElementById('formPopup');
+        form.CHCK_SNO.value = chkParam;
+        form.PWPL_ID.value = chkPwplId;
+        form.PRCDOC_NO.value = chkParam1;
+        form.PRCDOC_NM.value = chkParam2;
+        form.CHCK_TITL.value = chkParam3;
+        form.action = "Exam_KhnpReplayViewer.do";
+        form.target = "_self";
+        form.submit()
+    }
 
 	// 수정 화면으로 이동
 	function fnExamDetail() {
@@ -175,6 +180,7 @@
 <body class="no-skin real-skin">
 <form id="formPopup" name="formPopup" method="post">
 <input type="hidden" name="CHCK_SNO" id="CHCK_SNO" value="">
+<input type="hidden" name="PWPL_ID" id="PWPL_ID" value="">
 <input type="hidden" name="PRCDOC_NO" id="PRCDOC_NO" value="">
 <input type="hidden" name="PRCDOC_NM" id="PRCDOC_NM" value="">
 <input type="hidden" name="CHCK_TITL" id="CHCK_TITL" value="">
@@ -301,10 +307,11 @@
 									<c:forEach var="exam" items="${examList}" begin="0" end="${examList.size()}" step="1">
 										<tr class="Item">
 											<td align="center" style="font-weight:bold">
-												<input name="CHK_ITEM" id="CHK_ITEM" type="checkbox"  onclick="checkOnlyOne(this)" value="${exam.CHCK_SNO}">
-												<input name="PRCDOC_NO" id="PRCDOC_NO" type="hidden" value="${exam.PRCDOC_NO}">
-												<input name="PRCDOC_NM" id="PRCDOC_NM" type="hidden" value="${exam.PRCDOC_NM}">
-												<input name="CHCK_TITL" id="CHCK_TITL" type="hidden" value="${exam.CHCK_TITL}">
+                                                <input name="CHK_ITEM" id="CHK_ITEM" type="checkbox" onclick="checkOnlyOne(this)" value="${exam.CHCK_SNO}">
+                                                <input name="PWPL_ID_ROW" id="PWPL_ID_ROW" type="hidden" value="${exam.PWPL_ID}">
+                                                <input name="PRCDOC_NO" id="PRCDOC_NO" type="hidden" value="${exam.PRCDOC_NO}">
+                                                <input name="PRCDOC_NM" id="PRCDOC_NM" type="hidden" value="${exam.PRCDOC_NM}">
+                                                <input name="CHCK_TITL" id="CHCK_TITL" type="hidden" value="${exam.CHCK_TITL}">
 												<input name="PRCDOC_RVSN_NO" id="PRCDOC_RVSN_NO" type="hidden" value="${exam.PRCDOC_RVSN_NO}">
 												<input name="ATFL_PHCL_NM" id="ATFL_PHCL_NM" type="hidden" value="">
 												<input name="CNMR_ID" id="CNMR_ID" type="hidden" value="${exam.CNMR_ID}">
@@ -392,7 +399,8 @@
 				</div><!-- /.col -->
 			</div><!-- /.row -->
 		</div><!-- /.page-content-area -->
-</form>
+	</div>
+    </form>
 	</div><!-- /.page-content -->
 </body>
 </html>
