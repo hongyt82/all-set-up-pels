@@ -50,7 +50,7 @@ public class TstEventMeta {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("PDF_PAGE_CNT")
-    @Min(1) @Max(99999)
+    @Min(0) @Max(99999)
     private Integer pdfPageNo;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -74,8 +74,8 @@ public class PelsBatchServiceImpl implements PelsBatchService {
 
 				// Event Image 입력
 				if(eventEntity.getEventTyp().equals(5)
-					|| eventEntity.getEventTyp().equals(7)
-				    || eventEntity.getEventTyp().equals(8)) {
+					|| eventEntity.getEventTyp().equals(6)
+				    || eventEntity.getEventTyp().equals(7)) {
 					// Entity로 변환
 					TstEventImageEntity imageEntity = pelsEventConverter.toEventImageEntiry(eventMeta);
 

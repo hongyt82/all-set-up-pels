@@ -40,7 +40,6 @@ public class TstEventImageMeta {
     private BigDecimal height;
 
     @JsonProperty("URL_INFO")
-    @NotBlank
     @Size(max = 500)
     private String fileUrl;
 

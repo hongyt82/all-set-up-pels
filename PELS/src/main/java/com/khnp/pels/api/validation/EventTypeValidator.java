@@ -1,5 +1,6 @@
 package com.khnp.pels.api.validation;
 
+import com.khnp.pels.api.dto.TstEventImageMeta;
 import com.khnp.pels.api.dto.TstEventMeta;
 
 import javax.validation.ConstraintValidator;
@@ -24,6 +25,8 @@ public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCon
 
         context.disableDefaultConstraintViolation();
 
+        TstEventImageMeta imageDto = dto.getImage();
+
         switch (dto.getEventTyp()) {
             case PAGE_ADD:
             case PAGE_DELETE:
@@ -41,8 +44,18 @@ public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCon
                 valid &= forbidden(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
                 break;
 
-            case IMAGE_ADD:
-            case IMAGE_MODIFY:
+            case IMAGE_CONTAINER_ADD:
+                valid &= require(context, dto.getImage(), "IMAGE");
+                valid &= require(context, dto.getImgId(), "IMG_ID");
+                valid &= forbidden(context, dto.getPdfPageNo(), "PDF_PAGE_NO");
+                if(imageDto != null){
+                    valid &= forbidden(context, imageDto.getFileUrl(), "IMAGE.URL_INFO");
+                }
+                break;
+            case IMAGE_UPSERT:
+                if(imageDto != null){
+                    valid &= require(context, imageDto.getFileUrl(), "IMAGE.URL_INFO");
+                }
             case IMAGE_RESIZE:
                 valid &= require(context, dto.getImage(), "IMAGE");
             case IMAGE_DELETE:
