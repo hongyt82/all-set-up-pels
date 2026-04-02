@@ -3,6 +3,7 @@ package com.khnp.pels.api.converter;
 import com.khnp.pels.api.dto.*;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -99,7 +100,7 @@ public class PelsEventConverter {
     public TstEventImageEntity toEventImageEntity(TstEventMeta dto) {
         return TstEventImageEntity.builder()
             .xCrdnt(dto.getImage().getXCrdnt())
-            .yCrdnt(dto.getImage().getYCrdnt())
+            .yCrdnt(PelsConvertUtil.zeroIfNegitive(dto.getImage().getYCrdnt()))
             .wdthNumv(dto.getImage().getWdthNumv())
             .hdthNumv(dto.getImage().getHdthNumv())
             .urlInfo(dto.getImage().getUrlInfo())

@@ -24,7 +24,7 @@ public class TstEventImageMeta {
 
     @JsonProperty("Y_CRDNT")
     @NotNull
-    @DecimalMin(value = "0.00", inclusive = false)
+    @DecimalMin(value = "-9999.99")
     @DecimalMax(value = "9999.99")
     private BigDecimal yCrdnt;
 
