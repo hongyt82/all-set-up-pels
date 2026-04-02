@@ -99,7 +99,7 @@ public class PelsEventConverter {
      */
     public TstEventImageEntity toEventImageEntity(TstEventMeta dto) {
         return TstEventImageEntity.builder()
-            .xCrdnt(dto.getImage().getXCrdnt())
+            .xCrdnt(PelsConvertUtil.zeroIfNegitive(dto.getImage().getXCrdnt()))
             .yCrdnt(PelsConvertUtil.zeroIfNegitive(dto.getImage().getYCrdnt()))
             .wdthNumv(dto.getImage().getWdthNumv())
             .hdthNumv(dto.getImage().getHdthNumv())
