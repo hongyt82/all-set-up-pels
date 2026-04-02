@@ -63,7 +63,7 @@
 		p:driverClassName="${jdbc.driverClassOracle}" p:url="${jdbc.urlOracle}"
 		p:username="${jdbc.usernameOracle}" p:password="${jdbc.passwordOracle}"
 		p:initialSize="5" p:maxActive="20" p:minIdle="5" p:maxWait="3000"
-		p:poolPreparedStatements="true" p:maxOpenPreparedStatements="50"
+		p:poolPreparedStatements="true" p:maxOpenPreparedStatements="200"
 		p:validationQuery="select 1 from dual" p:testWhileIdle="true"
 		p:timeBetweenEvictionRunsMillis="7200000" />
 

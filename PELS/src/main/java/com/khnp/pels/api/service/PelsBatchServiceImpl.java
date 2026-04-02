@@ -36,7 +36,8 @@ public class PelsBatchServiceImpl implements PelsBatchService {
 	 */
 	public int saveTstEventBatch(List<TstEventMeta> eventMetaList, Map<String, byte[]> fileMap) {
 
-		int batchSize = 1000;
+		int batchSize = 500;
+		int flushSize = 30;
 
 		for (int i = 0; i < eventMetaList.size(); i += batchSize) {
 
@@ -82,6 +83,12 @@ public class PelsBatchServiceImpl implements PelsBatchService {
 					imageEntity.setEventSno(seq);  // 이벤트 Key
 					pelsEventBatchDao.insertTstEventImage(imageEntity);
 				}
+
+				// flush + 메모리 정리
+				if(size%flushSize == 0) {
+					pelsEventBatchDao.flush();
+				}
+
 			}
 
 			// flush + 메모리 정리
