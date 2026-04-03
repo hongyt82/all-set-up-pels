@@ -18,7 +18,17 @@ import javax.validation.constraints.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonPropertyOrder({
-    "EVENT_SNO"
+    "EVENT_SNO",
+    "EVENT_TYP_SQNO",
+    "PWPL_ID",
+    "CHCK_SNO",
+    "PAGE_CNT",
+    "INSRTN_PAGE_CNT",
+    "PDF_PAGE_CNT",
+    "STRK_SEQ",
+    "USER_ID",
+    "USER_NM",
+    "EVENT_CRTE_DT"
 })
 public class TstEventResponse extends TstEventMeta {
 
@@ -26,6 +36,6 @@ public class TstEventResponse extends TstEventMeta {
     private Long eventSno;
 
     @JsonProperty("USER_NM")
-    private Long userNm;
+    private String userNm;
 
 }
