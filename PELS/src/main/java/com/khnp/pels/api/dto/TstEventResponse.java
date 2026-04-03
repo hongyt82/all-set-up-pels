@@ -23,7 +23,9 @@ import javax.validation.constraints.*;
 public class TstEventResponse extends TstEventMeta {
 
     @JsonProperty("EVENT_SNO")
-    @NotNull
     private Long eventSno;
+
+    @JsonProperty("USER_NM")
+    private Long userNm;
 
 }
