@@ -110,9 +110,6 @@ export const ReplayViewerWorkspace = forwardRef<
     w: FIXED_W,
     h: FIXED_H,
   });
-  const [pageBoxByPage, setPageBoxByPage] = useState<Record<number, PageBox>>(
-    {}
-  );
 
   const findLogicalPage = (page: number) => {
     return logicalPages?.find(p => Number(p.page) === Number(page)) ?? null;
@@ -142,7 +139,6 @@ export const ReplayViewerWorkspace = forwardRef<
       setPdfDoc(doc);
       setNumPages(doc.numPages);
       setCurrentPage(1);
-      setPageBoxByPage({});
     };
 
     try {
@@ -217,7 +213,6 @@ export const ReplayViewerWorkspace = forwardRef<
           setPdfDoc(doc);
           setNumPages(doc.numPages);
           setCurrentPage(1);
-          setPageBoxByPage({});
         };
 
         try {
@@ -296,10 +291,6 @@ export const ReplayViewerWorkspace = forwardRef<
         );
 
         setPageBox({ w: drawW, h: drawH });
-        setPageBoxByPage(prev => ({
-          ...prev,
-          [currentPage]: { w: drawW, h: drawH },
-        }));
 
         const dpr = window.devicePixelRatio || 1;
         canvas.style.width = `${drawW}px`;
@@ -332,10 +323,6 @@ export const ReplayViewerWorkspace = forwardRef<
         const BH = isLandscape ? FIXED_W : FIXED_H;
 
         setPageBox({ w: BW, h: BH });
-        setPageBoxByPage(prev => ({
-          ...prev,
-          [currentPage]: { w: BW, h: BH },
-        }));
 
         const dpr = window.devicePixelRatio || 1;
         canvas.style.width = `${BW}px`;
@@ -535,7 +522,12 @@ export const ReplayViewerWorkspace = forwardRef<
                       const width = Math.round((a.width || 0) * sx);
                       const height = Math.round((a.height || 0) * sy);
 
-                      if (a.type === 'image') {
+                      const imageSrc = a.fileUrl || a.url || a.src || null;
+
+                      if (
+                        (a.type === 'image' || a.type === 'camera') &&
+                        imageSrc
+                      ) {
                         return (
                           <div
                             key={`att-img-${idx}`}
@@ -548,7 +540,7 @@ export const ReplayViewerWorkspace = forwardRef<
                             }}
                           >
                             <img
-                              src={a.src}
+                              src={imageSrc}
                               alt="attachment"
                               style={{
                                 width: '100%',
@@ -561,6 +553,9 @@ export const ReplayViewerWorkspace = forwardRef<
                         );
                       }
                       if (a.type === 'video') {
+                        const videoSrc = a.fileUrl || a.url || a.src || null;
+                        if (!videoSrc) return null;
+
                         return (
                           <div
                             key={`att-video-${idx}`}
@@ -573,7 +568,7 @@ export const ReplayViewerWorkspace = forwardRef<
                             }}
                           >
                             <video
-                              src={a.src}
+                              src={videoSrc}
                               width={width}
                               height={height}
                               controls={a.controls ?? true}

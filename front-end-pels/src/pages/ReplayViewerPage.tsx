@@ -23,6 +23,21 @@ import { BASE_PAGE_WIDTH } from '../constants/pageSize';
 const BASE_W = BASE_PAGE_WIDTH;
 const BASE_H = Math.round((PDF_BOUNDARY.height / PDF_BOUNDARY.width) * BASE_W);
 
+type ReplayAttachmentItem = {
+  id: string;
+  type?: string | null;
+  text?: string | null;
+  x?: number | null;
+  y?: number | null;
+  posX?: number | null;
+  posY?: number | null;
+  width?: number | null;
+  height?: number | null;
+  fileUrl?: string | null;
+  url?: string | null;
+  imagePath?: string | null;
+};
+
 type ReplayEventItem = {
   EVENT_SNO: number;
   EVENT_TYP_SQNO: number;
@@ -34,19 +49,31 @@ type ReplayEventItem = {
   IMAGE_SEQ: number | null;
   USER_ID: string;
   EVENT_CRTE_DT: string;
+
+  EVENT_NM?: string | null;
+  EVENT_NAME?: string | null;
+  ATTACHMENT_EVENT_TYPE?: string | null;
+
+  STRK_X_CRDNT?: number | null;
+  STRK_Y_CRDNT?: number | null;
+  LINE_SNO?: number | null;
+  LINE_ETT?: number | null;
+
+  IMG_ID?: string | null;
+  IMG_X_CRDNT?: number | null;
+  IMG_Y_CRDNT?: number | null;
+  WDTH_NUMV?: number | null;
+  HDTH_NUMV?: number | null;
+  URL_INFO?: string | null;
+
   STROKE?: {
     X_CRDNT?: number | null;
     Y_CRDNT?: number | null;
     LINE_SNO?: number | null;
     LINE_ETT?: number | null;
   } | null;
-  IMAGE?: {
-    posX?: number | null;
-    posY?: number | null;
-    width?: number | null;
-    height?: number | null;
-    fileUrl?: string | null;
-  } | null;
+
+  IMAGE?: ReplayAttachmentItem | null;
 };
 
 type ReplayLogicalPage = any;
@@ -54,6 +81,7 @@ type ReplayLogicalPage = any;
 type ReplayState = {
   logicalPages: ReplayLogicalPage[];
   pathDataByPage: Record<number, TemplatePathData[]>;
+  attachmentsByPage: Record<number, any[]>;
 };
 
 function extractBoundary(contentType: string) {
@@ -162,6 +190,136 @@ function decodeStrokeBinary(
   };
 }
 
+function getOriginFromUrl(url?: string | null) {
+  if (!url) return '';
+  try {
+    return new URL(url).origin;
+  } catch {
+    return '';
+  }
+}
+
+function toImageUrl(url?: string | null, fileBaseUrl?: string) {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (!fileBaseUrl) return url;
+  return `${fileBaseUrl}/${String(url).replace(/^\/+/, '')}`;
+}
+
+function normalizeImageSrc(
+  fileUrl?: string | null,
+  url?: string | null,
+  fileBaseUrl?: string
+) {
+  return toImageUrl(fileUrl ?? url ?? null, fileBaseUrl);
+}
+
+function mapAttachmentEventName(eventType: number) {
+  if (eventType === 5) return 'addAttachment';
+  if (eventType === 6) return 'changeUrlAttachment';
+  if (eventType === 7) return 'changeLayoutAttachment';
+  if (eventType === 8) return 'removeAttachment';
+  return null;
+}
+
+function getReplayEventLabel(eventType: number) {
+  switch (Number(eventType)) {
+    case 1:
+      return '페이지 추가';
+    case 2:
+      return '페이지 삭제';
+    case 3:
+      return '스트로크 추가';
+    case 4:
+      return '스트로크 삭제';
+    case 5:
+      return '사진 컨테이너 추가';
+    case 6:
+      return '사진 추가/변경';
+    case 7:
+      return '사진 크기 변경';
+    case 8:
+      return '사진 삭제';
+    default:
+      return '알 수 없는 이벤트';
+  }
+}
+
+
+async function getPdfPageCountFromFile(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+  const data = new Uint8Array(arrayBuffer.slice(0));
+
+  const loadingTask = (await import('pdfjs-dist')).getDocument({ data });
+  const doc = await loadingTask.promise;
+  return doc.numPages;
+}
+
+function getFilenameFromPath(path?: string | null) {
+  if (!path) return 'replay_viewer.pdf';
+  const clean = path.split('?')[0];
+  const name = clean.substring(clean.lastIndexOf('/') + 1);
+  return name || 'replay_viewer.pdf';
+}
+
+
+
+
+function normalizeAttachment(
+  att?: ReplayAttachmentItem | null,
+  fileBaseUrl?: string
+) {
+  if (!att?.id) return null;
+
+  const normalizedSrc = normalizeImageSrc(att.fileUrl, att.url, fileBaseUrl);
+
+  return {
+    ...att,
+    id: String(att.id),
+    x: att.x ?? att.posX ?? 0,
+    y: att.y ?? att.posY ?? 0,
+    width: att.width ?? 0,
+    height: att.height ?? 0,
+    fileUrl: normalizedSrc,
+    url: normalizedSrc,
+  };
+}
+
+
+function buildBasePagesFromPdf(
+  pdfPageCount: number,
+  parsedPages: any[] = []
+): any[] {
+  const firstParsed = parsedPages.find(
+    pg => Number(pg?.pdfPageNo) === 1 || Number(pg?.page) === 1
+  );
+
+  const fallbackWidth = Number(firstParsed?.width) || BASE_W;
+  const fallbackHeight = Number(firstParsed?.height) || BASE_H;
+
+  return Array.from({ length: pdfPageCount }, (_, idx) => {
+    const pdfPageNo = idx + 1;
+
+    const matched =
+      parsedPages.find(pg => Number(pg?.pdfPageNo) === pdfPageNo) ??
+      parsedPages.find(pg => Number(pg?.page) === pdfPageNo);
+
+    return {
+      page: pdfPageNo,
+      pdfPageNo,
+      targetPdfPageNo: pdfPageNo,
+      constraintPageNo: pdfPageNo,
+      width: Number(matched?.width) || fallbackWidth,
+      height: Number(matched?.height) || fallbackHeight,
+      isChange: 'N',
+      components: Array.isArray(matched?.components) ? matched.components : [],
+      attachments: [],
+    };
+  });
+}
+
+
+
 export function ReplayViewerPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const chckSno = params.get('CHCK_SNO') || '';
@@ -171,12 +329,16 @@ export function ReplayViewerPage() {
   const [fileSize, setFileSize] = useState<string | undefined>();
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [fileBaseUrl, setFileBaseUrl] = useState('');
 
   const [zoomLevel, setZoomLevel] = useState(100);
   const [pageScale, setPageScale] = useState(1);
 
   const [basePages, setBasePages] = useState<TemplateDoc['pages']>([]);
   const [attachmentsByPage, setAttachmentsByPage] = useState<
+    Record<number, any[]>
+  >({});
+  const [replayAttachmentsByPage, setReplayAttachmentsByPage] = useState<
     Record<number, any[]>
   >({});
 
@@ -201,6 +363,25 @@ export function ReplayViewerPage() {
   const footerRef = useRef<HTMLDivElement | null>(null);
   const centerRef = useRef<HTMLDivElement | null>(null);
   const playTimerRef = useRef<number | null>(null);
+
+  const handleLoadedFile = async (file: File, frmOverJson?: string | null) => {
+    setPdfFile(file);
+    setCurrentFile(file.name);
+    setFileSize(`${(file.size / 1024 / 1024).toFixed(2)} MB`);
+    setFileUrl(URL.createObjectURL(file));
+    wsRef.current?.loadPdfFile(file);
+
+    if (frmOverJson) {
+      const parsed = JSON.parse(frmOverJson);
+      const parsedPages = Array.isArray(parsed.pages) ? parsed.pages : [];
+      const initialPdfPageCount = await getPdfPageCountFromFile(file);
+      const initialBasePages = buildBasePagesFromPdf(
+        initialPdfPageCount,
+        parsedPages
+      );
+      setBasePages(initialBasePages);
+    }
+  };
 
   const recalcScale = useCallback(() => {
     const headerH = headerRef.current?.offsetHeight ?? 0;
@@ -248,6 +429,37 @@ export function ReplayViewerPage() {
         .sort((a, b) => Number(a.page) - Number(b.page));
 
       const activeStrokeIdsByPage = new Map<number, Set<number>>();
+      const activeAttachmentsByPage = new Map<number, Map<string, any>>();
+
+      nextLogicalPages.forEach(page => {
+        const pageNo = Number(page.page);
+        activeAttachmentsByPage.set(pageNo, new Map<string, any>());
+      });
+
+      const ensureAttachmentPage = (pageNo: number) => {
+        if (!activeAttachmentsByPage.has(pageNo)) {
+          activeAttachmentsByPage.set(pageNo, new Map<string, any>());
+        }
+        return activeAttachmentsByPage.get(pageNo)!;
+      };
+
+      const rebuildAttachmentMapByLogicalPages = () => {
+        const rebuilt = new Map<number, Map<string, any>>();
+
+        nextLogicalPages.forEach((pg, idx) => {
+          const newPageNo = idx + 1;
+          const prevPageNo = Number(pg.page);
+          rebuilt.set(
+            newPageNo,
+            activeAttachmentsByPage.get(prevPageNo) ?? new Map<string, any>()
+          );
+        });
+
+        activeAttachmentsByPage.clear();
+        rebuilt.forEach((value, key) => {
+          activeAttachmentsByPage.set(key, value);
+        });
+      };
 
       for (let i = 0; i <= appliedIndex; i++) {
         const ev = sourceEvents[i];
@@ -258,6 +470,11 @@ export function ReplayViewerPage() {
         const pdfPageNo =
           ev.PDF_PAGE_CNT == null ? null : Number(ev.PDF_PAGE_CNT);
         const strokeSeq = ev.STRK_SEQ == null ? null : Number(ev.STRK_SEQ);
+
+        const eventName =
+          ev.ATTACHMENT_EVENT_TYPE ?? ev.EVENT_NM ?? ev.EVENT_NAME ?? null;
+
+        const attachment = normalizeAttachment(ev.IMAGE, fileBaseUrl);
 
         if (eventType === 1) {
           const insertIdx = Math.max(
@@ -280,6 +497,9 @@ export function ReplayViewerPage() {
             pg.page = idx + 1;
           });
 
+          rebuildAttachmentMapByLogicalPages();
+          ensureAttachmentPage(pageNo);
+
           continue;
         }
 
@@ -292,6 +512,8 @@ export function ReplayViewerPage() {
             nextLogicalPages.forEach((pg, idx) => {
               pg.page = idx + 1;
             });
+
+            rebuildAttachmentMapByLogicalPages();
           }
 
           continue;
@@ -301,16 +523,68 @@ export function ReplayViewerPage() {
           const set = activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
           set.add(strokeSeq);
           activeStrokeIdsByPage.set(pageNo, set);
+          continue;
         }
 
         if (eventType === 4 && strokeSeq != null) {
           const set = activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
           set.delete(strokeSeq);
           activeStrokeIdsByPage.set(pageNo, set);
+          continue;
+        }
+
+        if (eventName === 'addAttachment' && attachment?.id) {
+          const pageMap = ensureAttachmentPage(pageNo);
+          pageMap.set(attachment.id, attachment);
+          continue;
+        }
+
+        if (eventName === 'changeLayoutAttachment' && attachment?.id) {
+          const pageMap = ensureAttachmentPage(pageNo);
+          const prev = pageMap.get(attachment.id);
+
+          if (prev) {
+            pageMap.set(attachment.id, {
+              ...prev,
+              x: attachment.x ?? prev.x,
+              y: attachment.y ?? prev.y,
+              width: attachment.width ?? prev.width,
+              height: attachment.height ?? prev.height,
+            });
+          } else {
+            pageMap.set(attachment.id, attachment);
+          }
+
+          continue;
+        }
+
+        if (eventName === 'changeUrlAttachment' && attachment?.id) {
+          const pageMap = ensureAttachmentPage(pageNo);
+          const prev = pageMap.get(attachment.id);
+
+          if (prev) {
+            pageMap.set(attachment.id, {
+              ...prev,
+              fileUrl: attachment.fileUrl ?? prev.fileUrl,
+              url: attachment.url ?? prev.url,
+              imagePath: attachment.imagePath ?? prev.imagePath,
+            });
+          } else {
+            pageMap.set(attachment.id, attachment);
+          }
+
+          continue;
+        }
+
+        if (eventName === 'removeAttachment' && attachment?.id) {
+          const pageMap = ensureAttachmentPage(pageNo);
+          pageMap.delete(attachment.id);
+          continue;
         }
       }
 
       const nextPathDataByPage: Record<number, TemplatePathData[]> = {};
+      const nextAttachmentsByPage: Record<number, any[]> = {};
 
       nextLogicalPages.forEach(page => {
         const pageNo = Number(page.page);
@@ -321,22 +595,29 @@ export function ReplayViewerPage() {
         nextPathDataByPage[pageNo] = Array.from(activeIds)
           .map(id => strokeMap[id])
           .filter(Boolean);
+
+        const attachmentMap =
+          activeAttachmentsByPage.get(pageNo) ?? new Map<string, any>();
+
+        nextAttachmentsByPage[pageNo] = Array.from(attachmentMap.values());
+
+        page.attachments = nextAttachmentsByPage[pageNo];
       });
 
-      // console
-      console.log('[replay] buildReplayState', {
-        appliedIndex,
-        logicalPages: nextLogicalPages,
-        pathDataByPage: nextPathDataByPage,
-      });
-      // console
+      // console.log('[replay] buildReplayState', {
+      //   appliedIndex,
+      //   logicalPages: nextLogicalPages,
+      //   pathDataByPage: nextPathDataByPage,
+      //   attachmentsByPage: nextAttachmentsByPage,
+      // });
 
       return {
         logicalPages: nextLogicalPages,
         pathDataByPage: nextPathDataByPage,
+        attachmentsByPage: nextAttachmentsByPage,
       };
     },
-    [attachmentsByPage, basePages, strokePathByPage]
+    [attachmentsByPage, basePages, strokePathByPage, fileBaseUrl]
   );
 
   const moveToEventPage = useCallback(
@@ -365,32 +646,31 @@ export function ReplayViewerPage() {
     const load = async () => {
       setLoading(true);
       try {
-
-
         const metaRes = await axios.get('/api/Exam_Json_M', {
           params: { CHCK_SNO: chckSno },
           withCredentials: true,
         });
 
         const { PDF_PATH, FRM_OVER_JSON } = metaRes.data;
-        console.log('[replay] PDF_PATH=', PDF_PATH);
-        console.log('[replay] has FRM_OVER_JSON=', !!FRM_OVER_JSON);
+        // console.log('[replay] PDF_PATH=', PDF_PATH);
+        // console.log('[replay] has FRM_OVER_JSON=', !!FRM_OVER_JSON);
 
+        const origin = getOriginFromUrl(PDF_PATH);
+        setFileBaseUrl(origin);
 
         if (!PDF_PATH) return;
 
         const isProd = import.meta.env.PROD;
+        const viewerFileName = getFilenameFromPath(PDF_PATH);
+
         if (isProd) {
           const res = await fetch(PDF_PATH);
           const blob = await res.blob();
-          const file = new File([blob], 'replay_viewer.pdf', {
+          const file = new File([blob], viewerFileName, {
             type: 'application/pdf',
           });
-          setPdfFile(file);
-          setCurrentFile(file.name);
-          setFileSize(`${(file.size / 1024 / 1024).toFixed(2)} MB`);
-          setFileUrl(URL.createObjectURL(file));
-          wsRef.current?.loadPdfFile(file);
+
+          await handleLoadedFile(file, FRM_OVER_JSON);
         } else {
           const pdfRes = await axios.get('/proxy/pdf', {
             params: { path: PDF_PATH },
@@ -398,40 +678,34 @@ export function ReplayViewerPage() {
             withCredentials: true,
           });
 
+          // console.log('[replay] pdfRes.status=', pdfRes.status);
+          // console.log(
+          //   '[replay] pdfRes.content-type=',
+          //   pdfRes.headers['content-type']
+          // );
+          // console.log('[replay] pdfRes.size=', pdfRes.data?.size);
 
-          console.log('[replay] pdfRes.status=', pdfRes.status);
-          console.log('[replay] pdfRes.content-type=', pdfRes.headers['content-type']);
-          console.log('[replay] pdfRes.size=', pdfRes.data?.size);
-
-
-
-
-          const file = new File([pdfRes.data], 'replay_viewer.pdf', {
+          const file = new File([pdfRes.data], viewerFileName, {
             type: 'application/pdf',
           });
-          setPdfFile(file);
-          setCurrentFile(file.name);
-          setFileSize(`${(file.size / 1024 / 1024).toFixed(2)} MB`);
-          setFileUrl(URL.createObjectURL(file));
-          wsRef.current?.loadPdfFile(file);
+
+          await handleLoadedFile(file, FRM_OVER_JSON);
         }
 
         if (FRM_OVER_JSON) {
           const parsed = JSON.parse(FRM_OVER_JSON);
-          const templateJson = {
-            ...(parsed.doc || {}),
-            pages: parsed.pages || [],
-          } as TemplateDoc;
-
-          setBasePages(templateJson.pages || []);
+          const parsedPages = Array.isArray(parsed.pages) ? parsed.pages : [];
 
           const attachmentMap: Record<number, any[]> = {};
-          (parsed.pages || []).forEach((pg: any) => {
+          parsedPages.forEach((pg: any) => {
             attachmentMap[Number(pg.page)] = Array.isArray(pg.attachments)
               ? pg.attachments
               : [];
           });
           setAttachmentsByPage(attachmentMap);
+
+          // basePages는 여기서 바로 세팅하지 말고,
+          // PDF 로드 후 실제 pdf page 수를 안 다음에 세팅
         }
 
         const eventRes = await axios.get('/api/events', {
@@ -442,27 +716,167 @@ export function ReplayViewerPage() {
           withCredentials: true,
         });
 
-        console.log('[replay] eventRes.status=', eventRes.status);
-        console.log('[replay] eventRes.data=', eventRes.data);
+        // console.log(
+        //   '[replay] raw image rows',
+        //   (eventRes.data?.data ?? []).filter(
+        //     (row: any) =>
+        //       Number(row.EVENT_TYP_SQNO) >= 5 && Number(row.EVENT_TYP_SQNO) <= 8
+        //   )
+        // );
+        //
+        // console.log(
+        //   '[replay] raw image row keys',
+        //   (eventRes.data?.data ?? []).find(
+        //     (row: any) =>
+        //       Number(row.EVENT_TYP_SQNO) >= 5 && Number(row.EVENT_TYP_SQNO) <= 8
+        //   ) || null
+        // );
+        //
+        // console.log('[replay] eventRes.status=', eventRes.status);
+        // console.log('[replay] eventRes.data=', eventRes.data);
+
+        const fileBaseUrl = getOriginFromUrl(PDF_PATH);
 
         const nextEvents: ReplayEventItem[] = Array.isArray(eventRes.data?.data)
-          ? [...eventRes.data.data].sort((a, b) => {
-            const ta = new Date(a.EVENT_CRTE_DT).getTime();
-            const tb = new Date(b.EVENT_CRTE_DT).getTime();
+          ? [...eventRes.data.data]
+              .map((row: any) => {
+                const nestedStroke = row.STROKE ?? null;
+                // const nestedImage = row.IMAGE ?? null;
 
-            if (ta !== tb) return ta - tb;
-            return Number(a.EVENT_SNO) - Number(b.EVENT_SNO);
-          })
+                const mappedStroke =
+                  nestedStroke ??
+                  (Number(row.EVENT_TYP_SQNO) === 3 ||
+                  Number(row.EVENT_TYP_SQNO) === 4
+                    ? {
+                        X_CRDNT: row.STRK_X_CRDNT ?? null,
+                        Y_CRDNT: row.STRK_Y_CRDNT ?? null,
+                        LINE_SNO: row.LINE_SNO ?? null,
+                        LINE_ETT: row.LINE_ETT ?? null,
+                      }
+                    : null);
+
+                const mappedImage =
+                  Number(row.EVENT_TYP_SQNO) >= 5 &&
+                  Number(row.EVENT_TYP_SQNO) <= 8
+                    ? {
+                        id: String(
+                          row.IMG_ID ?? row.IMAGE_SEQ ?? row.IMAGE?.id ?? ''
+                        ),
+                        type: row.IMAGE?.type ?? 'camera',
+
+                        x:
+                          row.IMAGE?.x ??
+                          row.IMAGE?.posX ??
+                          row.IMAGE?.X_CRDNT ??
+                          row.IMG_X_CRDNT ??
+                          0,
+
+                        y:
+                          row.IMAGE?.y ??
+                          row.IMAGE?.posY ??
+                          row.IMAGE?.Y_CRDNT ??
+                          row.IMG_Y_CRDNT ??
+                          0,
+
+                        width:
+                          row.IMAGE?.width ??
+                          row.IMAGE?.WDTH_NUMV ??
+                          row.WDTH_NUMV ??
+                          0,
+
+                        height:
+                          row.IMAGE?.height ??
+                          row.IMAGE?.HDTH_NUMV ??
+                          row.HDTH_NUMV ??
+                          0,
+
+                        fileUrl: toImageUrl(
+                          row.IMAGE?.fileUrl ??
+                            row.IMAGE?.url ??
+                            row.IMAGE?.URL_INFO ??
+                            row.URL_INFO ??
+                            null,
+                          fileBaseUrl
+                        ),
+
+                        url: toImageUrl(
+                          row.IMAGE?.url ??
+                            row.IMAGE?.fileUrl ??
+                            row.IMAGE?.URL_INFO ??
+                            row.URL_INFO ??
+                            null,
+                          fileBaseUrl
+                        ),
+                      }
+                    : null;
+
+                return {
+                  ...row,
+                  IMAGE_SEQ: row.IMAGE_SEQ ?? row.IMG_ID ?? null,
+                  ATTACHMENT_EVENT_TYPE:
+                    row.ATTACHMENT_EVENT_TYPE ??
+                    row.EVENT_NM ??
+                    row.EVENT_NAME ??
+                    mapAttachmentEventName(Number(row.EVENT_TYP_SQNO)),
+                  STROKE: mappedStroke,
+                  IMAGE: mappedImage,
+                };
+              })
+              .sort((a, b) => {
+                const ta = new Date(a.EVENT_CRTE_DT).getTime();
+                const tb = new Date(b.EVENT_CRTE_DT).getTime();
+
+                if (ta !== tb) return ta - tb;
+                return Number(a.EVENT_SNO) - Number(b.EVENT_SNO);
+              })
           : [];
 
+        // console.log(
+        //   '[replay] mapped image rows',
+        //   nextEvents.filter(
+        //     ev =>
+        //       Number(ev.EVENT_TYP_SQNO) >= 5 && Number(ev.EVENT_TYP_SQNO) <= 8
+        //   )
+        // );
+
         setEvents(nextEvents);
-        console.log('[replay] event sample', nextEvents[0]);
+        setPlayheadIndex(-1);
+
+        // console.log('[replay] event sample', nextEvents[0]);
+        // console.log(
+        //   '[replay] image events',
+        //   nextEvents.filter(ev => ev.IMAGE?.fileUrl || ev.IMAGE?.url)
+        // );
+        //
+        // console.log('[replay] event sample', nextEvents[0]);
+        // console.log(
+        //   '[replay] image events',
+        //   nextEvents
+        //     .filter(
+        //       ev =>
+        //         Number(ev.EVENT_TYP_SQNO) >= 5 && Number(ev.EVENT_TYP_SQNO) <= 8
+        //     )
+        //     .map(ev => ({
+        //       eventSno: ev.EVENT_SNO,
+        //       eventType: ev.EVENT_TYP_SQNO,
+        //       id: ev.IMAGE?.id,
+        //       x: ev.IMAGE?.x,
+        //       y: ev.IMAGE?.y,
+        //       width: ev.IMAGE?.width,
+        //       height: ev.IMAGE?.height,
+        //       fileUrl: ev.IMAGE?.fileUrl,
+        //       url: ev.IMAGE?.url,
+        //       attachmentEventType: ev.ATTACHMENT_EVENT_TYPE,
+        //     }))
+        // );
 
         const pageNos = Array.from(
           new Set(
             nextEvents
               .filter(
-                ev => Number(ev.EVENT_TYP_SQNO) === 3 || Number(ev.EVENT_TYP_SQNO) === 4
+                ev =>
+                  Number(ev.EVENT_TYP_SQNO) === 3 ||
+                  Number(ev.EVENT_TYP_SQNO) === 4
               )
               .map(ev => Number(ev.PAGE_CNT))
               .filter(pageNo => Number.isFinite(pageNo) && pageNo > 0)
@@ -528,18 +942,18 @@ export function ReplayViewerPage() {
               strokeSeq
             );
 
-            console.log('[replay] matched addEvent', addEvent);
-
-            console.log('[replay] decode result', {
-              pageNo,
-              filename: part.filename,
-              eventSno,
-              strokeSeq,
-              blobLength: part.body.length,
-              strokeColor,
-              strokeWidth,
-              decoded,
-            });
+            // console.log('[replay] matched addEvent', addEvent);
+            //
+            // console.log('[replay] decode result', {
+            //   pageNo,
+            //   filename: part.filename,
+            //   eventSno,
+            //   strokeSeq,
+            //   blobLength: part.body.length,
+            //   strokeColor,
+            //   strokeWidth,
+            //   decoded,
+            // });
 
             const safeStrokeSeq = strokeSeq ?? eventSno;
 
@@ -553,7 +967,7 @@ export function ReplayViewerPage() {
         }
 
         // console
-        console.log('[replay] nextStrokePathByPage', nextStrokePathByPage);
+        // console.log('[replay] nextStrokePathByPage', nextStrokePathByPage);
         setStrokePathByPage(nextStrokePathByPage);
       } catch (err) {
         console.error('[ReplayViewerPage] load failed', err);
@@ -571,6 +985,9 @@ export function ReplayViewerPage() {
     const nextState = buildReplayState(events, playheadIndex);
     setLogicalPages(nextState.logicalPages);
     setPathDataByPage(nextState.pathDataByPage);
+    setReplayAttachmentsByPage(nextState.attachmentsByPage);
+
+    // console.log('[replay] next attachmentsByPage', nextState.attachmentsByPage);
 
     if (nextState.logicalPages.length > 0) {
       const exists = nextState.logicalPages.some(
@@ -672,6 +1089,31 @@ export function ReplayViewerPage() {
       ? events[playheadIndex].EVENT_CRTE_DT
       : '-';
 
+  const currentReplayEvent =
+    playheadIndex >= 0 && events[playheadIndex] ? events[playheadIndex] : null;
+
+  const prevReplayEvent =
+    playheadIndex > 0 && events[playheadIndex - 1]
+      ? events[playheadIndex - 1]
+      : null;
+
+  const currentReplayEventLabel = currentReplayEvent
+    ? getReplayEventLabel(currentReplayEvent.EVENT_TYP_SQNO)
+    : '처음 상태';
+
+  const currentReplayPageText = currentReplayEvent
+    ? `페이지 ${Number(currentReplayEvent.PAGE_CNT)}`
+    : '';
+
+  const pageMoveText =
+    currentReplayEvent &&
+    prevReplayEvent &&
+    Number(currentReplayEvent.PAGE_CNT) !== Number(prevReplayEvent.PAGE_CNT)
+      ? `페이지 이동 ${Number(prevReplayEvent.PAGE_CNT)} → ${Number(
+          currentReplayEvent.PAGE_CNT
+        )}`
+      : '';
+
   const totalEvents = events.length;
 
   return (
@@ -766,6 +1208,7 @@ export function ReplayViewerPage() {
           <option value={1}>1x</option>
           <option value={2}>2x</option>
           <option value={4}>4x</option>
+          <option value={10}>10x</option>
         </select>
         <input
           type="range"
@@ -794,10 +1237,59 @@ export function ReplayViewerPage() {
         <div className="flex flex-1 justify-center items-start py-3">
           <div
             style={{
+              position: 'relative',
               width: BASE_W * pageScale,
               height: BASE_H * pageScale,
             }}
           >
+            <div
+              style={{
+                position: 'absolute',
+                top: 12,
+                // right: -150,
+                left: 'calc(100% + 50px)',
+                zIndex: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                alignItems: 'flex-start',
+                pointerEvents: 'none',
+              }}
+            >
+              <div
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: 999,
+                  background: 'rgba(15, 23, 42, 0.82)',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {currentReplayEventLabel}
+              </div>
+
+              {(currentReplayPageText || pageMoveText) && (
+                <div
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 999,
+                    background: 'rgba(255, 255, 255, 0.92)',
+                    color: '#0f172a',
+                    fontSize: 11,
+                    fontWeight: 500,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                    whiteSpace: 'nowrap',
+                    border: '1px solid rgba(148,163,184,0.35)',
+                  }}
+                >
+                  {pageMoveText || currentReplayPageText}
+                </div>
+              )}
+            </div>
+
             <div
               style={{
                 width: BASE_W,
@@ -812,7 +1304,7 @@ export function ReplayViewerPage() {
                 fileUrl={fileUrl ?? undefined}
                 logicalPages={logicalPages as any}
                 pathDataByPage={pathDataByPage}
-                attachmentsByPage={attachmentsByPage}
+                attachmentsByPage={replayAttachmentsByPage}
                 onPageInfoChange={info => setPageInfo(info)}
               />
             </div>
