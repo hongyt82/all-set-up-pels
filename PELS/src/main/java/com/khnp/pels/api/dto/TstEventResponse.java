@@ -26,6 +26,7 @@ import javax.validation.constraints.*;
     "INSRTN_PAGE_CNT",
     "PDF_PAGE_CNT",
     "STRK_SEQ",
+    "IMG_ID",
     "USER_ID",
     "USER_NM",
     "EVENT_CRTE_DT"
