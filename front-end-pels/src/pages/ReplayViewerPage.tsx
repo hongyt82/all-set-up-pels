@@ -48,6 +48,7 @@ type ReplayEventItem = {
   STRK_SEQ: number | null;
   IMAGE_SEQ: number | null;
   USER_ID: string;
+  USER_NM?: string | null;
   EVENT_CRTE_DT: string;
 
   EVENT_NM?: string | null;
@@ -306,7 +307,9 @@ function buildBasePagesFromPdf(
 
     return {
       page: pdfPageNo,
+      pageKey: `pdf-${pdfPageNo}`,
       pdfPageNo,
+      insrtnPageCnt: null,
       targetPdfPageNo: pdfPageNo,
       constraintPageNo: pdfPageNo,
       width: Number(matched?.width) || fallbackWidth,
@@ -318,6 +321,37 @@ function buildBasePagesFromPdf(
   });
 }
 
+function makeReplayPageKey(pdfPageCnt?: number | null, insrtnPageCnt?: number | null) {
+  const pdfNo = Number(pdfPageCnt);
+  const insertNo = Number(insrtnPageCnt);
+
+  if (Number.isFinite(pdfNo) && pdfNo > 0) {
+    return `pdf-${pdfNo}`;
+  }
+
+  if (Number.isFinite(insertNo) && insertNo > 0) {
+    return `insert-${insertNo}`;
+  }
+
+  return null;
+}
+
+
+function findPageByCurrentPage(
+  pages: ReplayLogicalPage[],
+  pageCnt: number
+) {
+  return pages.find(p => Number(p.page) === Number(pageCnt)) ?? null;
+}
+
+function getEventPageKey(ev: ReplayEventItem) {
+  return (
+    makeReplayPageKey(
+      ev.PDF_PAGE_CNT == null ? null : Number(ev.PDF_PAGE_CNT),
+      ev.INSRTN_PAGE_CNT == null ? null : Number(ev.INSRTN_PAGE_CNT)
+    ) ?? null
+  );
+}
 
 
 export function ReplayViewerPage() {
@@ -344,7 +378,7 @@ export function ReplayViewerPage() {
 
   const [events, setEvents] = useState<ReplayEventItem[]>([]);
   const [strokePathByPage, setStrokePathByPage] = useState<
-    Record<number, Record<number, TemplatePathData>>
+    Record<string, Record<number, TemplatePathData>>
   >({});
 
   const [logicalPages, setLogicalPages] = useState<ReplayLogicalPage[]>([]);
@@ -416,50 +450,39 @@ export function ReplayViewerPage() {
           return {
             ...pg,
             page: pageNo,
+            pageKey:
+              (pg as any).pageKey ??
+              makeReplayPageKey(pdfPageNo, (pg as any).insrtnPageCnt) ??
+              `page-${pageNo}`,
             pdfPageNo,
+            insrtnPageCnt:
+              (pg as any).insrtnPageCnt == null
+                ? null
+                : Number((pg as any).insrtnPageCnt),
             width: Number((pg as any).width) || BASE_W,
             height: Number((pg as any).height) || BASE_H,
-            attachments:
-              attachmentsByPage[pageNo] ??
-              (Array.isArray((pg as any).attachments)
-                ? (pg as any).attachments
-                : []),
+            attachments: Array.isArray((pg as any).attachments)
+              ? (pg as any).attachments
+              : [],
           };
         })
         .sort((a, b) => Number(a.page) - Number(b.page));
 
-      const activeStrokeIdsByPage = new Map<number, Set<number>>();
-      const activeAttachmentsByPage = new Map<number, Map<string, any>>();
+      const activeStrokeIdsByPageKey = new Map<string, Set<number>>();
+      const activeAttachmentsByPageKey = new Map<string, Map<string, any>>();
 
       nextLogicalPages.forEach(page => {
-        const pageNo = Number(page.page);
-        activeAttachmentsByPage.set(pageNo, new Map<string, any>());
+        const pageKey = String(page.pageKey);
+        activeAttachmentsByPageKey.set(pageKey, new Map<string, any>());
       });
 
-      const ensureAttachmentPage = (pageNo: number) => {
-        if (!activeAttachmentsByPage.has(pageNo)) {
-          activeAttachmentsByPage.set(pageNo, new Map<string, any>());
+      const ensureAttachmentPageByKey = (pageKey: string) => {
+        if (!activeAttachmentsByPageKey.has(pageKey)) {
+          activeAttachmentsByPageKey.set(pageKey, new Map<string, any>());
         }
-        return activeAttachmentsByPage.get(pageNo)!;
+        return activeAttachmentsByPageKey.get(pageKey)!;
       };
 
-      const rebuildAttachmentMapByLogicalPages = () => {
-        const rebuilt = new Map<number, Map<string, any>>();
-
-        nextLogicalPages.forEach((pg, idx) => {
-          const newPageNo = idx + 1;
-          const prevPageNo = Number(pg.page);
-          rebuilt.set(
-            newPageNo,
-            activeAttachmentsByPage.get(prevPageNo) ?? new Map<string, any>()
-          );
-        });
-
-        activeAttachmentsByPage.clear();
-        rebuilt.forEach((value, key) => {
-          activeAttachmentsByPage.set(key, value);
-        });
-      };
 
       for (let i = 0; i <= appliedIndex; i++) {
         const ev = sourceEvents[i];
@@ -477,14 +500,19 @@ export function ReplayViewerPage() {
         const attachment = normalizeAttachment(ev.IMAGE, fileBaseUrl);
 
         if (eventType === 1) {
-          const insertIdx = Math.max(
-            0,
-            Math.min(nextLogicalPages.length, pageNo - 1)
-          );
+          const insertIdx = Math.max(0, Math.min(nextLogicalPages.length, pageNo - 1));
+          const insertSeq =
+            ev.INSRTN_PAGE_CNT == null ? null : Number(ev.INSRTN_PAGE_CNT);
+
+          const pageKey =
+            makeReplayPageKey(pdfPageNo, insertSeq) ?? `insert-fallback-${eventType}-${i}`;
 
           nextLogicalPages.splice(insertIdx, 0, {
             page: 0,
+            pageKey,
             pdfPageNo,
+            insrtnPageCnt: insertSeq,
+            targetPdfPageNo: null,
             constraintPageNo: pdfPageNo ?? -1,
             width: nextLogicalPages[0]?.width ?? BASE_W,
             height: nextLogicalPages[0]?.height ?? BASE_H,
@@ -497,50 +525,90 @@ export function ReplayViewerPage() {
             pg.page = idx + 1;
           });
 
-          rebuildAttachmentMapByLogicalPages();
-          ensureAttachmentPage(pageNo);
+          if (!activeAttachmentsByPageKey.has(pageKey)) {
+            activeAttachmentsByPageKey.set(pageKey, new Map<string, any>());
+          }
+          if (!activeStrokeIdsByPageKey.has(pageKey)) {
+            activeStrokeIdsByPageKey.set(pageKey, new Set<number>());
+          }
 
           continue;
         }
 
         if (eventType === 2) {
-          const removeIdx = pageNo - 1;
+          const deleteKey =
+            makeReplayPageKey(
+              ev.PDF_PAGE_CNT == null ? null : Number(ev.PDF_PAGE_CNT),
+              ev.INSRTN_PAGE_CNT == null ? null : Number(ev.INSRTN_PAGE_CNT)
+            );
+
+          let removeIdx = -1;
+
+          if (deleteKey) {
+            removeIdx = nextLogicalPages.findIndex(
+              pg => String(pg.pageKey) === deleteKey
+            );
+          }
+
+          if (removeIdx < 0) {
+            removeIdx = pageNo - 1;
+          }
 
           if (removeIdx >= 0 && removeIdx < nextLogicalPages.length) {
+            const removed = nextLogicalPages[removeIdx];
+            const removedKey = String(removed.pageKey);
+
             nextLogicalPages.splice(removeIdx, 1);
 
             nextLogicalPages.forEach((pg, idx) => {
               pg.page = idx + 1;
             });
 
-            rebuildAttachmentMapByLogicalPages();
+            activeAttachmentsByPageKey.delete(removedKey);
+            activeStrokeIdsByPageKey.delete(removedKey);
           }
 
           continue;
         }
 
         if (eventType === 3 && strokeSeq != null) {
-          const set = activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
+          const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
+          if (!targetPage) continue;
+
+          const pageKey = String(targetPage.pageKey);
+          const set = activeStrokeIdsByPageKey.get(pageKey) ?? new Set<number>();
           set.add(strokeSeq);
-          activeStrokeIdsByPage.set(pageNo, set);
+          activeStrokeIdsByPageKey.set(pageKey, set);
           continue;
         }
 
         if (eventType === 4 && strokeSeq != null) {
-          const set = activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
+          const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
+          if (!targetPage) continue;
+
+          const pageKey = String(targetPage.pageKey);
+          const set = activeStrokeIdsByPageKey.get(pageKey) ?? new Set<number>();
           set.delete(strokeSeq);
-          activeStrokeIdsByPage.set(pageNo, set);
+          activeStrokeIdsByPageKey.set(pageKey, set);
           continue;
         }
 
         if (eventName === 'addAttachment' && attachment?.id) {
-          const pageMap = ensureAttachmentPage(pageNo);
+          const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
+          if (!targetPage) continue;
+
+          const pageKey = String(targetPage.pageKey);
+          const pageMap = ensureAttachmentPageByKey(pageKey);
           pageMap.set(attachment.id, attachment);
           continue;
         }
 
         if (eventName === 'changeLayoutAttachment' && attachment?.id) {
-          const pageMap = ensureAttachmentPage(pageNo);
+          const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
+          if (!targetPage) continue;
+
+          const pageKey = String(targetPage.pageKey);
+          const pageMap = ensureAttachmentPageByKey(pageKey);
           const prev = pageMap.get(attachment.id);
 
           if (prev) {
@@ -559,7 +627,11 @@ export function ReplayViewerPage() {
         }
 
         if (eventName === 'changeUrlAttachment' && attachment?.id) {
-          const pageMap = ensureAttachmentPage(pageNo);
+          const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
+          if (!targetPage) continue;
+
+          const pageKey = String(targetPage.pageKey);
+          const pageMap = ensureAttachmentPageByKey(pageKey);
           const prev = pageMap.get(attachment.id);
 
           if (prev) {
@@ -577,7 +649,11 @@ export function ReplayViewerPage() {
         }
 
         if (eventName === 'removeAttachment' && attachment?.id) {
-          const pageMap = ensureAttachmentPage(pageNo);
+          const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
+          if (!targetPage) continue;
+
+          const pageKey = String(targetPage.pageKey);
+          const pageMap = ensureAttachmentPageByKey(pageKey);
           pageMap.delete(attachment.id);
           continue;
         }
@@ -588,16 +664,19 @@ export function ReplayViewerPage() {
 
       nextLogicalPages.forEach(page => {
         const pageNo = Number(page.page);
+        const pageKey = String(page.pageKey);
+
         const activeIds =
-          activeStrokeIdsByPage.get(pageNo) ?? new Set<number>();
-        const strokeMap = strokePathByPage[pageNo] ?? {};
+          activeStrokeIdsByPageKey.get(pageKey) ?? new Set<number>();
+
+        const strokeMap = strokePathByPage[pageKey] ?? {};
 
         nextPathDataByPage[pageNo] = Array.from(activeIds)
           .map(id => strokeMap[id])
           .filter(Boolean);
 
         const attachmentMap =
-          activeAttachmentsByPage.get(pageNo) ?? new Map<string, any>();
+          activeAttachmentsByPageKey.get(pageKey) ?? new Map<string, any>();
 
         nextAttachmentsByPage[pageNo] = Array.from(attachmentMap.values());
 
@@ -716,25 +795,6 @@ export function ReplayViewerPage() {
           withCredentials: true,
         });
 
-        // console.log(
-        //   '[replay] raw image rows',
-        //   (eventRes.data?.data ?? []).filter(
-        //     (row: any) =>
-        //       Number(row.EVENT_TYP_SQNO) >= 5 && Number(row.EVENT_TYP_SQNO) <= 8
-        //   )
-        // );
-        //
-        // console.log(
-        //   '[replay] raw image row keys',
-        //   (eventRes.data?.data ?? []).find(
-        //     (row: any) =>
-        //       Number(row.EVENT_TYP_SQNO) >= 5 && Number(row.EVENT_TYP_SQNO) <= 8
-        //   ) || null
-        // );
-        //
-        // console.log('[replay] eventRes.status=', eventRes.status);
-        // console.log('[replay] eventRes.data=', eventRes.data);
-
         const fileBaseUrl = getOriginFromUrl(PDF_PATH);
 
         const nextEvents: ReplayEventItem[] = Array.isArray(eventRes.data?.data)
@@ -831,46 +891,10 @@ export function ReplayViewerPage() {
               })
           : [];
 
-        // console.log(
-        //   '[replay] mapped image rows',
-        //   nextEvents.filter(
-        //     ev =>
-        //       Number(ev.EVENT_TYP_SQNO) >= 5 && Number(ev.EVENT_TYP_SQNO) <= 8
-        //   )
-        // );
-
         setEvents(nextEvents);
         setPlayheadIndex(-1);
 
-        // console.log('[replay] event sample', nextEvents[0]);
-        // console.log(
-        //   '[replay] image events',
-        //   nextEvents.filter(ev => ev.IMAGE?.fileUrl || ev.IMAGE?.url)
-        // );
-        //
-        // console.log('[replay] event sample', nextEvents[0]);
-        // console.log(
-        //   '[replay] image events',
-        //   nextEvents
-        //     .filter(
-        //       ev =>
-        //         Number(ev.EVENT_TYP_SQNO) >= 5 && Number(ev.EVENT_TYP_SQNO) <= 8
-        //     )
-        //     .map(ev => ({
-        //       eventSno: ev.EVENT_SNO,
-        //       eventType: ev.EVENT_TYP_SQNO,
-        //       id: ev.IMAGE?.id,
-        //       x: ev.IMAGE?.x,
-        //       y: ev.IMAGE?.y,
-        //       width: ev.IMAGE?.width,
-        //       height: ev.IMAGE?.height,
-        //       fileUrl: ev.IMAGE?.fileUrl,
-        //       url: ev.IMAGE?.url,
-        //       attachmentEventType: ev.ATTACHMENT_EVENT_TYPE,
-        //     }))
-        // );
-
-        const pageNos = Array.from(
+        const strokeFetchPageNos = Array.from(
           new Set(
             nextEvents
               .filter(
@@ -883,12 +907,12 @@ export function ReplayViewerPage() {
           )
         );
 
-        const nextStrokePathByPage: Record<
-          number,
+        const nextStrokePathByPageKey: Record<
+          string,
           Record<number, TemplatePathData>
         > = {};
 
-        for (const pageNo of pageNos) {
+        for (const pageNo of strokeFetchPageNos) {
           const strokeRes = await axios.get('/api/events/strokes', {
             params: {
               pwplId,
@@ -904,14 +928,11 @@ export function ReplayViewerPage() {
           if (!boundary) continue;
 
           const rawBuffer = strokeRes.data as ArrayBuffer;
-
           const parts = parseMultipartMixedBinary(rawBuffer, boundary);
 
           const pageEvents = nextEvents.filter(
             ev => Number(ev.PAGE_CNT) === Number(pageNo)
           );
-
-          nextStrokePathByPage[pageNo] = {};
 
           for (const part of parts) {
             const eventSno = parseEventSnoFromFilename(part.filename);
@@ -927,11 +948,16 @@ export function ReplayViewerPage() {
 
             if (!addEvent) continue;
 
+            const pageKey = getEventPageKey(addEvent);
+            if (!pageKey) continue;
+
+            if (!nextStrokePathByPageKey[pageKey]) {
+              nextStrokePathByPageKey[pageKey] = {};
+            }
+
             const strokeSeq =
               addEvent.STRK_SEQ == null ? null : Number(addEvent.STRK_SEQ);
 
-            // const strokeColor = addEvent.STROKE?.strokeColor ?? null;
-            // const strokeWidth = addEvent.STROKE?.strokeWidth ?? null;
             const strokeColor = addEvent.STROKE?.LINE_SNO ?? null;
             const strokeWidth = addEvent.STROKE?.LINE_ETT ?? null;
 
@@ -942,23 +968,10 @@ export function ReplayViewerPage() {
               strokeSeq
             );
 
-            // console.log('[replay] matched addEvent', addEvent);
-            //
-            // console.log('[replay] decode result', {
-            //   pageNo,
-            //   filename: part.filename,
-            //   eventSno,
-            //   strokeSeq,
-            //   blobLength: part.body.length,
-            //   strokeColor,
-            //   strokeWidth,
-            //   decoded,
-            // });
-
             const safeStrokeSeq = strokeSeq ?? eventSno;
 
             if (decoded) {
-              nextStrokePathByPage[pageNo][safeStrokeSeq] = {
+              nextStrokePathByPageKey[pageKey][safeStrokeSeq] = {
                 ...decoded,
                 id: safeStrokeSeq,
               };
@@ -966,9 +979,7 @@ export function ReplayViewerPage() {
           }
         }
 
-        // console
-        // console.log('[replay] nextStrokePathByPage', nextStrokePathByPage);
-        setStrokePathByPage(nextStrokePathByPage);
+        setStrokePathByPage(nextStrokePathByPageKey);
       } catch (err) {
         console.error('[ReplayViewerPage] load failed', err);
       } finally {
@@ -1084,9 +1095,19 @@ export function ReplayViewerPage() {
   const handleNextPage = () => wsRef.current?.goNextPage();
   const handlePageChange = (target: number) => wsRef.current?.goToPage(target);
 
-  const currentEventTime =
+  /*const currentEventTime =
     playheadIndex >= 0 && events[playheadIndex]
       ? events[playheadIndex].EVENT_CRTE_DT
+      : '-';*/
+  /*const currentEventTime =
+    playheadIndex >= 0 && events[playheadIndex]
+      ? String(events[playheadIndex].EVENT_CRTE_DT).slice(11, 19)
+      : '-';*/
+  const currentEventTime =
+    playheadIndex >= 0 && events[playheadIndex]
+      ? String(events[playheadIndex].EVENT_CRTE_DT)
+        .replace('T', ' ')
+        .slice(0, 19)
       : '-';
 
   const currentReplayEvent =
@@ -1100,6 +1121,9 @@ export function ReplayViewerPage() {
   const currentReplayEventLabel = currentReplayEvent
     ? getReplayEventLabel(currentReplayEvent.EVENT_TYP_SQNO)
     : '처음 상태';
+
+  const currentReplayUserName =
+    currentReplayEvent?.USER_NM?.trim() || currentReplayEvent?.USER_ID || '';
 
   const currentReplayPageText = currentReplayEvent
     ? `페이지 ${Number(currentReplayEvent.PAGE_CNT)}`
@@ -1140,92 +1164,154 @@ export function ReplayViewerPage() {
         />
       </div>
 
-      <div className="px-3 py-2 text-xs text-slate-600 bg-slate-50 border-b flex items-center gap-3">
-        <button
-          className="px-3 py-1 rounded bg-slate-900 text-white"
-          onClick={() => {
-            setIsPlaying(false);
-            setPlayheadIndex(-1);
-          }}
-        >
-          처음
-        </button>
-        <button
-          className="px-3 py-1 rounded bg-slate-900 text-white"
-          onClick={() => setIsPlaying(prev => !prev)}
-          disabled={totalEvents === 0}
-        >
-          {isPlaying ? '일시정지' : '재생'}
-        </button>
-        <button
-          className="px-3 py-1 rounded bg-slate-900 text-white"
-          onClick={() => {
-            setIsPlaying(false);
+      <div className="px-3 py-2 text-xs text-slate-600 bg-slate-50 border-b">
+        <div className="flex items-center gap-3">
+          <button
+            className="px-3 py-1 rounded bg-slate-900 text-white"
+            onClick={() => {
+              setIsPlaying(false);
+              setPlayheadIndex(-1);
+            }}
+          >
+            처음
+          </button>
 
-            setPlayheadIndex(prev => {
-              const next = Math.max(-1, prev - 1);
+          <button
+            className="px-3 py-1 rounded bg-slate-900 text-white"
+            onClick={() => setIsPlaying(prev => !prev)}
+            disabled={totalEvents === 0}
+          >
+            {isPlaying ? '일시정지' : '재생'}
+          </button>
 
-              if (next >= 0) {
-                requestAnimationFrame(() => {
-                  moveToEventPage(next);
-                });
-              }
+          <button
+            className="px-3 py-1 rounded bg-slate-900 text-white"
+            onClick={() => {
+              setIsPlaying(false);
 
-              return next;
-            });
-          }}
-          disabled={totalEvents === 0}
-        >
-          이전 이벤트
-        </button>
-        <button
-          className="px-3 py-1 rounded bg-slate-900 text-white"
-          onClick={() => {
-            setIsPlaying(false);
+              setPlayheadIndex(prev => {
+                const next = Math.max(-1, prev - 1);
 
-            setPlayheadIndex(prev => {
-              const next = Math.min(totalEvents - 1, prev + 1);
+                if (next >= 0) {
+                  requestAnimationFrame(() => {
+                    moveToEventPage(next);
+                  });
+                }
 
-              if (next >= 0) {
-                requestAnimationFrame(() => {
-                  moveToEventPage(next);
-                });
-              }
+                return next;
+              });
+            }}
+            disabled={totalEvents === 0}
+          >
+            이전 이벤트
+          </button>
 
-              return next;
-            });
-          }}
-          disabled={totalEvents === 0}
-        >
-          다음 이벤트
-        </button>
-        <select
-          className="border px-2 py-1"
-          value={playSpeed}
-          onChange={e => setPlaySpeed(Number(e.target.value))}
-        >
-          <option value={0.5}>0.5x</option>
-          <option value={1}>1x</option>
-          <option value={2}>2x</option>
-          <option value={4}>4x</option>
-          <option value={10}>10x</option>
-        </select>
-        <input
-          type="range"
-          min={-1}
-          max={Math.max(-1, totalEvents - 1)}
-          value={playheadIndex}
-          onChange={e => {
-            setIsPlaying(false);
-            setPlayheadIndex(Number(e.target.value));
-          }}
-          className="flex-1"
-        />
-        <span className="text-slate-500">
-          {playheadIndex < 0 ? 0 : playheadIndex + 1} / {totalEvents}
-        </span>
-        <span className="text-slate-500">{currentEventTime}</span>
-        {loading && <span className="text-slate-500">불러오는 중...</span>}
+          <button
+            className="px-3 py-1 rounded bg-slate-900 text-white"
+            onClick={() => {
+              setIsPlaying(false);
+
+              setPlayheadIndex(prev => {
+                const next = Math.min(totalEvents - 1, prev + 1);
+
+                if (next >= 0) {
+                  requestAnimationFrame(() => {
+                    moveToEventPage(next);
+                  });
+                }
+
+                return next;
+              });
+            }}
+            disabled={totalEvents === 0}
+          >
+            다음 이벤트
+          </button>
+
+          <select
+            className="border px-2 py-1"
+            value={playSpeed}
+            onChange={e => setPlaySpeed(Number(e.target.value))}
+          >
+            <option value={0.5}>0.5x</option>
+            <option value={1}>1x</option>
+            <option value={2}>2x</option>
+            <option value={4}>4x</option>
+            <option value={10}>10x</option>
+          </select>
+
+          <span className="text-slate-500">
+      {playheadIndex < 0 ? 0 : playheadIndex + 1} / {totalEvents}
+    </span>
+
+          <span className="text-slate-500">{currentEventTime}</span>
+
+          {loading && <span className="text-slate-500">불러오는 중...</span>}
+
+          <input
+            type="range"
+            min={-1}
+            max={Math.max(-1, totalEvents - 1)}
+            value={playheadIndex}
+            onChange={e => {
+              setIsPlaying(false);
+              setPlayheadIndex(Number(e.target.value));
+            }}
+            className="flex-1"
+          />
+        </div>
+
+        <div className="mt-2 flex items-center gap-2">
+          <div
+            style={{
+              padding: '6px 10px',
+              borderRadius: 999,
+              background: 'rgba(15, 23, 42, 0.82)',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {currentReplayEventLabel}
+          </div>
+
+          {currentReplayUserName && (
+            <div
+              style={{
+                padding: '5px 10px',
+                borderRadius: 999,
+                background: 'rgba(14, 165, 233, 0.92)',
+                color: '#f8fafc',
+                fontSize: 11,
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {currentReplayUserName}
+            </div>
+          )}
+
+          {(currentReplayPageText || pageMoveText) && (
+            <div
+              style={{
+                padding: '5px 10px',
+                borderRadius: 999,
+                background: 'rgba(255, 255, 255, 0.92)',
+                color: '#0f172a',
+                fontSize: 11,
+                fontWeight: 500,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                whiteSpace: 'nowrap',
+                border: '1px solid rgba(148,163,184,0.35)',
+              }}
+            >
+              {pageMoveText || currentReplayPageText}
+            </div>
+          )}
+        </div>
       </div>
 
       <div
@@ -1242,54 +1328,6 @@ export function ReplayViewerPage() {
               height: BASE_H * pageScale,
             }}
           >
-            <div
-              style={{
-                position: 'absolute',
-                top: 12,
-                // right: -150,
-                left: 'calc(100% + 50px)',
-                zIndex: 20,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                alignItems: 'flex-start',
-                pointerEvents: 'none',
-              }}
-            >
-              <div
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: 999,
-                  background: 'rgba(15, 23, 42, 0.82)',
-                  color: '#fff',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {currentReplayEventLabel}
-              </div>
-
-              {(currentReplayPageText || pageMoveText) && (
-                <div
-                  style={{
-                    padding: '5px 10px',
-                    borderRadius: 999,
-                    background: 'rgba(255, 255, 255, 0.92)',
-                    color: '#0f172a',
-                    fontSize: 11,
-                    fontWeight: 500,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-                    whiteSpace: 'nowrap',
-                    border: '1px solid rgba(148,163,184,0.35)',
-                  }}
-                >
-                  {pageMoveText || currentReplayPageText}
-                </div>
-              )}
-            </div>
-
             <div
               style={{
                 width: BASE_W,

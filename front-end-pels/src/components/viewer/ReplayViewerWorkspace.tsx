@@ -476,7 +476,7 @@ export const ReplayViewerWorkspace = forwardRef<
               borderRadius: 8,
             }}
           />
-          <canvas
+{/*          <canvas
             ref={drawCanvasRef}
             style={{
               position: 'absolute',
@@ -486,7 +486,7 @@ export const ReplayViewerWorkspace = forwardRef<
               height: pageBox.h,
               pointerEvents: 'none',
             }}
-          />
+          />*/}
 
           <div
             style={{
@@ -524,31 +524,59 @@ export const ReplayViewerWorkspace = forwardRef<
 
                       const imageSrc = a.fileUrl || a.url || a.src || null;
 
-                      if (
-                        (a.type === 'image' || a.type === 'camera') &&
-                        imageSrc
-                      ) {
+                      if (a.type === 'image' || a.type === 'camera') {
+                        if (imageSrc) {
+                          return (
+                            <div
+                              key={`att-img-${idx}`}
+                              style={{
+                                position: 'absolute',
+                                left,
+                                top,
+                                width,
+                                height,
+                              }}
+                            >
+                              <img
+                                src={imageSrc}
+                                alt="attachment"
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'contain',
+                                  display: 'block',
+                                }}
+                              />
+                            </div>
+                          );
+                        }
+
                         return (
                           <div
-                            key={`att-img-${idx}`}
+                            key={`att-img-placeholder-${idx}`}
                             style={{
                               position: 'absolute',
                               left,
                               top,
                               width,
                               height,
+                              border: '2px dashed rgba(59,130,246,0.75)',
+                              background: 'rgba(59,130,246,0.10)',
+                              borderRadius: 8,
+                              boxSizing: 'border-box',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#1d4ed8',
+                              fontSize: Math.max(12, Math.min(width, height) * 0.12),
+                              fontWeight: 700,
+                              textAlign: 'center',
+                              padding: 8,
+                              overflow: 'hidden',
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            <img
-                              src={imageSrc}
-                              alt="attachment"
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'contain',
-                                display: 'block',
-                              }}
-                            />
+                            IMAGE BOX
                           </div>
                         );
                       }
@@ -764,6 +792,19 @@ export const ReplayViewerWorkspace = forwardRef<
                 );
               })()}
           </div>
+
+          <canvas
+            ref={drawCanvasRef}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: pageBox.w,
+              height: pageBox.h,
+              pointerEvents: 'none',
+            }}
+          />
+
 
           <div
             style={{
