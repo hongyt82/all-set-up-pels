@@ -47,7 +47,10 @@ public class ValidStrokeFile {
                 .orElse(Collections.emptyList())
                 .stream()
                 .collect(Collectors.toMap(
-                        file -> StrokeFilename.baseFileName(file.getOriginalFilename()),
+                        file -> {
+                            StrokeFilename sf = StrokeFilename.parse(file.getOriginalFilename());
+                            return sf.toFilename();
+                        },
                         Function.identity()
                 ));
 
@@ -95,10 +98,10 @@ public class ValidStrokeFile {
         }
 
         // 스트로크 파일명 체크
-        String original = mpFile.getOriginalFilename();
-        StrokeFilename sf = StrokeFilename.parse(original);
-        if(!original.equals(sf.toFilename())){
-            throw new RestBadRequestException("Stroke filename does not match meta: " + original);
+        String metaFileNm = StrokeFilename.toFilename(eventMeta);
+        StrokeFilename sf = StrokeFilename.parse(mpFile.getOriginalFilename());
+        if(!metaFileNm.equals(sf.toFilename())){
+            throw new RestBadRequestException("Stroke filename does not match meta: " + metaFileNm);
         }
 
         // Event Entity로 변환
