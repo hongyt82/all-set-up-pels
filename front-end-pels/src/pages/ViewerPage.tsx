@@ -1242,7 +1242,7 @@ export function ViewerPage() {
       return { r, g, b, a };
     };
 
-    let sourcePdf: File | null = pdfFile;
+    const sourcePdf: File | null = pdfFile;
 
     if (!sourcePdf) {
       alert('PDF 파일이 로드되지 않았습니다. 먼저 PDF를 불러와 주세요.');
