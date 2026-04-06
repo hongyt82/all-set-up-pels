@@ -1,47 +1,39 @@
 package com.khnp.pels.api.service;
 
-import com.khnp.pels.api.converter.PelsEventConverter;
 import com.khnp.pels.api.dao.PelsEventBatchDao;
 import com.khnp.pels.api.dto.TstEventEntity;
 import com.khnp.pels.api.dto.TstEventImageEntity;
-import com.khnp.pels.api.dto.TstEventMeta;
 import com.khnp.pels.api.dto.TstEventStrokeEntity;
-import com.khnp.pels.api.validation.StrokeFilename;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @RequiredArgsConstructor
 @Service("pelsBatchService")
-public class PelsBatchServiceImpl implements PelsBatchService {
+public class PelsEventBatchServiceImpl implements PelsEventBatchService {
 
-	private static final Logger logger = LoggerFactory.getLogger(PelsBatchServiceImpl.class);
+	private static final Logger logger = LoggerFactory.getLogger(PelsEventBatchServiceImpl.class);
 
 	private final PelsEventBatchDao pelsEventBatchDao;
 
 	private final PelsEventService pelsEventService;
 
-	private final PelsEventConverter pelsEventConverter;
-
 	/**
 	 * 수행기록 이벤트 Batch 저장
-	 * @param eventMetaList 이벤트 메타 목록
-	 * @param fileMap 스트로크 파일 맵
+	 * @param eventEntityList 이벤트 객체 목록
 	 * @return int 처리 개수
 	 */
-	public int saveTstEventBatch(List<TstEventMeta> eventMetaList, Map<String, byte[]> fileMap) {
+	public int saveTstEventBatch(List<TstEventEntity> eventEntityList) {
 
 		int batchSize = 500;
-		int flushSize = 30;
+		int flushSize = 50;
 
-		for (int i = 0; i < eventMetaList.size(); i += batchSize) {
+		for (int i = 0; i < eventEntityList.size(); i += batchSize) {
 
-			int size = Math.min(batchSize, eventMetaList.size() - i);
+			int size = Math.min(batchSize, eventEntityList.size() - i);
 
 			// Sequence 조회
 			List<Long> eventSeqList = pelsEventService.getEventSeqList(size);
@@ -49,9 +41,7 @@ public class PelsBatchServiceImpl implements PelsBatchService {
 			// Insert
 			for (int j = 0; j < size; j++) {
 
-				TstEventMeta eventMeta = eventMetaList.get(i + j);
-				// Entity로 변환
-				TstEventEntity eventEntity = pelsEventConverter.toEventEntity(eventMeta);
+				TstEventEntity eventEntity = eventEntityList.get(i + j);
 
 				Long seq = eventSeqList.get(j);
 
@@ -61,26 +51,19 @@ public class PelsBatchServiceImpl implements PelsBatchService {
 
 				// Event Stroke 입력
 				if(eventEntity.getEventTypSqno().equals(3)) {
-					// Entity로 변환
-					TstEventStrokeEntity strokeEntity = pelsEventConverter.toEventStrokeEntity(eventMeta);
+					TstEventStrokeEntity eventStrokeEntity = eventEntity.getStroke();
+					eventStrokeEntity.setEventSno(seq);  // 이벤트 Key
 
-					// 이벤트 Key
-					strokeEntity.setEventSno(seq);
-					// Set stroke binary file
-					String key = StrokeFilename.toFilename(eventMeta);
-					strokeEntity.setLinePthDcr(fileMap.get(key));
-
-					pelsEventBatchDao.insertTstEventStroke(strokeEntity);
+					pelsEventBatchDao.insertTstEventStroke(eventStrokeEntity);
 				}
 
 				// Event Image 입력
 				if(eventEntity.getEventTypSqno().equals(5)
 					|| eventEntity.getEventTypSqno().equals(6)
 				    || eventEntity.getEventTypSqno().equals(7)) {
-					// Entity로 변환
-					TstEventImageEntity imageEntity = pelsEventConverter.toEventImageEntity(eventMeta);
-
+					TstEventImageEntity imageEntity = eventEntity.getImage();
 					imageEntity.setEventSno(seq);  // 이벤트 Key
+
 					pelsEventBatchDao.insertTstEventImage(imageEntity);
 				}
 
@@ -95,7 +78,7 @@ public class PelsBatchServiceImpl implements PelsBatchService {
 			pelsEventBatchDao.flush();
 		}
 
-		return eventMetaList.size();
+		return eventEntityList.size();
 	}
 
 }

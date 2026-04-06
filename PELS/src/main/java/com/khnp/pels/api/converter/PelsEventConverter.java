@@ -53,6 +53,8 @@ public class PelsEventConverter {
                 .eventTrgtId(eventTrgtId)
                 .userId(dto.getUserId())
                 .eventCrteDt(dto.getEventCrteDt())
+                .stroke(this.toEventStrokeEntity(dto))
+                .image(this.toEventImageEntity(dto))
                 .build();
     }
 
@@ -61,6 +63,7 @@ public class PelsEventConverter {
      * @param list 이벤트 메타 목록
      * @return 이벤트 스트로크 목록
      */
+    @Deprecated
     public List<TstEventStrokeEntity> toEventStrokeList(List<TstEventMeta> list) {
         return list.stream().map(
                 this::toEventStrokeEntity
@@ -73,6 +76,7 @@ public class PelsEventConverter {
      * @return 이벤트 스트로크 엔터티
      */
     public TstEventStrokeEntity toEventStrokeEntity(TstEventMeta dto) {
+        if(dto.getStroke() == null) return null;
         return TstEventStrokeEntity.builder()
                 .xCrdnt(dto.getStroke().getXCrdnt())
                 .yCrdnt(dto.getStroke().getYCrdnt())
@@ -86,6 +90,7 @@ public class PelsEventConverter {
      * @param list 이벤트 메타 목록
      * @return 이벤트 사진 목록
      */
+    @Deprecated
     public List<TstEventImageEntity> toEventImageList(List<TstEventMeta> list) {
         return list.stream().map(
                 this::toEventImageEntity
@@ -98,6 +103,7 @@ public class PelsEventConverter {
      * @return 이벤트 사진 엔터티
      */
     public TstEventImageEntity toEventImageEntity(TstEventMeta dto) {
+        if(dto.getImage() == null) return null;
         return TstEventImageEntity.builder()
             .xCrdnt(PelsConvertUtil.zeroIfNegitive(dto.getImage().getXCrdnt()))
             .yCrdnt(PelsConvertUtil.zeroIfNegitive(dto.getImage().getYCrdnt()))

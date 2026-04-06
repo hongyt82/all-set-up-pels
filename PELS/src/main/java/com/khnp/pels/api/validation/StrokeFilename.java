@@ -2,9 +2,12 @@ package com.khnp.pels.api.validation;
 
 import com.khnp.pels.api.dto.TstEventMeta;
 import com.khnp.pels.common.exception.RestBadRequestException;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
-@Value
+@AllArgsConstructor
 public class StrokeFilename {
     long pwplId;        //발전소ID
     long chckSno;       //시험순번
@@ -17,7 +20,7 @@ public class StrokeFilename {
      * 순수 바이너리 파일명 얻기
      * @param filePath 파일전체경로
      * @return 순수 파일명
-     * @apiNote C:\fakepath\stroke_3_2_3_1_1.bin -> stroke_3_2_3_1_1.bin
+     * @apiNote C:\fakepath\stroke_3_2_3_1_0_1.bin -> stroke_3_2_3_1_0_1.bin
      */
     public static String baseFileName(String filePath) {
         if (filePath == null) return null;
@@ -36,9 +39,9 @@ public class StrokeFilename {
     public static StrokeFilename parse(String originalFilename) {
         String filename = baseFileName(originalFilename); //순수 파일명 얻기
 
-        // stroke_{TST_UNQ_KY_VAL}_{PAGE_NO}_{STROKE_SEQ}.bin
-        // ex) stroke_3_1_2.bin
-        if (filename == null){
+        // stroke_{PWPL_ID}_{CHCK_SNO}_{PAGE_CNT}_{INSRTN_PAGE_CNT}_{PDF_PAGE_CNT}_{STRK_SEQ}.bin
+        // ex) stroke_3_1_2_0_2_2.bin
+        if(filename == null || originalFilename.trim().isEmpty()){
             throw new RestBadRequestException("Filename is null");
         }
 

@@ -3,7 +3,6 @@ package com.khnp.pels.api.service;
 import com.khnp.pels.api.converter.PelsEventConverter;
 import com.khnp.pels.api.dao.PelsEventDao;
 import com.khnp.pels.api.dto.*;
-import com.khnp.pels.common.exception.RestBadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +20,6 @@ public class PelsEventServiceImpl implements PelsEventService {
 
 	@Autowired
 	PelsEventDao pelsEventDao;
-
-	@Autowired
-	PelsBatchService pelsBatchService;
 
 	@Autowired
 	PelsEventConverter pelsEventConverter;
@@ -60,18 +56,6 @@ public class PelsEventServiceImpl implements PelsEventService {
 	}
 
 	/**
-	 * 수행기록 페이지 벌크 저장
-	 * @param eventPageMetaList 이벤트 페이지 목록
-	 * @return int 처리 개수
-	 */
-	@Override
-	@Transactional(rollbackFor = {Exception.class})
-	public int saveTstEventPageBulk(List<TstEventMeta> eventPageMetaList) {
-		// Batch Insert 호출
-		return pelsBatchService.saveTstEventBatch(eventPageMetaList, null);
-	}
-
-	/**
 	 * 수행기록 페이지 단일 저장
 	 * @param eventPageMeta 이벤트 페이지 메타
 	 * @return int 처리 개수
@@ -100,37 +84,19 @@ public class PelsEventServiceImpl implements PelsEventService {
 	}
 
 	/**
-	 * 수행기록 이벤트 스트로크 벌크 저장
-	 * @param eventStrokeMetaList 이벤트 스트로크 메타 목록
-	 * @param fileMap 이벤트 스트로크 바이너리 파일(s)
-	 * @return int 처리 개수
-	 */
-	@Override
-	@Transactional(rollbackFor = {Exception.class})
-	public int saveTstEventStrokeBulk(List<TstEventMeta> eventStrokeMetaList, Map<String, byte[]> fileMap) {
-		// Batch Insert 호출
-		return pelsBatchService.saveTstEventBatch(eventStrokeMetaList, fileMap);
-	}
-
-	/**
 	 * 수행기록 이벤트 스트로크 단일 저장
-	 * @param eventStrokeMeta 이벤트 스트로크 메타
-	 * @param strokeFile 이벤트 스트로크 바이너리 파일
+	 * @param eventEntity 이벤트 객체
 	 * @return int 처리 개수
 	 */
 	@Override
 	@Transactional(rollbackFor = {Exception.class})
-	public int saveTstEventStroke(TstEventMeta eventStrokeMeta, byte[] strokeFile) {
-		// Event Entity로 변환
-		TstEventEntity eventEntity = pelsEventConverter.toEventEntity(eventStrokeMeta);
+	public int saveTstEventStroke(TstEventEntity eventEntity) {
 		// 이벤트 저장
 		int prcsCnt = pelsEventDao.insertTstEvent(eventEntity);
 
-		// Event Stroke Entity로 변환
-		TstEventStrokeEntity eventStrokeEntity = pelsEventConverter.toEventStrokeEntity(eventStrokeMeta);
-		eventStrokeEntity.setEventSno(eventEntity.getEventSno());  // 이벤트 일련번호
-		eventStrokeEntity.setLinePthDcr(strokeFile);  // 스트로크 바이너리 파일
 		// 이벤트 스트로크 저장
+		TstEventStrokeEntity eventStrokeEntity = eventEntity.getStroke();
+		eventStrokeEntity.setEventSno(eventEntity.getEventSno());  // 이벤트 일련번호
 		int prcsCnt2 = pelsEventDao.insertTstEventStroke(eventStrokeEntity);
 
 		return (prcsCnt == 1 && prcsCnt2 == 1) ? 1 : 0;
@@ -148,18 +114,6 @@ public class PelsEventServiceImpl implements PelsEventService {
 		TstEventEntity eventEntity = pelsEventConverter.toEventEntity(eventStrokeMeta);
 
 		return pelsEventDao.insertTstEvent(eventEntity);
-	}
-
-	/**
-	 * 수행기록 사진 벌크 저장
-	 * @param eventImageMetaList 이벤트 사진 메타 목록
-	 * @return int 처리 개수
-	 */
-	@Override
-	@Transactional(rollbackFor = {Exception.class})
-	public int saveTstEventImageBulk(List<TstEventMeta> eventImageMetaList) {
-		// Batch Insert 호출
-		return pelsBatchService.saveTstEventBatch(eventImageMetaList, null);
 	}
 
 	/**

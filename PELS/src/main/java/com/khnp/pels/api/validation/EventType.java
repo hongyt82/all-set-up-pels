@@ -2,16 +2,20 @@ package com.khnp.pels.api.validation;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * 이벤트 유형 정의
- *  - 페이지추가
- *  - 페이지삭제
- *  - 스트로크추가
- *  - 스트로크삭제
- *  - 사진컨테이너추가
- *  - 사진추가/변경
- *  - 사진사이즈변경
- *  - 사진삭제
+ *  - 1: 페이지추가
+ *  - 2: 페이지삭제
+ *  - 3: 스트로크추가
+ *  - 4: 스트로크삭제
+ *  - 5: 사진컨테이너추가
+ *  - 6: 사진추가/변경
+ *  - 7: 사진사이즈변경
+ *  - 8: 사진삭제
  */
 public enum EventType {
     PAGE_ADD(1),
@@ -38,16 +42,23 @@ public enum EventType {
     }
 
     /**
+     * EventType을 Map으로 유지
+     */
+    private static final Map<Integer, EventType> MAP =
+            Arrays.stream(values())
+                    .collect(Collectors.toMap(EventType::getValue, e -> e));
+
+    /**
      * 값으로 EventType 반환
      * @param value
      * @return
      */
     public static EventType fromValue(int value) {
-        for (EventType t : values()) {
-            if (t.getValue() == value) {
-                return t;
-            }
+        EventType e = MAP.get(value);
+        if (e == null) {
+            throw new IllegalArgumentException("Invalid EventType value: " + value);
         }
-        throw new IllegalArgumentException("Invalid EVENT_TYP value: " + value);
+        return e;
     }
+
 }

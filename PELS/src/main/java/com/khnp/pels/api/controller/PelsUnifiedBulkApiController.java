@@ -1,10 +1,13 @@
 package com.khnp.pels.api.controller;
 
 import com.khnp.pels.api.dto.ApiResponse;
+import com.khnp.pels.api.dto.TstEventEntity;
 import com.khnp.pels.api.dto.TstEventMeta;
+import com.khnp.pels.api.service.PelsEventBatchService;
 import com.khnp.pels.api.validation.EventType;
 import com.khnp.pels.api.validation.StrokeFilename;
 import com.khnp.pels.api.service.PelsEventService;
+import com.khnp.pels.api.validation.ValidStrokeFile;
 import com.khnp.pels.common.exception.RestBadRequestException;
 import com.khnp.pels.common.validation.JsonMetaBinder;
 import com.khnp.pels.common.validation.JsonTypeFactory;
@@ -41,10 +44,13 @@ public class PelsUnifiedBulkApiController {
 
     private final JsonMetaBinder jsonMetaBinder;
     private final JsonTypeFactory jsonTypeFactory;
+    private final ValidStrokeFile validStrokeFile;
+
     /**
      * 통합 bulk는 트랜잭션/롤백 보장을 위해 @Transactional이 걸린 service 경로로 위임 및 현재의 위치에 선언한다.
      */
     private final PelsEventService pelsEventService;
+    private final PelsEventBatchService pelsEventBatchService;
 
     @PostMapping(
             value = "/bulk",
@@ -65,8 +71,12 @@ public class PelsUnifiedBulkApiController {
         // STROKE_ADD는 바이너리 파일 필수 (batch 로직은 null을 허용하지 않음)
         validateStrokeFiles(metaList, fileMap);
 
+        // 스트로크 파일 검증
+        List<TstEventEntity> eventEntityList = validStrokeFile.validMappingEntityList(metaList, mpFiles);
+        logger.info("### saveTstEventStrokeBulk(), Checked stroke files={}", eventEntityList.size());
+
         // NOTE: saveTstEventStrokeBulk는 내부에서 batch 저장을 호출하며 @Transactional(rollbackFor=Exception.class) 적용된 부분 확인.
-        int prcsCnt = pelsEventService.saveTstEventStrokeBulk(metaList, fileMap);
+        int prcsCnt = pelsEventBatchService.saveTstEventBatch(eventEntityList);
         logger.info("### saveEventBulk(), Completed save events={}", prcsCnt);
 
         return ResponseEntity.ok().body(ApiResponse.success());
