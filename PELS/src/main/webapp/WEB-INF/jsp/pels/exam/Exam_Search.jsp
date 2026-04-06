@@ -16,7 +16,7 @@
 	// 리플레이
     function fnExamReplay() {
         const chkElements = $('#form input[name=CHK_ITEM]')
-        const chkPwplElements = $('#form input[name=PWPL_ID_ROW]')
+        const chkPwplElements = $('#form input[name=PWPL_ID]')
         const chkElements1 = $('#form input[name=PRCDOC_NO]')
         const chkElements2 = $('#form input[name=PRCDOC_NM]')
         const chkElements3 = $('#form input[name=CHCK_TITL]')
@@ -308,7 +308,7 @@
 										<tr class="Item">
 											<td align="center" style="font-weight:bold">
                                                 <input name="CHK_ITEM" id="CHK_ITEM" type="checkbox" onclick="checkOnlyOne(this)" value="${exam.CHCK_SNO}">
-                                                <input name="PWPL_ID_ROW" id="PWPL_ID_ROW" type="hidden" value="${exam.PWPL_ID}">
+                                                <input name="PWPL_ID" id="PWPL_ID" type="hidden" value="${exam.PWPL_ID}">
                                                 <input name="PRCDOC_NO" id="PRCDOC_NO" type="hidden" value="${exam.PRCDOC_NO}">
                                                 <input name="PRCDOC_NM" id="PRCDOC_NM" type="hidden" value="${exam.PRCDOC_NM}">
                                                 <input name="CHCK_TITL" id="CHCK_TITL" type="hidden" value="${exam.CHCK_TITL}">
