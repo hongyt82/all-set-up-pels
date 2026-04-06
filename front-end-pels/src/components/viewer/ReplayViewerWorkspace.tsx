@@ -476,7 +476,7 @@ export const ReplayViewerWorkspace = forwardRef<
               borderRadius: 8,
             }}
           />
-{/*          <canvas
+          {/*          <canvas
             ref={drawCanvasRef}
             style={{
               position: 'absolute',
@@ -568,7 +568,10 @@ export const ReplayViewerWorkspace = forwardRef<
                               alignItems: 'center',
                               justifyContent: 'center',
                               color: '#1d4ed8',
-                              fontSize: Math.max(12, Math.min(width, height) * 0.12),
+                              fontSize: Math.max(
+                                12,
+                                Math.min(width, height) * 0.12
+                              ),
                               fontWeight: 700,
                               textAlign: 'center',
                               padding: 8,
@@ -804,7 +807,6 @@ export const ReplayViewerWorkspace = forwardRef<
               pointerEvents: 'none',
             }}
           />
-
 
           <div
             style={{

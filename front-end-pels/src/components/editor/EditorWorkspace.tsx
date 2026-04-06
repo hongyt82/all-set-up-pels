@@ -980,7 +980,8 @@ export const EditorWorkspace = forwardRef<
       return;
     }
 
-    let { wPct, hPct, value } = preset;
+    let { wPct, hPct } = preset;
+    const { value } = preset;
     if (isSquareType(type)) {
       const s = Math.min(wPct, hPct);
       wPct = s;
