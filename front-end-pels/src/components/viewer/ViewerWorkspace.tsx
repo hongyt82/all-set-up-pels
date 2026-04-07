@@ -22,6 +22,7 @@ import {
 } from '../../lib/constraints/constraintsLogic';
 
 import { BASE_PAGE_WIDTH, BASE_PAGE_HEIGHT } from '../../constants/pageSize';
+import { devLog, devWarn } from '../../utils/devConsole';
 
 export interface TemplatePathData {
   points: number[];
@@ -245,7 +246,7 @@ export const ViewerWorkspace = forwardRef<
       });
     });
 
-    console.log(
+    devLog(
       '[map] treelist → overlay',
       Array.from(treelistToOverlayIdsRef.current.entries())
     );
@@ -335,7 +336,7 @@ export const ViewerWorkspace = forwardRef<
         try {
           await tryLoad(true);
         } catch (e1) {
-          console.warn(
+          devWarn(
             '[ViewerWorkspace] load from url with CMap failed, retry without CMap',
             e1
           );
@@ -367,7 +368,7 @@ export const ViewerWorkspace = forwardRef<
         try {
           renderTaskRef.current.cancel();
         } catch (e) {
-          console.warn('[ViewerWorkspace] cancel renderTask failed', e);
+          devWarn('[ViewerWorkspace] cancel renderTask failed', e);
         }
         renderTaskRef.current = null;
       }
@@ -432,7 +433,7 @@ export const ViewerWorkspace = forwardRef<
         try {
           await task.promise;
         } catch (e) {
-          console.warn('[ViewerWorkspace] render task error (ignored)', e);
+          devWarn('[ViewerWorkspace] render task error (ignored)', e);
         } finally {
           renderTaskRef.current = null;
         }
@@ -471,7 +472,7 @@ export const ViewerWorkspace = forwardRef<
         try {
           renderTaskRef.current.cancel();
         } catch (e) {
-          console.warn('[ViewerWorkspace] cancel on cleanup failed', e);
+          devWarn('[ViewerWorkspace] cancel on cleanup failed', e);
         }
         renderTaskRef.current = null;
       }
@@ -695,7 +696,7 @@ export const ViewerWorkspace = forwardRef<
     parentMapRef.current.clear();
 
     if (!constraintDoc?.treelist) {
-      console.warn('[ViewerWorkspace] treelist not found');
+      devWarn('[ViewerWorkspace] treelist not found');
       return;
     }
 
@@ -721,7 +722,7 @@ export const ViewerWorkspace = forwardRef<
 
     constraintDoc.treelist.forEach(walk);
 
-    console.log('[treelist ids]', Array.from(childrenMapRef.current.keys()));
+    devLog('[treelist ids]', Array.from(childrenMapRef.current.keys()));
   }, [constraintDoc]);
 
   // ---------------------------------------------------------------------------

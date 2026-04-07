@@ -14,6 +14,7 @@ import {
 import { ROUTES } from '../constants/routes.ts';
 import { useErrorStore } from '../stores/errorStore';
 import { triggerError } from '../utils/errorHandler';
+import { devLog } from '../utils/devConsole';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export function HomePage() {
 
   // 전역 에러 핸들러 테스트 함수들
   const testGlobalErrorHandler = () => {
-    console.log('🔴 [테스트] HTTP 에러 테스트 시작');
+    devLog('🔴 [테스트] HTTP 에러 테스트 시작');
     // HTTP 에러 테스트
     triggerError(
       'http-error',
@@ -56,67 +57,63 @@ export function HomePage() {
       '존재하지 않는 리소스에 접근했습니다.',
       404
     );
-    console.log(
-      '✅ [테스트] HTTP 에러 테스트 완료 - ErrorDialog가 표시되어야 함'
-    );
+    devLog('✅ [테스트] HTTP 에러 테스트 완료 - ErrorDialog가 표시되어야 함');
   };
 
   const testNetworkError = () => {
-    console.log('🔴 [테스트] 네트워크 에러 테스트 시작');
+    devLog('🔴 [테스트] 네트워크 에러 테스트 시작');
     // 네트워크 에러 테스트
     triggerError(
       'network-error',
       '네트워크 연결 실패',
       '인터넷 연결을 확인해주세요.'
     );
-    console.log(
+    devLog(
       '✅ [테스트] 네트워크 에러 테스트 완료 - ErrorDialog가 표시되어야 함'
     );
   };
 
   const testApiError = () => {
-    console.log('🔴 [테스트] API 에러 테스트 시작');
+    devLog('🔴 [테스트] API 에러 테스트 시작');
     // API 에러 테스트
     triggerError(
       'api-error',
       'API 요청 실패',
       '서버와의 통신 중 오류가 발생했습니다.'
     );
-    console.log(
-      '✅ [테스트] API 에러 테스트 완료 - ErrorDialog가 표시되어야 함'
-    );
+    devLog('✅ [테스트] API 에러 테스트 완료 - ErrorDialog가 표시되어야 함');
   };
 
   const testTimeoutError = () => {
-    console.log('🔴 [테스트] 타임아웃 에러 테스트 시작');
+    devLog('🔴 [테스트] 타임아웃 에러 테스트 시작');
     // 타임아웃 에러 테스트
     triggerError(
       'timeout-error',
       '요청 시간 초과',
       '서버 응답이 지연되고 있습니다.'
     );
-    console.log(
+    devLog(
       '✅ [테스트] 타임아웃 에러 테스트 완료 - ErrorDialog가 표시되어야 함'
     );
   };
 
   const testFetchError = async () => {
-    console.log('🔴 [테스트] Fetch 에러 테스트 시작');
+    devLog('🔴 [테스트] Fetch 에러 테스트 시작');
     // 실제 Fetch 에러 테스트 (존재하지 않는 URL)
     try {
       await fetch('/api/nonexistent-endpoint');
     } catch {
-      console.log(
+      devLog(
         '✅ [테스트] Fetch 에러 테스트 완료 - 네트워크 에러가 감지되어야 함'
       );
     }
   };
 
   const testPromiseRejection = () => {
-    console.log('🔴 [테스트] Promise Rejection 테스트 시작');
+    devLog('🔴 [테스트] Promise Rejection 테스트 시작');
     // Promise rejection 테스트
     Promise.reject(new Error('테스트 Promise Rejection 에러'));
-    console.log(
+    devLog(
       '✅ [테스트] Promise Rejection 테스트 완료 - unhandledrejection 이벤트가 감지되어야 함'
     );
   };

@@ -4,6 +4,7 @@ import type { ToolCategory } from './EditorHeader.tsx';
 import type { OverlayType } from '../../components/editor/EditorWorkspace';
 import { Button } from '../ui/button.tsx';
 import { MENU_LABELS } from '../../constants/mainmenu';
+import { devLog } from '../../utils/devConsole';
 
 interface ToolPaletteProps {
   selectedCategory?: ToolCategory | null;
@@ -124,11 +125,7 @@ const ToolPalette = React.memo(
                 onToolSelect?.(config.id);
                 // 실제 오버레이 타입은 여기서 전달
                 onAddOverlay?.(config.type);
-                console.log(
-                  '[ToolPalette] add overlay:',
-                  config.type,
-                  config.id
-                );
+                devLog('[ToolPalette] add overlay:', config.type, config.id);
               };
 
               return (

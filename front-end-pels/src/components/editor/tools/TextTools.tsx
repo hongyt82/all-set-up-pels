@@ -1,4 +1,5 @@
 import type React from 'react';
+import { devLog } from '../../../utils/devConsole';
 
 export interface TextElement {
   id: string;
@@ -35,7 +36,7 @@ export class TextToolsManager {
     y: number,
     content: string = '텍스트를 입력하세요'
   ): TextElement {
-    console.log('📝 [TextTools] 텍스트 입력 생성:', { x, y, content });
+    devLog('📝 [TextTools] 텍스트 입력 생성:', { x, y, content });
     return {
       id: `text-input-${Date.now()}`,
       type: 'text-input',
@@ -59,7 +60,7 @@ export class TextToolsManager {
     y: number,
     content: string = '굵은 텍스트'
   ): TextElement {
-    console.log('📝 [TextTools] 굵은 텍스트 생성:', { x, y, content });
+    devLog('📝 [TextTools] 굵은 텍스트 생성:', { x, y, content });
     return {
       ...this.createTextInput(x, y, content),
       id: `text-bold-${Date.now()}`,
@@ -74,7 +75,7 @@ export class TextToolsManager {
     y: number,
     content: string = '기울임 텍스트'
   ): TextElement {
-    console.log('📝 [TextTools] 기울임 텍스트 생성:', { x, y, content });
+    devLog('📝 [TextTools] 기울임 텍스트 생성:', { x, y, content });
     return {
       ...this.createTextInput(x, y, content),
       id: `text-italic-${Date.now()}`,
@@ -89,7 +90,7 @@ export class TextToolsManager {
     y: number,
     content: string = '밑줄 텍스트'
   ): TextElement {
-    console.log('📝 [TextTools] 밑줄 텍스트 생성:', { x, y, content });
+    devLog('📝 [TextTools] 밑줄 텍스트 생성:', { x, y, content });
     return {
       ...this.createTextInput(x, y, content),
       id: `text-underline-${Date.now()}`,
@@ -104,7 +105,7 @@ export class TextToolsManager {
     y: number,
     content: string = '왼쪽 정렬'
   ): TextElement {
-    console.log('📝 [TextTools] 왼쪽 정렬 텍스트 생성:', { x, y, content });
+    devLog('📝 [TextTools] 왼쪽 정렬 텍스트 생성:', { x, y, content });
     return {
       ...this.createTextInput(x, y, content),
       id: `text-align-left-${Date.now()}`,
@@ -119,7 +120,7 @@ export class TextToolsManager {
     y: number,
     content: string = '가운데 정렬'
   ): TextElement {
-    console.log('📝 [TextTools] 가운데 정렬 텍스트 생성:', { x, y, content });
+    devLog('📝 [TextTools] 가운데 정렬 텍스트 생성:', { x, y, content });
     return {
       ...this.createTextInput(x, y, content),
       id: `text-align-center-${Date.now()}`,
@@ -134,7 +135,7 @@ export class TextToolsManager {
     y: number,
     content: string = '오른쪽 정렬'
   ): TextElement {
-    console.log('📝 [TextTools] 오른쪽 정렬 텍스트 생성:', { x, y, content });
+    devLog('📝 [TextTools] 오른쪽 정렬 텍스트 생성:', { x, y, content });
     return {
       ...this.createTextInput(x, y, content),
       id: `text-align-right-${Date.now()}`,
@@ -177,7 +178,7 @@ export class TextToolsManager {
           placeholder="텍스트를 입력하세요..."
           onBlur={e => {
             element.content = e.target.value;
-            console.log('📝 [TextTools] 텍스트 편집 완료:', element.content);
+            devLog('📝 [TextTools] 텍스트 편집 완료:', element.content);
           }}
           autoFocus
         />

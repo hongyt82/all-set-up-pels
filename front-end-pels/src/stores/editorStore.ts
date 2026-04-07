@@ -9,6 +9,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { get, set, del } from 'idb-keyval';
 import type { ToolCategory } from '../components/editor/EditorHeader';
+import { devLog } from '../utils/devConsole';
 
 /**
  * 페이지별 컴포넌트 데이터 인터페이스 (더미 데이터용)
@@ -146,7 +147,7 @@ const storage = createJSONStorage<EditorState>(() => ({
     try {
       const value = await get(name);
       if (value) {
-        console.log('📖 [EditorStore] 상태 복원:', {
+        devLog('📖 [EditorStore] 상태 복원:', {
           키: name,
           데이터크기: JSON.stringify(value).length + ' bytes',
           시간: new Date().toLocaleTimeString(),
@@ -163,12 +164,12 @@ const storage = createJSONStorage<EditorState>(() => ({
       const state = value as EditorState;
       // isPersistEnabled가 false면 저장하지 않음
       if (!state.isPersistEnabled) {
-        console.log('⏸️ [EditorStore] 상태 저장 건너뛰기 (비활성화됨)');
+        devLog('⏸️ [EditorStore] 상태 저장 건너뛰기 (비활성화됨)');
         return;
       }
 
       await set(name, value);
-      console.log('💾 [EditorStore] 상태 저장:', {
+      devLog('💾 [EditorStore] 상태 저장:', {
         키: name,
         선택된카테고리: state.selectedCategory,
         현재페이지: state.currentPage,
@@ -184,7 +185,7 @@ const storage = createJSONStorage<EditorState>(() => ({
   removeItem: async (name: string) => {
     try {
       await del(name);
-      console.log('🗑️ [EditorStore] 상태 삭제:', {
+      devLog('🗑️ [EditorStore] 상태 삭제:', {
         키: name,
         시간: new Date().toLocaleTimeString(),
       });
@@ -203,7 +204,7 @@ export const useEditorStore = create<EditorState>()(
       ...initialState,
 
       setSelectedCategory: category => {
-        console.log('📝 [EditorStore] 카테고리 변경:', {
+        devLog('📝 [EditorStore] 카테고리 변경:', {
           이전: get().selectedCategory,
           새로운값: category,
           시간: new Date().toLocaleTimeString(),
@@ -213,7 +214,7 @@ export const useEditorStore = create<EditorState>()(
       },
 
       setSelectedTool: tool => {
-        console.log('🔧 [EditorStore] 도구 변경:', {
+        devLog('🔧 [EditorStore] 도구 변경:', {
           이전: get().selectedTool,
           새로운값: tool,
           시간: new Date().toLocaleTimeString(),
@@ -223,7 +224,7 @@ export const useEditorStore = create<EditorState>()(
       },
 
       setIsOverlayVisible: visible => {
-        console.log('👁️ [EditorStore] 오버레이 표시 변경:', {
+        devLog('👁️ [EditorStore] 오버레이 표시 변경:', {
           이전: get().isOverlayVisible,
           새로운값: visible,
           시간: new Date().toLocaleTimeString(),
@@ -235,7 +236,7 @@ export const useEditorStore = create<EditorState>()(
       setCurrentPage: page => {
         const totalPages = get().totalPages;
         const validPage = Math.max(1, Math.min(page, totalPages));
-        console.log('📄 [EditorStore] 현재 페이지 변경:', {
+        devLog('📄 [EditorStore] 현재 페이지 변경:', {
           이전: get().currentPage,
           새로운값: validPage,
           시간: new Date().toLocaleTimeString(),
@@ -245,7 +246,7 @@ export const useEditorStore = create<EditorState>()(
       },
 
       setTotalPages: total => {
-        console.log('📚 [EditorStore] 총 페이지 변경:', {
+        devLog('📚 [EditorStore] 총 페이지 변경:', {
           이전: get().totalPages,
           새로운값: total,
           시간: new Date().toLocaleTimeString(),
@@ -262,7 +263,7 @@ export const useEditorStore = create<EditorState>()(
       },
 
       setCurrentFile: file => {
-        console.log('📁 [EditorStore] 현재 파일 변경:', {
+        devLog('📁 [EditorStore] 현재 파일 변경:', {
           이전: get().currentFile,
           새로운값: file,
           시간: new Date().toLocaleTimeString(),
@@ -299,7 +300,7 @@ export const useEditorStore = create<EditorState>()(
             },
           };
 
-          console.log('🔄 [EditorStore] 페이지 데이터 업데이트:', {
+          devLog('🔄 [EditorStore] 페이지 데이터 업데이트:', {
             페이지번호: pageNumber,
             컴포넌트수: components.length,
             시간: new Date().toLocaleTimeString(),
@@ -326,7 +327,7 @@ export const useEditorStore = create<EditorState>()(
             },
           };
 
-          console.log('➕ [EditorStore] 컴포넌트 추가:', {
+          devLog('➕ [EditorStore] 컴포넌트 추가:', {
             페이지번호: pageNumber,
             컴포넌트ID: component.id,
             컴포넌트타입: component.type,
@@ -368,7 +369,7 @@ export const useEditorStore = create<EditorState>()(
               },
             };
 
-            console.log('🔄 [EditorStore] 컴포넌트 위치 업데이트:', {
+            devLog('🔄 [EditorStore] 컴포넌트 위치 업데이트:', {
               페이지번호: pageNumber,
               컴포넌트ID: componentId,
               새위치: { x, y },
@@ -408,7 +409,7 @@ export const useEditorStore = create<EditorState>()(
               },
             };
 
-            console.log('📏 [EditorStore] 컴포넌트 크기 업데이트:', {
+            devLog('📏 [EditorStore] 컴포넌트 크기 업데이트:', {
               페이지번호: pageNumber,
               컴포넌트ID: componentId,
               새크기: { width, height },
@@ -439,7 +440,7 @@ export const useEditorStore = create<EditorState>()(
             },
           };
 
-          console.log('➖ [EditorStore] 컴포넌트 삭제:', {
+          devLog('➖ [EditorStore] 컴포넌트 삭제:', {
             페이지번호: pageNumber,
             컴포넌트ID: componentId,
             남은컴포넌트수: updatedComponents.length,
@@ -452,7 +453,7 @@ export const useEditorStore = create<EditorState>()(
       },
 
       resetAllState: () => {
-        console.log('🔄 [EditorStore] 전체 상태 초기화:', {
+        devLog('🔄 [EditorStore] 전체 상태 초기화:', {
           시간: new Date().toLocaleTimeString(),
         });
         set({
@@ -467,7 +468,7 @@ export const useEditorStore = create<EditorState>()(
 
       togglePersist: () => {
         const newValue = !get().isPersistEnabled;
-        console.log('🔀 [EditorStore] 상태 저장 토글:', {
+        devLog('🔀 [EditorStore] 상태 저장 토글:', {
           이전값: get().isPersistEnabled,
           새로운값: newValue,
           시간: new Date().toLocaleTimeString(),
@@ -478,7 +479,7 @@ export const useEditorStore = create<EditorState>()(
         if (!newValue) {
           del('editor-storage')
             .then(() => {
-              console.log('🗑️ [EditorStore] 저장된 상태 삭제 완료');
+              devLog('🗑️ [EditorStore] 저장된 상태 삭제 완료');
             })
             .catch(error => {
               console.error('❌ [EditorStore] 저장된 상태 삭제 실패:', error);

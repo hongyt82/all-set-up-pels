@@ -1,4 +1,4 @@
-// no imports needed
+import { devLog } from '../../../utils/devConsole';
 
 export interface BanElement {
   id: string;
@@ -19,7 +19,7 @@ export interface BanToolsProps {
 export class BanToolsManager {
   // 금지 원형 생성
   static createBanCircle(x: number, y: number, size: number = 40): BanElement {
-    console.log('🚫 [BanTools] 금지 원형 생성:', { x, y, size });
+    devLog('🚫 [BanTools] 금지 원형 생성:', { x, y, size });
     return {
       id: `ban-circle-${Date.now()}`,
       type: 'ban-circle',
@@ -39,7 +39,7 @@ export class BanToolsManager {
     width: number = 40,
     height: number = 40
   ): BanElement {
-    console.log('🚫 [BanTools] 금지 사각형 생성:', { x, y, width, height });
+    devLog('🚫 [BanTools] 금지 사각형 생성:', { x, y, width, height });
     return {
       id: `ban-square-${Date.now()}`,
       type: 'ban-square',
@@ -54,7 +54,7 @@ export class BanToolsManager {
 
   // 금지선 생성
   static createBanLine(x: number, y: number, length: number = 60): BanElement {
-    console.log('🚫 [BanTools] 금지선 생성:', { x, y, length });
+    devLog('🚫 [BanTools] 금지선 생성:', { x, y, length });
     return {
       id: `ban-line-${Date.now()}`,
       type: 'ban-line',
@@ -69,7 +69,7 @@ export class BanToolsManager {
 
   // 금지 X표시 생성
   static createBanCross(x: number, y: number, size: number = 30): BanElement {
-    console.log('🚫 [BanTools] 금지 X표시 생성:', { x, y, size });
+    devLog('🚫 [BanTools] 금지 X표시 생성:', { x, y, size });
     return {
       id: `ban-cross-${Date.now()}`,
       type: 'ban-cross',

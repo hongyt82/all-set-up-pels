@@ -1,5 +1,6 @@
 // src/hooks/useWebSocketRoom.ts
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { devLog, devWarn } from '../utils/devConsole';
 
 type UserInfo = {
   USER_ID: string;
@@ -105,14 +106,14 @@ export function useWebSocketRoom(opts: UseWebSocketRoomOptions) {
   );
 
   useEffect(() => {
-    console.log('🔥 ViewerPage MOUNT');
+    devLog('🔥 ViewerPage MOUNT');
     return () => {
-      console.log('💀 ViewerPage UNMOUNT');
+      devLog('💀 ViewerPage UNMOUNT');
     };
   }, []);
 
   useEffect(() => {
-    console.log('[WS CONFIG]', {
+    devLog('[WS CONFIG]', {
       page: window.location.href,
       wsUrl,
       roomId,
@@ -165,10 +166,10 @@ export function useWebSocketRoom(opts: UseWebSocketRoomOptions) {
   const safeSend = useCallback((obj: any) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      if (import.meta.env.DEV) console.log('[WS OUT SKIP]', obj);
+      devLog('[WS OUT SKIP]', obj);
       return false;
     }
-    if (import.meta.env.DEV) console.log('[WS OUT]', obj);
+    devLog('[WS OUT]', obj);
     ws.send(JSON.stringify(obj));
     return true;
   }, []);
@@ -250,22 +251,24 @@ export function useWebSocketRoom(opts: UseWebSocketRoomOptions) {
     // ===== connect 폭주 추적용 =====
     const seq = ++connectSeqRef.current;
     connectCallCountRef.current += 1;
-    console.groupCollapsed(
-      `%c[WS CONNECT CALL #${connectCallCountRef.current} | seq=${seq}]`,
-      'color:orange;font-weight:bold;'
-    );
-    console.log('time=', new Date().toISOString());
-    console.log('page=', window.location.href);
-    console.log('wsUrl:', wsUrl);
-    console.log('roomId:', roomId);
-    console.log('clientKey:', clientKey);
-    console.log('existing ws:', wsRef.current);
-    console.log(
-      'existing readyState:',
-      wsRef.current ? wsRef.current.readyState : 'none'
-    );
-    console.trace('[WS CONNECT TRACE]');
-    console.groupEnd();
+    if (import.meta.env.DEV) {
+      console.groupCollapsed(
+        `%c[WS CONNECT CALL #${connectCallCountRef.current} | seq=${seq}]`,
+        'color:orange;font-weight:bold;'
+      );
+      console.log('time=', new Date().toISOString());
+      console.log('page=', window.location.href);
+      console.log('wsUrl:', wsUrl);
+      console.log('roomId:', roomId);
+      console.log('clientKey:', clientKey);
+      console.log('existing ws:', wsRef.current);
+      console.log(
+        'existing readyState:',
+        wsRef.current ? wsRef.current.readyState : 'none'
+      );
+      console.trace('[WS CONNECT TRACE]');
+      console.groupEnd();
+    }
 
     manualCloseRef.current = false;
 
@@ -276,14 +279,13 @@ export function useWebSocketRoom(opts: UseWebSocketRoomOptions) {
       (existing.readyState === WebSocket.OPEN ||
         existing.readyState === WebSocket.CONNECTING)
     ) {
-      if (import.meta.env.DEV)
-        console.log('[WS CONNECT SKIP] already open/connecting');
+      devLog('[WS CONNECT SKIP] already open/connecting');
       return;
     }
 
     // ✅ connect() 동시 진입 방지 (브라우저 리소스 폭주 방지)
     if (connectInFlightRef.current) {
-      if (import.meta.env.DEV) console.log('[WS CONNECT SKIP] in-flight');
+      devLog('[WS CONNECT SKIP] in-flight');
       return;
     }
     connectInFlightRef.current = true;
@@ -294,13 +296,13 @@ export function useWebSocketRoom(opts: UseWebSocketRoomOptions) {
       reconnectTimerRef.current = null;
     }
 
-    console.log('[WS CONNECT TRY]', wsUrl);
+    devLog('[WS CONNECT TRY]', wsUrl);
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('[WS OPEN]', { wsUrl, roomId, clientKey });
+      devLog('[WS OPEN]', { wsUrl, roomId, clientKey });
       setIsOpen(true);
 
       retryRef.current = 0; // 성공하면 카운터 리셋
@@ -322,7 +324,7 @@ export function useWebSocketRoom(opts: UseWebSocketRoomOptions) {
       }
 
       const msg: WSMessage = (raw?.payload ?? raw) as WSMessage;
-      if (import.meta.env.DEV) console.log('[WS IN]', raw, '=>', msg);
+      devLog('[WS IN]', raw, '=>', msg);
 
       if (!msg) return;
       if (msg.roomId && msg.roomId !== roomId) return;
@@ -384,13 +386,13 @@ export function useWebSocketRoom(opts: UseWebSocketRoomOptions) {
     };
 
     ws.onerror = e => {
-      console.log('[WS ERROR]', e);
+      console.error('[WS ERROR]', e);
       // 에러가 떠도 onclose로 이어지는 경우가 많지만, 혹시를 위해 해제
       connectInFlightRef.current = false;
     };
 
     ws.onclose = ev => {
-      console.log('[WS CLOSE]', ev.code, ev.reason);
+      devLog('[WS CLOSE]', ev.code, ev.reason);
       setIsOpen(false);
       wsRef.current = null;
       connectInFlightRef.current = false;
@@ -399,7 +401,7 @@ export function useWebSocketRoom(opts: UseWebSocketRoomOptions) {
 
       retryRef.current += 1;
       if (retryRef.current > MAX_RETRY) {
-        console.warn('[WS] retry stopped');
+        devWarn('[WS] retry stopped');
         return;
       }
 

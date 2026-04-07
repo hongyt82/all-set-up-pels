@@ -9,6 +9,7 @@ import { FileUpload } from '../components/common/FileUpload';
 import { FileDownload } from '../components/common/FileDownload';
 import { fileService, type UploadProgress } from '../lib/fileService';
 import { api, createRequestBuilder } from '../lib/requestBuilder';
+import { devLog } from '../utils/devConsole';
 
 export function ApiTestPage() {
   const [users, setUsers] = useState<UserDto[]>([]);
@@ -163,7 +164,7 @@ export function ApiTestPage() {
   const handleUploadComplete = (fileId: string, fileName: string) => {
     setUploadedFileId(fileId);
     setUploadedFileName(fileName);
-    console.log('Upload completed:', { fileId, fileName });
+    devLog('Upload completed:', { fileId, fileName });
   };
 
   const handleUploadError = (error: string) => {
@@ -173,11 +174,11 @@ export function ApiTestPage() {
 
   const handleUploadProgress = (progress: UploadProgress) => {
     setUploadProgress(progress);
-    console.log('Upload progress:', progress);
+    devLog('Upload progress:', progress);
   };
 
   const handleDownloadComplete = (fileName: string) => {
-    console.log('Download completed:', fileName);
+    devLog('Download completed:', fileName);
   };
 
   const handleDownloadError = (error: string) => {
@@ -191,7 +192,7 @@ export function ApiTestPage() {
     setError(null);
     try {
       const response = await http.get('/users');
-      console.log('GET Response:', response);
+      devLog('GET Response:', response);
       setUsers(response.data || []);
     } catch (e: any) {
       if (
@@ -218,7 +219,7 @@ export function ApiTestPage() {
         name: 'New User',
         email: 'new@example.com',
       });
-      console.log('POST Response:', response);
+      devLog('POST Response:', response);
       setUsers(prev => [...prev, response.data]);
     } catch (e: any) {
       if (
@@ -245,7 +246,7 @@ export function ApiTestPage() {
         name: users[0].name + ' (updated)',
         email: users[0].email,
       });
-      console.log('PUT Response:', response);
+      devLog('PUT Response:', response);
       setUsers(prev =>
         prev.map(u => (u.id === users[0].id ? response.data : u))
       );
@@ -271,7 +272,7 @@ export function ApiTestPage() {
     setError(null);
     try {
       const response = await http.delete(`/users/${users[0].id}`);
-      console.log('DELETE Response:', response);
+      devLog('DELETE Response:', response);
       setUsers(prev => prev.filter(u => u.id !== users[0].id));
     } catch (e: any) {
       if (
@@ -306,11 +307,11 @@ export function ApiTestPage() {
       const response = await customBuilder.get('/users', {
         params: { limit: 10, offset: 0 },
         onDownloadProgress: progress => {
-          console.log('Download progress:', progress.percentage + '%');
+          devLog('Download progress:', progress.percentage + '%');
         },
       });
 
-      console.log('Custom Builder Response:', response);
+      devLog('Custom Builder Response:', response);
       setUsers(response.data || []);
     } catch (e: any) {
       if (
@@ -337,7 +338,7 @@ export function ApiTestPage() {
       const response = await api.get('/users', {
         params: { page: 1, size: 5 },
       });
-      console.log('API Client Response:', response);
+      devLog('API Client Response:', response);
       setUsers(response.data || []);
     } catch (e: any) {
       if (

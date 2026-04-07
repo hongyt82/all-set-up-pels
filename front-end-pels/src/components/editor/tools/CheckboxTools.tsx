@@ -1,5 +1,6 @@
 import type React from 'react';
 import { Check, X } from 'lucide-react';
+import { devLog } from '../../../utils/devConsole';
 
 export interface CheckboxElement {
   id: string;
@@ -31,7 +32,7 @@ export class CheckboxToolsManager {
     y: number,
     size: number = 20
   ): CheckboxElement {
-    console.log('☐ [CheckboxTools] 빈 체크박스 생성:', { x, y, size });
+    devLog('☐ [CheckboxTools] 빈 체크박스 생성:', { x, y, size });
     return {
       id: `checkbox-empty-${Date.now()}`,
       type: 'checkbox-empty',
@@ -53,7 +54,7 @@ export class CheckboxToolsManager {
     y: number,
     size: number = 20
   ): CheckboxElement {
-    console.log('☑ [CheckboxTools] 체크된 체크박스 생성:', { x, y, size });
+    devLog('☑ [CheckboxTools] 체크된 체크박스 생성:', { x, y, size });
     return {
       id: `checkbox-checked-${Date.now()}`,
       type: 'checkbox-checked',
@@ -75,7 +76,7 @@ export class CheckboxToolsManager {
     y: number,
     size: number = 16
   ): CheckboxElement {
-    console.log('✓ [CheckboxTools] 체크 표시 생성:', { x, y, size });
+    devLog('✓ [CheckboxTools] 체크 표시 생성:', { x, y, size });
     return {
       id: `checkbox-check-${Date.now()}`,
       type: 'checkbox-check',
@@ -97,7 +98,7 @@ export class CheckboxToolsManager {
     y: number,
     size: number = 16
   ): CheckboxElement {
-    console.log('✗ [CheckboxTools] X 표시 생성:', { x, y, size });
+    devLog('✗ [CheckboxTools] X 표시 생성:', { x, y, size });
     return {
       id: `checkbox-cross-${Date.now()}`,
       type: 'checkbox-cross',
@@ -126,7 +127,7 @@ export class CheckboxToolsManager {
       newElement.borderColor = newElement.checked ? '#059669' : '#374151';
       newElement.fillColor = newElement.checked ? '#d1fae5' : '#ffffff';
 
-      console.log('🔄 [CheckboxTools] 체크박스 토글:', {
+      devLog('🔄 [CheckboxTools] 체크박스 토글:', {
         id: element.id,
         이전상태: element.checked,
         새상태: newElement.checked,
