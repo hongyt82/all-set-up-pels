@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import type { TreeListItem } from '../../types/constraints';
 import { Rnd } from 'react-rnd';
+import { devLog } from '../../utils/devConsole';
 
 interface CircleSlashItem {
   id: string;
@@ -68,9 +69,9 @@ export const TreeListEditorPanel: React.FC<Props> = ({
       }
     });
 
-    console.log('[TreeListEditorPanel] circleSlashItems', circleSlashItems);
-    console.log('[TreeListEditorPanel] initialTree', initialTree);
-    console.log('[TreeListEditorPanel] built tree', tree);
+    devLog('[TreeListEditorPanel] circleSlashItems', circleSlashItems);
+    devLog('[TreeListEditorPanel] initialTree', initialTree);
+    devLog('[TreeListEditorPanel] built tree', tree);
 
     return tree;
   }, [circleSlashItems, initialTree]);

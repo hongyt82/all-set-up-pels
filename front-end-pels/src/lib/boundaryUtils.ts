@@ -3,6 +3,8 @@
  * 오버레이 위에 배치되는 컴포넌트들이 PDF 페이지 영역을 넘어가지 않도록 제한
  */
 
+import { devWarn } from '../utils/devConsole';
+
 /**
  * PDF 페이지 경계 상수 (A4 비율 고정)
  */
@@ -324,7 +326,7 @@ export function logBoundaryConstraint(
   after: BoundaryConstraintResult
 ): void {
   if (after.isConstrained) {
-    console.warn(`[Boundary] Component ${componentId} constrained:`, {
+    devWarn(`[Boundary] Component ${componentId} constrained:`, {
       before: { x: before.x, y: before.y },
       after: { x: after.x, y: after.y },
       constrainedX: after.constrainedX,

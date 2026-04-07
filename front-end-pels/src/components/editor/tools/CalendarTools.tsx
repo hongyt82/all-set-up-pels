@@ -1,5 +1,6 @@
 import type React from 'react';
 import { Calendar, CalendarDays, Clock, Plus } from 'lucide-react';
+import { devLog } from '../../../utils/devConsole';
 
 export interface CalendarElement {
   id: string;
@@ -26,7 +27,7 @@ export interface CalendarToolsProps {
 export class CalendarToolsManager {
   // 전체 캘린더 생성
   static createFullCalendar(x: number, y: number): CalendarElement {
-    console.log('📅 [CalendarTools] 전체 캘린더 생성:', { x, y });
+    devLog('📅 [CalendarTools] 전체 캘린더 생성:', { x, y });
     return {
       id: `calendar-full-${Date.now()}`,
       type: 'calendar-full',
@@ -44,7 +45,7 @@ export class CalendarToolsManager {
 
   // 날짜 선택기 생성
   static createDatePicker(x: number, y: number): CalendarElement {
-    console.log('📅 [CalendarTools] 날짜 선택기 생성:', { x, y });
+    devLog('📅 [CalendarTools] 날짜 선택기 생성:', { x, y });
     return {
       id: `calendar-days-${Date.now()}`,
       type: 'calendar-days',
@@ -62,7 +63,7 @@ export class CalendarToolsManager {
 
   // 시간 선택기 생성
   static createTimePicker(x: number, y: number): CalendarElement {
-    console.log('🕐 [CalendarTools] 시간 선택기 생성:', { x, y });
+    devLog('🕐 [CalendarTools] 시간 선택기 생성:', { x, y });
     return {
       id: `calendar-clock-${Date.now()}`,
       type: 'calendar-clock',
@@ -80,7 +81,7 @@ export class CalendarToolsManager {
 
   // 기간 선택기 생성
   static createDateRange(x: number, y: number): CalendarElement {
-    console.log('📅 [CalendarTools] 기간 선택기 생성:', { x, y });
+    devLog('📅 [CalendarTools] 기간 선택기 생성:', { x, y });
     const now = new Date();
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 

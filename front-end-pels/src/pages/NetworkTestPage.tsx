@@ -12,6 +12,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { IS_DEV } from '../constants/config';
+import { devLog } from '../utils/devConsole';
 import type {
   NetworkChangeEvent,
   NetworkQuality,
@@ -74,7 +75,7 @@ const NetworkTestPage: React.FC = () => {
       setNetworkHistory(prev => [event, ...prev.slice(0, 49)]); // 최대 50개 유지
 
       if (IS_DEV) {
-        console.log('🌐 네트워크 상태 변경:', event);
+        devLog('🌐 네트워크 상태 변경:', event);
       }
     });
   }, [isMonitoring]);
@@ -82,7 +83,7 @@ const NetworkTestPage: React.FC = () => {
   // 네트워크 연결 테스트
   const runConnectionTest = async () => {
     if (IS_DEV) {
-      console.log('🔗 네트워크 연결 테스트 시작');
+      devLog('🔗 네트워크 연결 테스트 시작');
     }
 
     const success = await checkNetworkConnection();
@@ -92,14 +93,14 @@ const NetworkTestPage: React.FC = () => {
     }));
 
     if (IS_DEV) {
-      console.log('🔗 네트워크 연결 테스트 결과:', success ? '성공' : '실패');
+      devLog('🔗 네트워크 연결 테스트 결과:', success ? '성공' : '실패');
     }
   };
 
   // 네트워크 품질 테스트
   const runQualityTest = async () => {
     if (IS_DEV) {
-      console.log('📊 네트워크 품질 테스트 시작');
+      devLog('📊 네트워크 품질 테스트 시작');
     }
 
     const result = await testNetworkQuality();
@@ -109,14 +110,14 @@ const NetworkTestPage: React.FC = () => {
     }));
 
     if (IS_DEV) {
-      console.log('📊 네트워크 품질 테스트 결과:', result);
+      devLog('📊 네트워크 품질 테스트 결과:', result);
     }
   };
 
   // 데이터 전송 전 검증 테스트
   const runValidationTest = async () => {
     if (IS_DEV) {
-      console.log('✅ 데이터 전송 검증 테스트 시작');
+      devLog('✅ 데이터 전송 검증 테스트 시작');
     }
 
     const result = await validateNetworkBeforeSend();
@@ -126,7 +127,7 @@ const NetworkTestPage: React.FC = () => {
     }));
 
     if (IS_DEV) {
-      console.log('✅ 데이터 전송 검증 테스트 결과:', result);
+      devLog('✅ 데이터 전송 검증 테스트 결과:', result);
     }
   };
 
@@ -167,7 +168,7 @@ const NetworkTestPage: React.FC = () => {
   // 네트워크 상태 JSON 출력
   const exportNetworkState = () => {
     const json = getNetworkStateAsJson();
-    console.log('📋 네트워크 상태 JSON:', json);
+    devLog('📋 네트워크 상태 JSON:', json);
 
     // 클립보드에 복사
     navigator.clipboard
@@ -183,7 +184,7 @@ const NetworkTestPage: React.FC = () => {
   // 실제 데이터 전송 시뮬레이션
   const simulateDataSend = async () => {
     if (IS_DEV) {
-      console.log('📤 데이터 전송 시뮬레이션 시작');
+      devLog('📤 데이터 전송 시뮬레이션 시작');
     }
 
     // 전송 전 검증
@@ -210,7 +211,7 @@ const NetworkTestPage: React.FC = () => {
       if (response.ok) {
         alert('데이터 전송 성공!');
         if (IS_DEV) {
-          console.log('📤 데이터 전송 성공:', await response.json());
+          devLog('📤 데이터 전송 성공:', await response.json());
         }
       } else {
         alert(`데이터 전송 실패: HTTP ${response.status}`);

@@ -4,6 +4,7 @@
  */
 
 import { useErrorStore } from '../stores/errorStore';
+import { devLog } from './devConsole';
 
 // 에러 타입 정의
 export type GlobalErrorType =
@@ -43,14 +44,14 @@ export class GlobalErrorHandler {
     this.setupXHRErrorHandler();
 
     this.isInitialized = true;
-    console.log('🔧 GlobalErrorHandler 초기화 완료');
+    devLog('🔧 GlobalErrorHandler 초기화 완료');
   }
 
   // Window 에러 핸들러 (JavaScript 런타임 에러)
   private setupWindowErrorHandler() {
     window.addEventListener('error', event => {
       console.error('🚨 [GlobalErrorHandler] Window Error 감지:', event.error);
-      console.log('📍 에러 위치:', {
+      devLog('📍 에러 위치:', {
         파일: event.filename,
         라인: event.lineno,
         컬럼: event.colno,
@@ -73,7 +74,7 @@ export class GlobalErrorHandler {
         '🚨 [GlobalErrorHandler] Unhandled Promise Rejection 감지:',
         event.reason
       );
-      console.log('📍 Promise 에러 정보:', {
+      devLog('📍 Promise 에러 정보:', {
         메시지: event.reason?.message,
         상태코드: event.reason?.status,
         스택: event.reason?.stack,
@@ -84,7 +85,7 @@ export class GlobalErrorHandler {
       // HTTP 에러인지 확인
       if (event.reason?.status) {
         const errorType = getErrorTypeFromStatus(event.reason.status);
-        console.log('🔴 HTTP 에러로 처리:', errorType, event.reason.status);
+        devLog('🔴 HTTP 에러로 처리:', errorType, event.reason.status);
         showError(
           errorType,
           `HTTP ${event.reason.status} 에러가 발생했습니다.`,
@@ -92,7 +93,7 @@ export class GlobalErrorHandler {
           event.reason.status
         );
       } else {
-        console.log('🔴 런타임 에러로 처리');
+        devLog('🔴 런타임 에러로 처리');
         showError(
           'runtime-error',
           event.reason?.message || 'Promise 에러가 발생했습니다.',
@@ -110,7 +111,7 @@ export class GlobalErrorHandler {
     const originalFetch = window.fetch;
 
     window.fetch = async (...args) => {
-      console.log('🌐 [GlobalErrorHandler] Fetch 요청 시작:', args[0]);
+      devLog('🌐 [GlobalErrorHandler] Fetch 요청 시작:', args[0]);
 
       try {
         const response = await originalFetch(...args);
@@ -141,10 +142,7 @@ export class GlobalErrorHandler {
             response.status
           );
         } else {
-          console.log(
-            '✅ [GlobalErrorHandler] Fetch 요청 성공:',
-            response.status
-          );
+          devLog('✅ [GlobalErrorHandler] Fetch 요청 성공:', response.status);
         }
 
         return response;
@@ -182,7 +180,7 @@ export class GlobalErrorHandler {
     ) {
       (this as any)._url = url;
       (this as any)._method = method;
-      console.log('🌐 [GlobalErrorHandler] XHR 요청 시작:', { method, url });
+      devLog('🌐 [GlobalErrorHandler] XHR 요청 시작:', { method, url });
       return originalXHROpen.call(
         this,
         method,
@@ -233,7 +231,7 @@ export class GlobalErrorHandler {
     details?: string,
     statusCode?: number
   ) {
-    console.log('🔴 [GlobalErrorHandler] 수동 에러 발생:', {
+    devLog('🔴 [GlobalErrorHandler] 수동 에러 발생:', {
       타입: type,
       메시지: message,
       상세정보: details,

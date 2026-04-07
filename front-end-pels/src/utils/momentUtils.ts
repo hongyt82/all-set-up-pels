@@ -1,4 +1,5 @@
 import moment from 'moment';
+import { devWarn } from './devConsole';
 
 /**
  * Moment.js 유틸리티 함수 모음
@@ -405,7 +406,7 @@ export const safeFormat = (
     const m = moment(date);
     return m.isValid() ? m.format(format) : fallback;
   } catch (error) {
-    console.warn('Date formatting error:', error);
+    devWarn('Date formatting error:', error);
     return fallback;
   }
 };

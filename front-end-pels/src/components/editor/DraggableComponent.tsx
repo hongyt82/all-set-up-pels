@@ -11,6 +11,7 @@ import { useBoundaryConstraint } from '../../hooks/useBoundaryConstraint';
 import { useEditorStore } from '../../stores/editorStore';
 import { BoundaryIndicator } from './BoundaryIndicator.tsx';
 import { PDF_BOUNDARY, isOutOfBounds } from '../../lib/boundaryUtils';
+import { devWarn } from '../../utils/devConsole';
 
 interface DraggableComponentProps {
   id: string;
@@ -80,7 +81,7 @@ export function DraggableComponent({
     setIsOutOfBoundsWarning(outOfBounds);
 
     if (outOfBounds) {
-      console.warn(`⚠️ [경계 벗어남] Component ${id}:`, {
+      devWarn(`⚠️ [경계 벗어남] Component ${id}:`, {
         x: position.x,
         y: position.y,
         width: position.width,

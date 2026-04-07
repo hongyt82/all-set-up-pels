@@ -1,5 +1,6 @@
 import type React from 'react';
 import type { ToolCategory } from '../EditorHeader.tsx';
+import { devLog } from '../../../utils/devConsole';
 
 // 각 도구별 매니저 import
 import BanToolsManager, { BanToolsDemo } from './BanTools.tsx';
@@ -59,7 +60,7 @@ export class ToolsManager {
     y: number,
     options?: CreateOptions
   ): PDFElement | null {
-    console.log('🔧 [ToolsManager] 요소 생성:', {
+    devLog('🔧 [ToolsManager] 요소 생성:', {
       category,
       tool,
       x,
@@ -276,7 +277,7 @@ export class ToolsManager {
       else if (element.type.startsWith('circle-')) stats.circle++;
     });
 
-    console.log('📊 [ToolsManager] 요소 통계:', stats);
+    devLog('📊 [ToolsManager] 요소 통계:', stats);
     return stats;
   }
 }

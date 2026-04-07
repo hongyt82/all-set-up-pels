@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import { getEffectiveApiBaseUrl, IS_DEV } from '../constants/config';
+import { devWarn } from '../utils/devConsole';
 
 let cached: AxiosInstance | null = null;
 
@@ -27,7 +28,7 @@ export function getHttpClient(): AxiosInstance {
     error => {
       // In development mode, provide fallback for connection errors
       if (IS_DEV && error.code === 'ECONNREFUSED') {
-        console.warn(
+        devWarn(
           '[HTTP] Connection refused, using mock response for development'
         );
         // Return a mock response instead of rejecting
@@ -78,7 +79,7 @@ export function createMultipartClient(): AxiosInstance {
     error => {
       // In development mode, provide fallback for connection errors
       if (IS_DEV && error.code === 'ECONNREFUSED') {
-        console.warn(
+        devWarn(
           '[HTTP] Multipart connection refused, using mock response for development'
         );
         return Promise.resolve({

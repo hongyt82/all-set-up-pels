@@ -1,6 +1,7 @@
 import type { RouteGuardConfig } from '../components/common/RouteGuard';
 import { ROUTES } from './routes';
 import { IS_DEV } from './config.ts';
+import { devLog } from '../utils/devConsole';
 
 /**
  * 전역 가드 활성화 플래그 (true 시 guards 로직 활성화)
@@ -20,7 +21,7 @@ export const customRouteGuardConfig: RouteGuardConfig = {
    * false를 반환하면 경로 변경을 차단
    */
   onBeforeRouteChange: async (from, to) => {
-    console.log('🔄 [RouteGuard] 경로 변경 시작:', {
+    devLog('🔄 [RouteGuard] 경로 변경 시작:', {
       from,
       to,
       timestamp: new Date().toISOString(),
@@ -34,7 +35,7 @@ export const customRouteGuardConfig: RouteGuardConfig = {
           '저장되지 않은 변경사항이 있습니다. 정말 떠나시겠습니까?'
         );
         if (!shouldLeave) {
-          console.log('🚫 [RouteGuard] 사용자가 경로 변경을 취소함');
+          devLog('🚫 [RouteGuard] 사용자가 경로 변경을 취소함');
           return false;
         }
       }
@@ -42,7 +43,7 @@ export const customRouteGuardConfig: RouteGuardConfig = {
 
     // 예: 특정 경로로의 이동 전 로딩 상태 설정
     if (to === ROUTES.EDITOR || to === ROUTES.EDITOR) {
-      console.log('⏳ [RouteGuard] PDF 도구 페이지로 이동 중...');
+      devLog('⏳ [RouteGuard] PDF 도구 페이지로 이동 중...');
     }
 
     return true;
@@ -52,7 +53,7 @@ export const customRouteGuardConfig: RouteGuardConfig = {
    * 경로 변경 후 실행되는 로직
    */
   onAfterRouteChange: async (from, to) => {
-    console.log('✅ [RouteGuard] 경로 변경 완료:', {
+    devLog('✅ [RouteGuard] 경로 변경 완료:', {
       from,
       to,
       timestamp: new Date().toISOString(),
@@ -60,13 +61,13 @@ export const customRouteGuardConfig: RouteGuardConfig = {
 
     // 예: 페이지별 초기화 로직
     if (to === ROUTES.EDITOR) {
-      console.log('📝 [RouteGuard] 편집기 페이지 초기화');
+      devLog('📝 [RouteGuard] 편집기 페이지 초기화');
       // 편집기 관련 초기화 로직
     } else if (to === ROUTES.VIEWER) {
-      console.log('👁️ [RouteGuard] 뷰어 페이지 초기화');
+      devLog('👁️ [RouteGuard] 뷰어 페이지 초기화');
       // 뷰어 관련 초기화 로직
     } else if (to === ROUTES.HOME || to === ROUTES.ROOT) {
-      console.log('🏠 [RouteGuard] 홈 페이지 초기화');
+      devLog('🏠 [RouteGuard] 홈 페이지 초기화');
       // 홈 페이지 관련 초기화 로직
     }
 
@@ -80,21 +81,21 @@ export const customRouteGuardConfig: RouteGuardConfig = {
   guards: {
     [ROUTES.EDITOR]: {
       canAccess: async (from, to) => {
-        console.log('🔒 [RouteGuard] 편집기 접근 권한 체크:', { from, to });
+        devLog('🔒 [RouteGuard] 편집기 접근 권한 체크:', { from, to });
         // 가드 비활성화 시 항상 통과
         if (!ROUTE_GUARDS_ENABLED) return true;
 
         // 예: 로그인 상태 체크
         const isLoggedIn = checkLoginStatus();
         if (!isLoggedIn) {
-          console.log('🚫 [RouteGuard] 로그인이 필요합니다');
+          devLog('🚫 [RouteGuard] 로그인이 필요합니다');
           return false;
         }
 
         // 예: 편집 권한 체크
         const hasEditPermission = checkEditPermission();
         if (!hasEditPermission) {
-          console.log('🚫 [RouteGuard] 편집 권한이 없습니다');
+          devLog('🚫 [RouteGuard] 편집 권한이 없습니다');
           return false;
         }
 
@@ -103,21 +104,21 @@ export const customRouteGuardConfig: RouteGuardConfig = {
       redirectTo: ROUTES.HOME, // 접근 불가 시 리다이렉트할 경로
       onAccessDenied: (from, to) => {
         if (!ROUTE_GUARDS_ENABLED) return;
-        console.log('🚫 [RouteGuard] 편집기 접근 거부:', { from, to });
+        devLog('🚫 [RouteGuard] 편집기 접근 거부:', { from, to });
         alert('편집기 접근 권한이 없습니다.');
       },
     },
 
     [ROUTES.VIEWER]: {
       canAccess: async (from, to) => {
-        console.log('🔒 [RouteGuard] 뷰어 접근 권한 체크:', { from, to });
+        devLog('🔒 [RouteGuard] 뷰어 접근 권한 체크:', { from, to });
         // 가드 비활성화 시 항상 통과
         if (!ROUTE_GUARDS_ENABLED) return true;
 
         // 예: 로그인 상태 체크
         const isLoggedIn = checkLoginStatus();
         if (!isLoggedIn) {
-          console.log('🚫 [RouteGuard] 로그인이 필요합니다');
+          devLog('🚫 [RouteGuard] 로그인이 필요합니다');
           return false;
         }
 
@@ -126,14 +127,14 @@ export const customRouteGuardConfig: RouteGuardConfig = {
       redirectTo: ROUTES.HOME,
       onAccessDenied: (from, to) => {
         if (!ROUTE_GUARDS_ENABLED) return;
-        console.log('🚫 [RouteGuard] 뷰어 접근 거부:', { from, to });
+        devLog('🚫 [RouteGuard] 뷰어 접근 거부:', { from, to });
         alert('뷰어 접근 권한이 없습니다.');
       },
     },
 
     [ROUTES.HOME]: {
       canAccess: async (from, to) => {
-        console.log('🔒 [RouteGuard] 홈 페이지 접근 권한 체크:', { from, to });
+        devLog('🔒 [RouteGuard] 홈 페이지 접근 권한 체크:', { from, to });
         // 홈 페이지는 항상 접근 가능
         return true;
       },
@@ -176,7 +177,7 @@ function checkEditPermission(): boolean {
  */
 function trackPageVisit(path: string): void {
   // 예: 페이지 방문 통계 수집
-  console.log('📊 [RouteGuard] 페이지 방문 통계:', {
+  devLog('📊 [RouteGuard] 페이지 방문 통계:', {
     path,
     timestamp: new Date().toISOString(),
   });

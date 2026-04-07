@@ -21,6 +21,7 @@ import {
 import { useState } from 'react';
 import { MENU_LABELS } from '../../constants/mainmenu';
 import { Button } from '../ui/button.tsx';
+import { devLog, devWarn } from '../../utils/devConsole';
 
 /**
  * 에디터에서 사용하는 도구 카테고리
@@ -165,7 +166,7 @@ export function EditorHeader({
       alert('먼저 PDF와 템플릿을 로드한 뒤 저장할 수 있습니다.');
       return;
     }
-    console.log('💾 [EditorHeader] 새로운 버전 서식 생성');
+    devLog('💾 [EditorHeader] 새로운 버전 서식 생성');
     onSaveFormJson?.();
   };
 
@@ -181,7 +182,7 @@ export function EditorHeader({
       if (!f) return;
       onImportPdf?.(f); // PDFWorkspace 로 전달
       // setHasPdfLoaded(true);
-      console.log('📄 [EditorHeader] PDF 불러오기:', {
+      devLog('📄 [EditorHeader] PDF 불러오기:', {
         file: f.name,
         size: f.size,
       });
@@ -192,7 +193,7 @@ export function EditorHeader({
   const pickJsonFile = () => {
     if (!hasPdfLoaded) {
       alert('먼저 PDF를 불러온 후 JSON 템플릿을 불러와 주세요.');
-      console.warn('[EditorHeader] JSON 불러오기 차단: PDF 미로드');
+      devWarn('[EditorHeader] JSON 불러오기 차단: PDF 미로드');
       return;
     }
     const input = document.createElement('input');
@@ -201,7 +202,7 @@ export function EditorHeader({
     input.onchange = () => {
       const f = input.files?.[0];
       if (!f) return;
-      console.log('[EditorHeader] JSON 파일 선택:', {
+      devLog('[EditorHeader] JSON 파일 선택:', {
         name: f.name,
         size: f.size,
       });
@@ -213,12 +214,12 @@ export function EditorHeader({
   const pickConstraintJsonFile = () => {
     if (!hasPdfLoaded) {
       alert('먼저 PDF를 불러온 후 Rule JSON을 불러와 주세요.');
-      console.warn('[EditorHeader] Rule JSON 불러오기 차단: PDF 미로드');
+      devWarn('[EditorHeader] Rule JSON 불러오기 차단: PDF 미로드');
       return;
     }
 
     if (!onLoadConstraintJson) {
-      console.warn('[EditorHeader] onLoadConstraintJson 핸들러가 없습니다.');
+      devWarn('[EditorHeader] onLoadConstraintJson 핸들러가 없습니다.');
       alert('Rule JSON 로드 핸들러가 연결되어 있지 않습니다.');
       return;
     }
@@ -229,7 +230,7 @@ export function EditorHeader({
     input.onchange = () => {
       const f = input.files?.[0];
       if (!f) return;
-      console.log('[EditorHeader] Rule JSON 파일 선택:', {
+      devLog('[EditorHeader] Rule JSON 파일 선택:', {
         name: f.name,
         size: f.size,
       });
@@ -243,7 +244,7 @@ export function EditorHeader({
       alert('먼저 PDF와 템플릿을 로드한 뒤 저장할 수 있습니다.');
       return;
     }
-    console.log('💾 [EditorHeader] JSON 템플릿 저장');
+    devLog('💾 [EditorHeader] JSON 템플릿 저장');
     onSaveTemplate?.();
   };
 
@@ -252,7 +253,7 @@ export function EditorHeader({
       alert('먼저 PDF와 템플릿을 로드한 뒤 저장할 수 있습니다.');
       return;
     }
-    console.log('💾 [EditorHeader] JSON 템플릿 다른 이름으로 저장');
+    devLog('💾 [EditorHeader] JSON 템플릿 다른 이름으로 저장');
     onSaveTemplateAs?.();
   };
 
@@ -260,7 +261,7 @@ export function EditorHeader({
     const next = window.prompt('문서 키를 입력하세요.', docKey);
     if (next && next.trim()) {
       onChangeDocKey?.(next.trim());
-      console.log('🔑 [EditorHeader] 문서키 변경:', next.trim());
+      devLog('🔑 [EditorHeader] 문서키 변경:', next.trim());
     }
   };
 
@@ -319,7 +320,7 @@ export function EditorHeader({
     const newSelection = isSelected ? null : category.id;
 
     if (isDisabled) {
-      console.log('🚫 [EditorHeader] 카테고리 클릭 차단 (총 페이지 0)', {
+      devLog('🚫 [EditorHeader] 카테고리 클릭 차단 (총 페이지 0)', {
         category: category.id,
       });
       return;

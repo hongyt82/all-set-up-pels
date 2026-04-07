@@ -4,6 +4,7 @@ import { IS_DEV } from '../../constants/config.ts';
 import { ROUTES } from '../../constants/routes';
 import { useEditorStore } from '../../stores/editorStore';
 import { checkNetworkConnection } from '../../utils';
+import { devLog, devWarn } from '../../utils/devConsole';
 
 /**
  * 상태 보존 관련 상수
@@ -25,12 +26,10 @@ const saveDraftState = (state: any) => {
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
     localStorage.setItem(DRAFT_TIMESTAMP_KEY, new Date().toISOString());
 
-    if (IS_DEV) {
-      console.log('💾 [RouteGuard] 상태 보존 완료:', {
-        timestamp: draftData.timestamp,
-        stateKeys: Object.keys(state),
-      });
-    }
+    devLog('💾 [RouteGuard] 상태 보존 완료:', {
+      timestamp: draftData.timestamp,
+      stateKeys: Object.keys(state),
+    });
   } catch (error) {
     console.error('❌ [RouteGuard] 상태 보존 실패:', error);
   }
@@ -56,12 +55,10 @@ const loadDraftState = () => {
 
     const parsed = JSON.parse(draftData);
 
-    if (IS_DEV) {
-      console.log('📂 [RouteGuard] 상태 복원:', {
-        timestamp: parsed.timestamp,
-        stateKeys: Object.keys(parsed.state),
-      });
-    }
+    devLog('📂 [RouteGuard] 상태 복원:', {
+      timestamp: parsed.timestamp,
+      stateKeys: Object.keys(parsed.state),
+    });
 
     return parsed.state;
   } catch (error) {
@@ -74,9 +71,7 @@ const clearDraftState = () => {
   localStorage.removeItem(DRAFT_STORAGE_KEY);
   localStorage.removeItem(DRAFT_TIMESTAMP_KEY);
 
-  if (IS_DEV) {
-    console.log('🗑️ [RouteGuard] 임시 상태 삭제 완료');
-  }
+  devLog('🗑️ [RouteGuard] 임시 상태 삭제 완료');
 };
 
 const isEditorRoute = (path: string) => {
@@ -134,7 +129,7 @@ export function RouteGuard({ config }: { config: RouteGuardConfig }) {
         isNavigatingRef.current = true;
 
         if (config.debug) {
-          console.log('🛡️ [RouteGuard] 경로 변경 감지:', {
+          devLog('🛡️ [RouteGuard] 경로 변경 감지:', {
             from: previousPath,
             to: currentPath,
             timestamp: new Date().toISOString(),
@@ -149,7 +144,7 @@ export function RouteGuard({ config }: { config: RouteGuardConfig }) {
           );
           if (canProceed === false) {
             if (config.debug) {
-              console.log('🚫 [RouteGuard] 경로 변경 차단:', {
+              devLog('🚫 [RouteGuard] 경로 변경 차단:', {
                 from: previousPath,
                 to: currentPath,
               });
@@ -168,7 +163,7 @@ export function RouteGuard({ config }: { config: RouteGuardConfig }) {
             const hasAccess = await guard.canAccess(previousPath, currentPath);
             if (!hasAccess) {
               if (config.debug) {
-                console.log('🚫 [RouteGuard] 접근 권한 없음:', {
+                devLog('🚫 [RouteGuard] 접근 권한 없음:', {
                   from: previousPath,
                   to: currentPath,
                 });
@@ -196,7 +191,7 @@ export function RouteGuard({ config }: { config: RouteGuardConfig }) {
         }
 
         if (config.debug) {
-          console.log('✅ [RouteGuard] 경로 변경 완료:', {
+          devLog('✅ [RouteGuard] 경로 변경 완료:', {
             from: previousPath,
             to: currentPath,
           });
@@ -261,9 +256,7 @@ export function useRouteGuard(config: RouteGuardConfig) {
 export const networkAwareRouteGuardConfig: RouteGuardConfig = {
   debug: IS_DEV,
   onBeforeRouteChange: async (from, to) => {
-    if (IS_DEV) {
-      console.log('🔄 [RouteGuard] 경로 변경 시작:', { from, to });
-    }
+    devLog('🔄 [RouteGuard] 경로 변경 시작:', { from, to });
 
     // 편집기/뷰어 경로 간 이동인지 확인
     const isEditorToEditor = isEditorRoute(from) && isEditorRoute(to);
@@ -279,9 +272,7 @@ export const networkAwareRouteGuardConfig: RouteGuardConfig = {
           try {
             isConnected = await checkNetworkConnection();
           } catch (error) {
-            if (IS_DEV) {
-              console.warn('⚠️ [RouteGuard] 네트워크 연결 확인 실패:', error);
-            }
+            devWarn('⚠️ [RouteGuard] 네트워크 연결 확인 실패:', error);
             isConnected = false;
           }
         }
@@ -294,14 +285,12 @@ export const networkAwareRouteGuardConfig: RouteGuardConfig = {
           if (currentState && Object.keys(currentState).length > 0) {
             saveDraftState(currentState);
 
-            if (IS_DEV) {
-              console.log('💾 [RouteGuard] 네트워크 불안정으로 상태 보존:', {
-                isOnline,
-                isConnected,
-                from,
-                to,
-              });
-            }
+            devLog('💾 [RouteGuard] 네트워크 불안정으로 상태 보존:', {
+              isOnline,
+              isConnected,
+              from,
+              to,
+            });
           }
         } else {
           // 네트워크가 안정적인 경우 기존 임시 상태 삭제
@@ -315,9 +304,7 @@ export const networkAwareRouteGuardConfig: RouteGuardConfig = {
     return true;
   },
   onAfterRouteChange: async (from, to) => {
-    if (IS_DEV) {
-      console.log('✅ [RouteGuard] 경로 변경 완료:', { from, to });
-    }
+    devLog('✅ [RouteGuard] 경로 변경 완료:', { from, to });
 
     // 편집기로 이동할 때 임시 상태 복원 검토
     if (isEditorRoute(to)) {
@@ -328,13 +315,11 @@ export const networkAwareRouteGuardConfig: RouteGuardConfig = {
           // 임시 상태가 있으면 복원
           useEditorStore.setState(draftState);
 
-          if (IS_DEV) {
-            console.log('📂 [RouteGuard] 임시 상태 복원 완료:', {
-              from,
-              to,
-              restoredKeys: Object.keys(draftState),
-            });
-          }
+          devLog('📂 [RouteGuard] 임시 상태 복원 완료:', {
+            from,
+            to,
+            restoredKeys: Object.keys(draftState),
+          });
         }
       } catch (error) {
         console.error('❌ [RouteGuard] 상태 복원 중 오류:', error);
@@ -344,22 +329,16 @@ export const networkAwareRouteGuardConfig: RouteGuardConfig = {
   guards: {
     [ROUTES.EDITOR]: {
       canAccess: (from: string, to: string): boolean => {
-        if (IS_DEV) {
-          console.log('🔒 [RouteGuard] 편집기 접근 권한 체크:', { from, to });
-        }
+        devLog('🔒 [RouteGuard] 편집기 접근 권한 체크:', { from, to });
         return true;
       },
       onAccessDenied: (from: string, to: string): void => {
-        if (IS_DEV) {
-          console.log('🚫 [RouteGuard] 편집기 접근 거부:', { from, to });
-        }
+        devLog('🚫 [RouteGuard] 편집기 접근 거부:', { from, to });
       },
     },
     [ROUTES.VIEWER]: {
       canAccess: (from: string, to: string): boolean => {
-        if (IS_DEV) {
-          console.log('🔒 [RouteGuard] 뷰어 접근 권한 체크:', { from, to });
-        }
+        devLog('🔒 [RouteGuard] 뷰어 접근 권한 체크:', { from, to });
         return true;
       },
     },
@@ -372,25 +351,25 @@ export const networkAwareRouteGuardConfig: RouteGuardConfig = {
 export const defaultRouteGuardConfig: RouteGuardConfig = {
   debug: IS_DEV,
   onBeforeRouteChange: (from, to) => {
-    console.log('🔄 [RouteGuard] 경로 변경 시작:', { from, to });
+    devLog('🔄 [RouteGuard] 경로 변경 시작:', { from, to });
     return true;
   },
   onAfterRouteChange: (from, to) => {
-    console.log('✅ [RouteGuard] 경로 변경 완료:', { from, to });
+    devLog('✅ [RouteGuard] 경로 변경 완료:', { from, to });
   },
   guards: {
     [ROUTES.EDITOR]: {
       canAccess: (from: string, to: string): boolean => {
-        console.log('🔒 [RouteGuard] 편집기 접근 권한 체크:', { from, to });
+        devLog('🔒 [RouteGuard] 편집기 접근 권한 체크:', { from, to });
         return true;
       },
       onAccessDenied: (from: string, to: string): void => {
-        console.log('🚫 [RouteGuard] 편집기 접근 거부:', { from, to });
+        devLog('🚫 [RouteGuard] 편집기 접근 거부:', { from, to });
       },
     },
     [ROUTES.VIEWER]: {
       canAccess: (from: string, to: string): boolean => {
-        console.log('🔒 [RouteGuard] 뷰어 접근 권한 체크:', { from, to });
+        devLog('🔒 [RouteGuard] 뷰어 접근 권한 체크:', { from, to });
         return true;
       },
     },

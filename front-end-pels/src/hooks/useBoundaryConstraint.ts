@@ -16,6 +16,7 @@ import {
   PDF_BOUNDARY,
   type ComponentPosition,
 } from '../lib/boundaryUtils';
+import { devWarn } from '../utils/devConsole';
 
 export interface UseBoundaryConstraintOptions {
   enableSnap?: boolean; // 그리드 스냅 활성화
@@ -174,7 +175,7 @@ export function useBoundaryConstraint(
       );
 
       if (enableLogging && constrained.isConstrained) {
-        console.warn(`[Boundary] Component ${componentId} size constrained:`, {
+        devWarn(`[Boundary] Component ${componentId} size constrained:`, {
           requested: { width, height },
           constrained: { width: constrained.width, height: constrained.height },
         });

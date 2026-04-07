@@ -38,6 +38,7 @@ import {
 import fontkit from '@pdf-lib/fontkit';
 import axios from 'axios';
 import { useWebSocketRoom } from '../hooks/useWebSocketRoom';
+import { devLog, devWarn } from '../utils/devConsole';
 
 // import NotoUrl from '/fonts/NotoSansKR-Regular.ttf?url';
 function getFontUrl() {
@@ -460,8 +461,7 @@ export function ViewerPage() {
         // 1) 전체 clear
         if (isClearAll) {
           setPathDataByPage(prev => ({ ...prev, [logicalPage]: [] }));
-          if (import.meta.env.DEV)
-            console.log('[DRAW CLEAR ALL]', { logicalPage });
+          if (import.meta.env.DEV) devLog('[DRAW CLEAR ALL]', { logicalPage });
           return;
         }
 
@@ -474,7 +474,7 @@ export function ViewerPage() {
               s => String((s as any)?.id ?? '') !== delId
             );
             if (import.meta.env.DEV)
-              console.log('[DRAW DELETE ONE]', {
+              devLog('[DRAW DELETE ONE]', {
                 logicalPage,
                 delId,
                 before: cur.length,
@@ -501,7 +501,7 @@ export function ViewerPage() {
 
           // 여기서 확인할 로그
           if (import.meta.env.DEV) {
-            console.log('[DRAW APPLY]', {
+            devLog('[DRAW APPLY]', {
               logicalPage,
               added: incoming.length,
               total: next.length,
@@ -634,7 +634,7 @@ export function ViewerPage() {
         if (list.length === 0) {
           pendingSetFormsRef.current.push(p);
           if (import.meta.env.DEV) {
-            console.log('[setForm] queued (overlays not ready)', {
+            devLog('[setForm] queued (overlays not ready)', {
               logicalPage,
               // pdfPageNo,
               formId: p.formId,
@@ -648,7 +648,7 @@ export function ViewerPage() {
         if (import.meta.env.DEV) {
           const has = list.some(o => String(o.id) === String(p.formId));
           if (!has)
-            console.warn('[setForm] id not found', {
+            devWarn('[setForm] id not found', {
               logicalPage,
               formId: p.formId,
               sampleIds: list.slice(0, 10).map(o => o.id),
@@ -769,8 +769,7 @@ export function ViewerPage() {
     // onMovePage: ({ page }) => applyIncomingMovePage(page),
     onMovePage: ({ page }) => {
       //디버깅
-      if (import.meta.env.DEV)
-        console.log('[movePage] IN  constraintPageNo=', page);
+      if (import.meta.env.DEV) devLog('[movePage] IN  constraintPageNo=', page);
       applyIncomingMovePage(page);
     },
 
@@ -805,8 +804,7 @@ export function ViewerPage() {
   });
 
   useEffect(() => {
-    if (import.meta.env.DEV)
-      console.log('[WS OPEN?]', wsRoom.isOpen, wsUrl, roomId);
+    if (import.meta.env.DEV) devLog('[WS OPEN?]', wsRoom.isOpen, wsUrl, roomId);
     if (wsRoom.isOpen) {
       wsRoom.requestClientList(); // 열리자마자 한번 더 요청
     }
@@ -879,7 +877,7 @@ export function ViewerPage() {
     pendingSetFormsRef.current = [];
 
     if (import.meta.env.DEV) {
-      console.log('[setForm] flush pending queue', q.length);
+      devLog('[setForm] flush pending queue', q.length);
     }
 
     q.forEach(p => applyIncomingSetForm(p));
@@ -936,12 +934,12 @@ export function ViewerPage() {
     lastSentPdfPageNoRef.current = logical;
 
     if (import.meta.env.DEV) {
-      console.log('[movePage] OUT logical', { logical });
+      devLog('[movePage] OUT logical', { logical });
     }
 
     const ok = wsRoom.sendMovePage(logical);
     if (import.meta.env.DEV && !ok) {
-      console.log('[movePage] sendMovePage skipped (ws not open)');
+      devLog('[movePage] sendMovePage skipped (ws not open)');
     }
   }, [pageInfo.currentPage, wsRoom.isOpen, wsRoom.sendMovePage]);
 
@@ -994,15 +992,10 @@ export function ViewerPage() {
 
         // 디버깅
         const ct = pdfRes.headers?.['content-type'];
-        console.log(
-          '[PDF PROXY] content-type=',
-          ct,
-          'size=',
-          pdfRes.data?.size
-        );
+        devLog('[PDF PROXY] content-type=', ct, 'size=', pdfRes.data?.size);
 
         const textHead = await (pdfRes.data as Blob).slice(0, 50).text();
-        console.log('[PDF PROXY] head=', JSON.stringify(textHead));
+        devLog('[PDF PROXY] head=', JSON.stringify(textHead));
 
         setPdfFile(file);
         setCurrentFile('viewer.pdf');
@@ -1040,7 +1033,7 @@ export function ViewerPage() {
         });
         setAttachmentsByPage(attachmentMap);
 
-        console.log('[ViewerPage] pathDataByPage', pathMap);
+        devLog('[ViewerPage] pathDataByPage', pathMap);
 
         const map: Record<number, OverlayItem[]> = {};
         (json.pages || []).forEach(pg => {
@@ -1102,7 +1095,7 @@ export function ViewerPage() {
 
     if (!obj.docId) obj.docId = 'UNKNOWN';
 
-    console.log('[Rule] apply', {
+    devLog('[Rule] apply', {
       pages: obj.pages.length,
       treelist: obj.treelist?.length,
     });
@@ -1282,10 +1275,7 @@ export function ViewerPage() {
         const bytes = new Uint8Array(await res.arrayBuffer());
         unicodeFont = await pdfDocLib.embedFont(bytes, { subset: false });
       } catch (e) {
-        console.warn(
-          'NotoSansKR 임베드 실패 — pdf-lib 기본 폰트로 진행합니다.',
-          e
-        );
+        devWarn('NotoSansKR 임베드 실패 — pdf-lib 기본 폰트로 진행합니다.', e);
       }
 
       // 각 페이지별 컴포넌트 그리기
@@ -1712,7 +1702,7 @@ export function ViewerPage() {
                 (pg.components || []).forEach((c, i) => {
                   // 지원하지 않는 type은 스킵 (예: satisfactionbox, 기타 사용자 정의 타입 등)
                   if (!SUPPORTED_TYPES.includes(c.type as SupportedType)) {
-                    console.warn(
+                    devWarn(
                       '[ViewerPage] unsupported component type, skip:',
                       c.type,
                       c

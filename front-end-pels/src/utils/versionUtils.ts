@@ -3,6 +3,8 @@
  * package.json의 version을 기반으로 앱 버전 정보를 관리
  */
 
+import { devLog } from './devConsole';
+
 // package.json에서 버전 정보를 가져오기 위한 import
 // 빌드 시점에 Vite가 이 값을 주입합니다
 declare const __APP_VERSION__: string;
@@ -282,14 +284,14 @@ export const getVersionBadgeColor = (versionInfo: AppVersionInfo): string => {
 export const logVersionInfo = (): void => {
   const versionInfo = getAppVersion();
 
-  console.log('🚀 App Version Info:');
-  console.log(`   Version: ${versionInfo.full}`);
-  console.log(`   Type: ${versionInfo.versionType}`);
-  console.log(`   Environment: ${versionInfo.environment}`);
-  console.log(`   Build Time: ${versionInfo.buildTime}`);
-  console.log(`   Deploy Date: ${versionInfo.deployDate}`);
+  devLog('🚀 App Version Info:');
+  devLog(`   Version: ${versionInfo.full}`);
+  devLog(`   Type: ${versionInfo.versionType}`);
+  devLog(`   Environment: ${versionInfo.environment}`);
+  devLog(`   Build Time: ${versionInfo.buildTime}`);
+  devLog(`   Deploy Date: ${versionInfo.deployDate}`);
   if (versionInfo.gitCommit) {
-    console.log(`   Git Commit: ${versionInfo.gitCommit}`);
+    devLog(`   Git Commit: ${versionInfo.gitCommit}`);
   }
 };
 

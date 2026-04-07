@@ -28,6 +28,7 @@ import { ConstraintRuleListPanel } from '../components/editor/ConstraintRuleList
 import { TreeListEditorPanel } from '../components/editor/TreeListEditorPanel';
 // import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { devLog, devWarn } from '../utils/devConsole';
 
 // V1 과 동일한 A4 비율 기준
 const DESIGN_RATIO = PDF_BOUNDARY.height / PDF_BOUNDARY.width; // 736/520
@@ -369,20 +370,20 @@ export function EditorPage() {
         withCredentials: true,
       });
 
-      console.log('[EditorPage] API response:', metaRes.data);
-      console.log('[EditorPage] PRCDOC_CFY:', metaRes.data?.PRCDOC_CFY);
-      console.log('[EditorPage] PRCDOC_NO:', metaRes.data?.PRCDOC_NO);
+      devLog('[EditorPage] API response:', metaRes.data);
+      devLog('[EditorPage] PRCDOC_CFY:', metaRes.data?.PRCDOC_CFY);
+      devLog('[EditorPage] PRCDOC_NO:', metaRes.data?.PRCDOC_NO);
 
       const { PDF_PATH, FRM_OVER_JSON, FRM_CONS_JSON, PRCDOC_CFY, PRCDOC_NO } =
         metaRes.data;
 
       const nextDocKey = buildDocKeyFromApi(PRCDOC_CFY, PRCDOC_NO);
 
-      console.log('[EditorPage] buildDocKeyFromApi input', {
+      devLog('[EditorPage] buildDocKeyFromApi input', {
         PRCDOC_CFY,
         PRCDOC_NO,
       });
-      console.log('[EditorPage] generated docKey:', nextDocKey);
+      devLog('[EditorPage] generated docKey:', nextDocKey);
 
       if (sourceMode === 'db') {
         setDocKey(buildDocKeyFromApi(PRCDOC_CFY, PRCDOC_NO));
@@ -491,7 +492,7 @@ export function EditorPage() {
       const isDisabled = totalPages === 0;
 
       if (isDisabled) {
-        console.log('🚫 [EditorPage] Category 선택 차단 (총 페이지 0)', {
+        devLog('🚫 [EditorPage] Category 선택 차단 (총 페이지 0)', {
           category,
         });
         return;
@@ -500,7 +501,7 @@ export function EditorPage() {
         setIsOverlayVisible(true);
       }
       setSelectedCategory(category);
-      console.log('📝 [EditorPage] Category 선택 변경', {
+      devLog('📝 [EditorPage] Category 선택 변경', {
         previous: selectedCategory,
         next: category,
         currentPage,
@@ -741,7 +742,7 @@ export function EditorPage() {
           docKey={docKey}
           onChangeDocKey={setDocKey}
           onImportPdf={file => {
-            console.log('📄 [EditorPage] importPdf from header', file.name);
+            devLog('📄 [EditorPage] importPdf from header', file.name);
             wsRef.current?.loadPdfFile(file);
           }}
           onSaveFormJson={() => wsRef.current?.downloadJsonCreate()}
@@ -771,7 +772,7 @@ export function EditorPage() {
           // treelist 생성
           onCreateTreeList={() => {
             const items = wsRef.current?.getAllCircleSlashItems() ?? [];
-            console.warn('[TreeList OPEN]', items);
+            devWarn('[TreeList OPEN]', items);
             setTreeEditorMode('create');
             setIsTreeEditorOpen(true);
           }}
@@ -792,7 +793,7 @@ export function EditorPage() {
               insertAfter,
             });
 
-            console.log('COPY RESULT:', results);
+            devLog('COPY RESULT:', results);
 
             if (results && Array.isArray(results)) {
               handleCopyPageResults(results);
