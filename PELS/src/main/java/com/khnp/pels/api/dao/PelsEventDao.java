@@ -4,6 +4,11 @@ import com.khnp.pels.api.dto.*;
 
 import java.util.List;
 
+/**
+ * 이벤트 DAO 인터페이스
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 public interface PelsEventDao {
 
 	/**

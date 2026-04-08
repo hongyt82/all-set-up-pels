@@ -7,12 +7,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * 이벤트 타입에 따른 조건 검증 Annotation
+ * @author KwangYong
+ * @since 2006-03-06
+ */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = EventTypeValidator.class)
 public @interface ValidEventTypeCondition {
 
-    String message() default "EVENT_TYP에 따른 필수값이 누락되었습니다";
+    String message() default "이벤트 타입에 따른 필수값이 누락되었습니다";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

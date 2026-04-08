@@ -15,7 +15,9 @@ import javax.validation.Valid;
 import javax.validation.constraints.*;
 
 /**
- *
+ * 이벤트 메타 DTO
+ * @author KwangYong
+ * @since 2006-02-06
  */
 @Data
 @SuperBuilder

@@ -6,6 +6,11 @@ import com.khnp.pels.api.dto.TstEventMeta;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
+/**
+ * 이벤트 타입에 따른 조건 검증
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 public class EventTypeValidator implements ConstraintValidator<ValidEventTypeCondition, TstEventMeta> {
 
     /**

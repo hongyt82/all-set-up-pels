@@ -8,6 +8,11 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 
+/**
+ * 이벤트 Batch DAO 구현
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @Repository("pelsEventBatchDao")
 public class PelsEventBatchDaoImpl implements PelsEventBatchDao {
 

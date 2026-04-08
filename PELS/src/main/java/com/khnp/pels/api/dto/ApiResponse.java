@@ -3,6 +3,11 @@ package com.khnp.pels.api.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * API 응답 DTO
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @Getter
 @AllArgsConstructor
 public class  ApiResponse<T> {

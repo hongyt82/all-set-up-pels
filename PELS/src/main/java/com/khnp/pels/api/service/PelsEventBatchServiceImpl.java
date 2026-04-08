@@ -11,6 +11,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * 이벤트 Batch 서비스 구현
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @RequiredArgsConstructor
 @Service("pelsBatchService")
 public class PelsEventBatchServiceImpl implements PelsEventBatchService {

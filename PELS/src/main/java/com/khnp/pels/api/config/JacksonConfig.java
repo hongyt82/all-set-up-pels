@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Spring 설정 클래스
+ * @author KwangYong
+ * @since 2006-02-12
  */
 @Configuration
 public class JacksonConfig {

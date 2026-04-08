@@ -8,6 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 이벤트 데이터 컨버터
+ * @author KwangYong
+ * @since 2006-03-22
+ */
 @Component
 public class PelsEventConverter {
 

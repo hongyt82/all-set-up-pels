@@ -4,8 +4,11 @@ import com.khnp.pels.api.dto.TstEventEntity;
 import com.khnp.pels.api.dto.TstEventImageEntity;
 import com.khnp.pels.api.dto.TstEventStrokeEntity;
 
-import java.util.List;
-
+/**
+ * 이벤트 Batch DAO 인터페이스
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 public interface PelsEventBatchDao {
 
 	/**

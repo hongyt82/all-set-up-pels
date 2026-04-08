@@ -1,9 +1,15 @@
 package com.khnp.pels.api.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
+/**
+ * 이벤트 객체 DTO
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @Data
 @Builder(toBuilder = true)
 @NoArgsConstructor

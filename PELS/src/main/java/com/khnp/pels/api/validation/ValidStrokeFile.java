@@ -3,26 +3,24 @@ package com.khnp.pels.api.validation;
 import com.khnp.pels.api.converter.PelsEventConverter;
 import com.khnp.pels.api.dto.TstEventEntity;
 import com.khnp.pels.api.dto.TstEventMeta;
-import com.khnp.pels.api.service.PelsEventServiceImpl;
 import com.khnp.pels.common.exception.RestBadRequestException;
 import lombok.AllArgsConstructor;
-import lombok.Value;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
+/**
+ * 스트로크 파일 검증
+ * @author KwangYong
+ * @since 2006-04-06
+ */
 @AllArgsConstructor
 @Component
 public class ValidStrokeFile {
@@ -30,7 +28,7 @@ public class ValidStrokeFile {
     private final PelsEventConverter pelsEventConverter;
 
     /**
-     * 스트로크 파일 검증 및 Entity로 변환
+     * 스트로크 파일 목록 검증 및 Entity로 변환
      * @param eventMetaList 이벤트 메타 목록
      * @param mpFiles 스트로크 파일 목록
      * @return 이벤트 객체 목록

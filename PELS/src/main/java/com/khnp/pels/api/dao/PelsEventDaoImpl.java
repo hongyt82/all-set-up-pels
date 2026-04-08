@@ -10,6 +10,11 @@ import org.springframework.stereotype.Repository;
 import javax.annotation.Resource;
 import java.util.List;
 
+/**
+ * 이벤트 DAO 구현
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @Repository("pelsEventDao")
 public class PelsEventDaoImpl implements PelsEventDao {
 	

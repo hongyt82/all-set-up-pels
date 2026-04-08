@@ -1,22 +1,16 @@
 package com.khnp.pels.api.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.khnp.pels.api.converter.PelsEventConverter;
-import com.khnp.pels.api.dto.ApiResponse;
-import com.khnp.pels.api.dto.TstEventEntity;
-import com.khnp.pels.api.dto.TstEventResponse;
-import com.khnp.pels.api.dto.TstEventStrokeEntity;
+import com.khnp.pels.api.dto.*;
+import com.khnp.pels.api.dto.group.ValidationGroups;
 import com.khnp.pels.api.service.PelsEventService;
 import com.khnp.pels.api.validation.StrokeFilename;
-import com.khnp.pels.common.validation.JsonMetaBinder;
-import com.khnp.pels.common.validation.JsonTypeFactory;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
@@ -26,7 +20,6 @@ import java.util.UUID;
 
 /**
  * 수행기록 이벤트 관련 Api Controller
- *
  * @author KwangYong
  * @since 2006-03-12
  */
@@ -42,50 +35,47 @@ public class PelsEventApiController {
 
     /**
      * 수행기록 이벤트 벌크 조회 (NO STROKE BINARY)
-     * @param chckSno 시험고유키값
+     * @param reqDto 이벤트 조회에 대한 요청 DTO
      */
     @GetMapping
     public ResponseEntity<ApiResponse<List<TstEventResponse>>> getTstEventBulkList (
-            @RequestParam("pwplId") String pwplId,
-            @RequestParam("chckSno") Long chckSno
+            @Validated(ValidationGroups.GroupEventBulk.class) TstEventSearchRequest reqDto
     ) throws Exception {
-        logger.info("### getTstEventBulkList() PWPL_ID={} CHCK_SNO={} Start", pwplId, chckSno);
+        logger.info("### getTstEventBulkList() PWPL_ID={} CHCK_SNO={} Start", reqDto.getPwplId(), reqDto.getChckSno());
 
         // 이벤트 목록 조회
         TstEventEntity paramEntity = new TstEventEntity();
-        paramEntity.setPwplId(pwplId);
-        paramEntity.setChckSno(chckSno);
+        paramEntity.setPwplId(reqDto.getPwplId());
+        paramEntity.setChckSno(reqDto.getChckSno());
         List<TstEventResponse> eventBulkList = pelsEventService.getTstEventBulkList(paramEntity);
 
         logger.info("### getTstEventBulkList() PWPL_ID={} CHCK_SNO={} End, events={}",
-                pwplId, chckSno, eventBulkList.size());
+                reqDto.getPwplId(), reqDto.getChckSno(), eventBulkList.size());
         return ResponseEntity.ok().body(ApiResponse.success(eventBulkList));
     }
 
     /**
      * 페이지별 이벤트 스트로크 벌크 조회
-     * @param chckSno 시험고유키값
+     * @param reqDto 이벤트 조회에 대한 요청 DTO
      */
     @GetMapping( value = "/strokes")
     public void getTstEventStrokeByPageList (
-            @RequestParam("pwplId") String pwplId,
-            @RequestParam("chckSno") Long chckSno,
-            @RequestParam("pageCnt") Integer pageCnt,
+            @Validated(ValidationGroups.GroupEventStroke.class) TstEventSearchRequest reqDto,
             HttpServletResponse response
     ) throws Exception {
         logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} Start",
-                pwplId, chckSno, pageCnt);
+                reqDto.getPwplId(), reqDto.getChckSno(), reqDto.getPageCnt());
 
         String boundary = "----strokeBoundary" + UUID.randomUUID().toString().replaceAll("-", "");
 
         // 스트로크 목록 조회
         TstEventEntity paramEntity = new TstEventEntity();
-        paramEntity.setPwplId(pwplId);
-        paramEntity.setChckSno(chckSno);
-        paramEntity.setPageCnt(pageCnt);
+        paramEntity.setPwplId(reqDto.getPwplId());
+        paramEntity.setChckSno(reqDto.getChckSno());
+        paramEntity.setPageCnt(reqDto.getPageCnt());
         List<TstEventStrokeEntity> tstStrokeEntityList = pelsEventService.getTstEventStrokeByPageList(paramEntity);
         logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={}, strokes={}",
-                pwplId, chckSno, pageCnt, tstStrokeEntityList.size());
+                reqDto.getPwplId(), reqDto.getChckSno(), reqDto.getPageCnt(), tstStrokeEntityList.size());
 
         // MultiPart 시작
         MultipartMixedWriter.begin(response, boundary);
@@ -99,13 +89,14 @@ public class PelsEventApiController {
                 makeFileCnt++;
             }
             logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={}, Write files={}",
-                    pwplId, chckSno, pageCnt, makeFileCnt);
+                    reqDto.getPwplId(), reqDto.getChckSno(), reqDto.getPageCnt(), makeFileCnt);
 
             // MultiPart 종료 (내부에서 flush)
             MultipartMixedWriter.end(os, boundary);
         }
         logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} End",
-                pwplId, chckSno, pageCnt);
+                reqDto.getPwplId(), reqDto.getChckSno(), reqDto.getPageCnt());
     }
 
 }
+

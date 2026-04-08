@@ -4,6 +4,11 @@ import com.khnp.pels.api.dto.TstEventEntity;
 
 import java.util.List;
 
+/**
+ * 이벤트 Batch 서비스 인터페이스
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 public interface PelsEventBatchService {
 
 	/**

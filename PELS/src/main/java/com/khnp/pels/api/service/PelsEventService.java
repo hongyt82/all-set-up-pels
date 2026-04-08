@@ -6,8 +6,12 @@ import com.khnp.pels.api.dto.TstEventResponse;
 import com.khnp.pels.api.dto.TstEventStrokeEntity;
 
 import java.util.List;
-import java.util.Map;
 
+/**
+ * 이벤트 서비스 인터페이스
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 public interface PelsEventService {
 
 	/**

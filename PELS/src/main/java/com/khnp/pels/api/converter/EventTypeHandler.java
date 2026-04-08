@@ -10,6 +10,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * 이벤트 타입 핸들러
+ * @author KwangYong
+ * @since 2006-03-12
+ */
 @MappedTypes(EventType.class)
 public class EventTypeHandler extends BaseTypeHandler<EventType> {
 

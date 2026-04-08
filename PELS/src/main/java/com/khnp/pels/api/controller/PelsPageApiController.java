@@ -1,13 +1,10 @@
 package com.khnp.pels.api.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.khnp.pels.api.converter.PelsEventConverter;
 import com.khnp.pels.api.dto.ApiResponse;
 import com.khnp.pels.api.dto.TstEventEntity;
 import com.khnp.pels.api.dto.TstEventMeta;
-import com.khnp.pels.api.dto.TstEventStrokeEntity;
 import com.khnp.pels.api.service.PelsEventBatchService;
-import com.khnp.pels.api.service.PelsEventBatchServiceImpl;
 import com.khnp.pels.api.service.PelsEventService;
 import com.khnp.pels.common.validation.JsonMetaBinder;
 import com.khnp.pels.common.validation.JsonTypeFactory;
@@ -22,7 +19,6 @@ import java.util.List;
 
 /**
  * 수행기록 이벤트 페이지 관련 Api Controller
- *
  * @author KwangYong
  * @since 2006-03-16
  */

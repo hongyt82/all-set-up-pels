@@ -3,10 +3,12 @@ package com.khnp.pels.api.validation;
 import com.khnp.pels.api.dto.TstEventMeta;
 import com.khnp.pels.common.exception.RestBadRequestException;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
 
+/**
+ * 스트로크 파일 Parsing
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @AllArgsConstructor
 public class StrokeFilename {
     long pwplId;        //발전소ID

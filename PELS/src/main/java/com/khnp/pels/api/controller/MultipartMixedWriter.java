@@ -6,6 +6,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Multipart Mixed Writer
+ * @author KwangYong
+ * @since 2006-02-12
+ */
 @UtilityClass
 public class MultipartMixedWriter {
 

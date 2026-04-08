@@ -1,15 +1,12 @@
 package com.khnp.pels.api.converter;
 
-import com.khnp.pels.api.dto.TstEventEntity;
-import com.khnp.pels.api.dto.TstEventImageEntity;
-import com.khnp.pels.api.dto.TstEventMeta;
-import com.khnp.pels.api.dto.TstEventStrokeEntity;
-import org.springframework.stereotype.Component;
-
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * 이벤트 데이터 컨버터 유틸
+ * @author KwangYong
+ * @since 2006-03-22
+ */
 public class PelsConvertUtil {
 
     /**

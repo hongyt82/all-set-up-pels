@@ -2,15 +2,16 @@ package com.khnp.pels.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.khnp.pels.api.validation.EventType;
-import com.khnp.pels.api.validation.ValidEventTypeCondition;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import javax.validation.constraints.*;
 
 /**
  * 이벤트 조회에 대한 응답 DTO
+ * @author KwangYong
+ * @since 2006-02-06
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

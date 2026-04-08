@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Json Java Factory
+ * Java Json Type Factory
  *
  * @author KwangYong
  * @since 2006-02-26

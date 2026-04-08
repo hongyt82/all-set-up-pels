@@ -11,8 +11,12 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
+/**
+ * 이벤트 서비스 구현
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @Service("pelsEventService")
 public class PelsEventServiceImpl implements PelsEventService {
 

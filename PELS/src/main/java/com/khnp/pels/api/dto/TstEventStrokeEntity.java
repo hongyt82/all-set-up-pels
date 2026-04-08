@@ -7,6 +7,11 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+/**
+ * 이벤트 스트로크 객체 DTO
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @Data
 @Builder
 @NoArgsConstructor

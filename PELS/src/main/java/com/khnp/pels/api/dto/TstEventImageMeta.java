@@ -10,6 +10,11 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.*;
 import java.math.BigDecimal;
 
+/**
+ * 이벤트 이미지 메타 DTO
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @Data
 @Builder
 @NoArgsConstructor

@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
  *  - 6: 사진추가/변경
  *  - 7: 사진사이즈변경
  *  - 8: 사진삭제
+ * @author KwangYong
+ * @since 2006-02-06
  */
 public enum EventType {
     PAGE_ADD(1),

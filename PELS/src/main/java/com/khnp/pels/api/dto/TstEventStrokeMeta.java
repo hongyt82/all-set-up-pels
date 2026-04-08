@@ -9,6 +9,11 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.*;
 import java.math.BigDecimal;
 
+/**
+ * 이벤트 스트로크 메타 DTO
+ * @author KwangYong
+ * @since 2006-02-06
+ */
 @Data
 @Builder
 @NoArgsConstructor

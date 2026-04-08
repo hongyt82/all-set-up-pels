@@ -1,33 +1,26 @@
 package com.khnp.pels.api.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.khnp.pels.api.converter.PelsEventConverter;
-import com.khnp.pels.api.dto.*;
+import com.khnp.pels.api.dto.ApiResponse;
+import com.khnp.pels.api.dto.TstEventEntity;
+import com.khnp.pels.api.dto.TstEventMeta;
 import com.khnp.pels.api.service.PelsEventBatchService;
 import com.khnp.pels.api.service.PelsEventService;
-import com.khnp.pels.common.exception.RestBadRequestException;
 import com.khnp.pels.common.validation.JsonMetaBinder;
 import com.khnp.pels.common.validation.JsonTypeFactory;
-import com.khnp.pels.api.validation.StrokeFilename;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 수행기록 이벤트 사진 관련 Api Controller
- *
  * @author KwangYong
- * @since 2006-02-06
+ * @since 2006-03-16
  */
 @RestController
 @RequiredArgsConstructor
