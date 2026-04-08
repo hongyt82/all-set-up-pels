@@ -396,7 +396,7 @@ export function ReplayViewerPage() {
     setCurrentFile(file.name);
     setFileSize(`${(file.size / 1024 / 1024).toFixed(2)} MB`);
     setFileUrl(URL.createObjectURL(file));
-    wsRef.current?.loadPdfFile(file);
+    // wsRef.current?.loadPdfFile(file);
 
     if (frmOverJson) {
       const parsed = JSON.parse(frmOverJson);
@@ -728,8 +728,6 @@ export function ReplayViewerPage() {
         });
 
         const { PDF_PATH, FRM_OVER_JSON } = metaRes.data;
-        // console.log('[replay] PDF_PATH=', PDF_PATH);
-        // console.log('[replay] has FRM_OVER_JSON=', !!FRM_OVER_JSON);
 
         const origin = getOriginFromUrl(PDF_PATH);
         setFileBaseUrl(origin);
@@ -754,13 +752,6 @@ export function ReplayViewerPage() {
             withCredentials: true,
           });
 
-          // console.log('[replay] pdfRes.status=', pdfRes.status);
-          // console.log(
-          //   '[replay] pdfRes.content-type=',
-          //   pdfRes.headers['content-type']
-          // );
-          // console.log('[replay] pdfRes.size=', pdfRes.data?.size);
-
           const file = new File([pdfRes.data], viewerFileName, {
             type: 'application/pdf',
           });
@@ -779,9 +770,6 @@ export function ReplayViewerPage() {
               : [];
           });
           setAttachmentsByPage(attachmentMap);
-
-          // basePages는 여기서 바로 세팅하지 말고,
-          // PDF 로드 후 실제 pdf page 수를 안 다음에 세팅
         }
 
         const eventRes = await axios.get('/api/events', {
@@ -1235,6 +1223,7 @@ export function ReplayViewerPage() {
             <option value={2}>2x</option>
             <option value={4}>4x</option>
             <option value={10}>10x</option>
+            <option value={50}>50x</option>
           </select>
 
           <span className="text-slate-500">
