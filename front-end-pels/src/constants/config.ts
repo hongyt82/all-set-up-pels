@@ -3,6 +3,8 @@
  * 모든 고정 설정 값을 중앙에서 관리
  */
 
+import { devLog } from '../utils/devConsole';
+
 // ============================================
 // PDF 관련 설정
 // ============================================
@@ -399,7 +401,7 @@ export function getMainHeight() {
  */
 export function debugLog(message: string, ...args: any[]) {
   if (ENABLE_DEBUG_LOG) {
-    console.log(`[DEBUG] ${message}`, ...args);
+    devLog(`[DEBUG] ${message}`, ...args);
   }
 }
 
@@ -426,6 +428,6 @@ export function validateConfig() {
     return false;
   }
 
-  console.log('✅ 설정 검증 성공');
+  devLog('✅ 설정 검증 성공');
   return true;
 }

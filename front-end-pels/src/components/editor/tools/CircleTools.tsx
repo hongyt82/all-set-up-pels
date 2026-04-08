@@ -1,4 +1,4 @@
-// no imports needed
+import { devLog } from '../../../utils/devConsole';
 
 export interface CircleElement {
   id: string;
@@ -26,7 +26,7 @@ export class CircleToolsManager {
     y: number,
     radius: number = 30
   ): CircleElement {
-    console.log('⭕ [CircleTools] 원형 외곽선 생성:', { x, y, radius });
+    devLog('⭕ [CircleTools] 원형 외곽선 생성:', { x, y, radius });
     return {
       id: `circle-outline-${Date.now()}`,
       type: 'circle-outline',
@@ -48,7 +48,7 @@ export class CircleToolsManager {
     y: number,
     radius: number = 30
   ): CircleElement {
-    console.log('🔵 [CircleTools] 원형 채움 생성:', { x, y, radius });
+    devLog('🔵 [CircleTools] 원형 채움 생성:', { x, y, radius });
     return {
       id: `circle-filled-${Date.now()}`,
       type: 'circle-filled',
@@ -70,7 +70,7 @@ export class CircleToolsManager {
     y: number,
     radius: number = 8
   ): CircleElement {
-    console.log('🔴 [CircleTools] 점 생성:', { x, y, radius });
+    devLog('🔴 [CircleTools] 점 생성:', { x, y, radius });
     return {
       id: `circle-dot-${Date.now()}`,
       type: 'circle-dot',
@@ -92,7 +92,7 @@ export class CircleToolsManager {
     y: number,
     radius: number = 25
   ): CircleElement {
-    console.log('⚪ [CircleTools] 링 생성:', { x, y, radius });
+    devLog('⚪ [CircleTools] 링 생성:', { x, y, radius });
     return {
       id: `circle-ring-${Date.now()}`,
       type: 'circle-ring',
@@ -113,7 +113,7 @@ export class CircleToolsManager {
     element: CircleElement,
     newRadius: number
   ): CircleElement {
-    console.log('🔄 [CircleTools] 원형 크기 조정:', {
+    devLog('🔄 [CircleTools] 원형 크기 조정:', {
       id: element.id,
       이전반지름: element.radius,
       새반지름: newRadius,
@@ -138,7 +138,7 @@ export class CircleToolsManager {
     if (strokeColor) updatedElement.strokeColor = strokeColor;
     if (fillColor) updatedElement.fillColor = fillColor;
 
-    console.log('🎨 [CircleTools] 원형 색상 변경:', {
+    devLog('🎨 [CircleTools] 원형 색상 변경:', {
       id: element.id,
       strokeColor: updatedElement.strokeColor,
       fillColor: updatedElement.fillColor,

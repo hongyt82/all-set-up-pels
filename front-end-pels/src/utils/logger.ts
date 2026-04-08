@@ -114,6 +114,10 @@ function log(
 ) {
   if (level < currentConfig.level) return;
 
+  if (!import.meta.env.DEV && level !== LogLevel.ERROR) {
+    return;
+  }
+
   const formattedMessage = formatLog(levelName, category, message);
   const color = COLORS[levelName];
 
@@ -183,6 +187,7 @@ export class Logger {
    * 특정 이벤트 로그
    */
   event(emoji: keyof typeof EMOJI, message: string, data?: any) {
+    if (!import.meta.env.DEV) return;
     const formattedMessage = `${EMOJI[emoji]} [${this.category}] ${message}`;
     if (data !== undefined) {
       console.log(formattedMessage, data);
@@ -195,6 +200,7 @@ export class Logger {
    * 그룹 로그 시작
    */
   group(title: string) {
+    if (!import.meta.env.DEV) return;
     console.group(`${EMOJI.START} [${this.category}] ${title}`);
   }
 
@@ -202,6 +208,7 @@ export class Logger {
    * 그룹 로그 종료
    */
   groupEnd() {
+    if (!import.meta.env.DEV) return;
     console.groupEnd();
   }
 
@@ -209,6 +216,7 @@ export class Logger {
    * 시간 측정 시작
    */
   time(label: string) {
+    if (!import.meta.env.DEV) return;
     console.time(`⏱️ [${this.category}] ${label}`);
   }
 
@@ -216,6 +224,7 @@ export class Logger {
    * 시간 측정 종료
    */
   timeEnd(label: string) {
+    if (!import.meta.env.DEV) return;
     console.timeEnd(`⏱️ [${this.category}] ${label}`);
   }
 }

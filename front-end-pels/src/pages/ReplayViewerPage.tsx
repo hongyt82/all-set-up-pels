@@ -128,8 +128,8 @@ function parseMultipartMixedBinary(
 
   let cursor = 0;
 
-  while (true) {
-    let boundaryStart = indexOfSubarray(bytes, boundaryBytes, cursor);
+  while (cursor < bytes.length) {
+    const boundaryStart = indexOfSubarray(bytes, boundaryBytes, cursor);
     if (boundaryStart < 0) break;
 
     let partStart = boundaryStart + boundaryBytes.length;
@@ -246,7 +246,6 @@ function getReplayEventLabel(eventType: number) {
   }
 }
 
-
 async function getPdfPageCountFromFile(file: File) {
   const arrayBuffer = await file.arrayBuffer();
   const data = new Uint8Array(arrayBuffer.slice(0));
@@ -262,9 +261,6 @@ function getFilenameFromPath(path?: string | null) {
   const name = clean.substring(clean.lastIndexOf('/') + 1);
   return name || 'replay_viewer.pdf';
 }
-
-
-
 
 function normalizeAttachment(
   att?: ReplayAttachmentItem | null,
@@ -285,7 +281,6 @@ function normalizeAttachment(
     url: normalizedSrc,
   };
 }
-
 
 function buildBasePagesFromPdf(
   pdfPageCount: number,
@@ -321,7 +316,10 @@ function buildBasePagesFromPdf(
   });
 }
 
-function makeReplayPageKey(pdfPageCnt?: number | null, insrtnPageCnt?: number | null) {
+function makeReplayPageKey(
+  pdfPageCnt?: number | null,
+  insrtnPageCnt?: number | null
+) {
   const pdfNo = Number(pdfPageCnt);
   const insertNo = Number(insrtnPageCnt);
 
@@ -336,11 +334,7 @@ function makeReplayPageKey(pdfPageCnt?: number | null, insrtnPageCnt?: number | 
   return null;
 }
 
-
-function findPageByCurrentPage(
-  pages: ReplayLogicalPage[],
-  pageCnt: number
-) {
+function findPageByCurrentPage(pages: ReplayLogicalPage[], pageCnt: number) {
   return pages.find(p => Number(p.page) === Number(pageCnt)) ?? null;
 }
 
@@ -352,7 +346,6 @@ function getEventPageKey(ev: ReplayEventItem) {
     ) ?? null
   );
 }
-
 
 export function ReplayViewerPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -483,7 +476,6 @@ export function ReplayViewerPage() {
         return activeAttachmentsByPageKey.get(pageKey)!;
       };
 
-
       for (let i = 0; i <= appliedIndex; i++) {
         const ev = sourceEvents[i];
         if (!ev) continue;
@@ -500,12 +492,16 @@ export function ReplayViewerPage() {
         const attachment = normalizeAttachment(ev.IMAGE, fileBaseUrl);
 
         if (eventType === 1) {
-          const insertIdx = Math.max(0, Math.min(nextLogicalPages.length, pageNo - 1));
+          const insertIdx = Math.max(
+            0,
+            Math.min(nextLogicalPages.length, pageNo - 1)
+          );
           const insertSeq =
             ev.INSRTN_PAGE_CNT == null ? null : Number(ev.INSRTN_PAGE_CNT);
 
           const pageKey =
-            makeReplayPageKey(pdfPageNo, insertSeq) ?? `insert-fallback-${eventType}-${i}`;
+            makeReplayPageKey(pdfPageNo, insertSeq) ??
+            `insert-fallback-${eventType}-${i}`;
 
           nextLogicalPages.splice(insertIdx, 0, {
             page: 0,
@@ -536,11 +532,10 @@ export function ReplayViewerPage() {
         }
 
         if (eventType === 2) {
-          const deleteKey =
-            makeReplayPageKey(
-              ev.PDF_PAGE_CNT == null ? null : Number(ev.PDF_PAGE_CNT),
-              ev.INSRTN_PAGE_CNT == null ? null : Number(ev.INSRTN_PAGE_CNT)
-            );
+          const deleteKey = makeReplayPageKey(
+            ev.PDF_PAGE_CNT == null ? null : Number(ev.PDF_PAGE_CNT),
+            ev.INSRTN_PAGE_CNT == null ? null : Number(ev.INSRTN_PAGE_CNT)
+          );
 
           let removeIdx = -1;
 
@@ -576,7 +571,8 @@ export function ReplayViewerPage() {
           if (!targetPage) continue;
 
           const pageKey = String(targetPage.pageKey);
-          const set = activeStrokeIdsByPageKey.get(pageKey) ?? new Set<number>();
+          const set =
+            activeStrokeIdsByPageKey.get(pageKey) ?? new Set<number>();
           set.add(strokeSeq);
           activeStrokeIdsByPageKey.set(pageKey, set);
           continue;
@@ -587,7 +583,8 @@ export function ReplayViewerPage() {
           if (!targetPage) continue;
 
           const pageKey = String(targetPage.pageKey);
-          const set = activeStrokeIdsByPageKey.get(pageKey) ?? new Set<number>();
+          const set =
+            activeStrokeIdsByPageKey.get(pageKey) ?? new Set<number>();
           set.delete(strokeSeq);
           activeStrokeIdsByPageKey.set(pageKey, set);
           continue;
@@ -1106,8 +1103,8 @@ export function ReplayViewerPage() {
   const currentEventTime =
     playheadIndex >= 0 && events[playheadIndex]
       ? String(events[playheadIndex].EVENT_CRTE_DT)
-        .replace('T', ' ')
-        .slice(0, 19)
+          .replace('T', ' ')
+          .slice(0, 19)
       : '-';
 
   const currentReplayEvent =
@@ -1241,8 +1238,8 @@ export function ReplayViewerPage() {
           </select>
 
           <span className="text-slate-500">
-      {playheadIndex < 0 ? 0 : playheadIndex + 1} / {totalEvents}
-    </span>
+            {playheadIndex < 0 ? 0 : playheadIndex + 1} / {totalEvents}
+          </span>
 
           <span className="text-slate-500">{currentEventTime}</span>
 

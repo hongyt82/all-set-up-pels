@@ -18,6 +18,7 @@ import { detectGlyphBoxesInPdf } from '../../lib/pdfGlyphBoxDetector';
 import { detectTextPatternBoxesInPdf } from '../../lib/pdfTextPatternBoxDetector';
 import { BASE_PAGE_WIDTH, BASE_PAGE_HEIGHT } from '../../constants/pageSize';
 import axios from 'axios';
+import { devLog, devWarn } from '../../utils/devConsole';
 
 // -----------------------------------------------------------------------------
 // 타입 정의
@@ -310,7 +311,7 @@ export const EditorWorkspace = forwardRef<
     onCopyPageResult,
   } = props;
 
-  console.log('[EditorWorkspace] docKey:', docKey);
+  devLog('[EditorWorkspace] docKey:', docKey);
 
   // ===== PDF 상태 & 렌더링 =====
   // - PDF 파일/문서 상태, 현재 페이지, 캔버스, 페이지 박스 사이즈 등
@@ -763,7 +764,7 @@ export const EditorWorkspace = forwardRef<
       try {
         await tryLoad(true);
       } catch (e) {
-        console.warn('[EditorWorkspace] load with CMap failed, retry', e);
+        devWarn('[EditorWorkspace] load with CMap failed, retry', e);
         await tryLoad(false);
       }
     };
@@ -780,7 +781,7 @@ export const EditorWorkspace = forwardRef<
         try {
           renderTaskRef.current.cancel();
         } catch (e) {
-          console.warn('[EditorWorkspace] cancel renderTask failed', e);
+          devWarn('[EditorWorkspace] cancel renderTask failed', e);
         }
         renderTaskRef.current = null;
       }
@@ -831,7 +832,7 @@ export const EditorWorkspace = forwardRef<
       try {
         await task.promise;
       } catch (e) {
-        console.warn('[EditorWorkspace] render task error (ignored)', e);
+        devWarn('[EditorWorkspace] render task error (ignored)', e);
       } finally {
         renderTaskRef.current = null;
       }
@@ -844,7 +845,7 @@ export const EditorWorkspace = forwardRef<
         try {
           renderTaskRef.current.cancel();
         } catch (e) {
-          console.warn('[EditorWorkspace] cancel on cleanup failed', e);
+          devWarn('[EditorWorkspace] cancel on cleanup failed', e);
         }
         renderTaskRef.current = null;
       }
@@ -980,7 +981,8 @@ export const EditorWorkspace = forwardRef<
       return;
     }
 
-    let { wPct, hPct, value } = preset;
+    let { wPct, hPct } = preset;
+    const { value } = preset;
     if (isSquareType(type)) {
       const s = Math.min(wPct, hPct);
       wPct = s;
@@ -1191,8 +1193,8 @@ export const EditorWorkspace = forwardRef<
     // Constraint(JSON)
     const ruleJson = buildRuleJson();
 
-    console.log('downloadJsonCreate = templateJson =', templateJson);
-    console.log('downloadJsonCreate = ruleJson =', ruleJson);
+    devLog('downloadJsonCreate = templateJson =', templateJson);
+    devLog('downloadJsonCreate = ruleJson =', ruleJson);
 
     if (!templateJson) return;
 
@@ -1205,7 +1207,7 @@ export const EditorWorkspace = forwardRef<
         return;
       }
 
-      console.log(
+      devLog(
         `[EditorWorkspace] API Request: POST /FormJsonSave_M.do (FRM_UNQ_KY_VAL=${FRM_UNQ_KY_VAL})`
       );
 
@@ -1215,7 +1217,7 @@ export const EditorWorkspace = forwardRef<
       formParams.append('FRM_OVER_JSON', JSON.stringify(templateJson));
       formParams.append('FRM_CONS_JSON', JSON.stringify(ruleJson));
 
-      console.log('SAVE PAYLOAD', {
+      devLog('SAVE PAYLOAD', {
         FRM_UNQ_KY_VAL,
         FRM_OVER_JSON: JSON.stringify(templateJson).length,
         FRM_CONS_JSON: JSON.stringify(ruleJson).length,
@@ -1235,7 +1237,7 @@ export const EditorWorkspace = forwardRef<
         }
       );
 
-      console.log('[EditorWorkspace] Form JSON saved:', response.data);
+      devLog('[EditorWorkspace] Form JSON saved:', response.data);
       const message = response.data?.resultMsg || '서식이 저장되었습니다.';
       alert(`✅ ${message}`);
     } catch (error: any) {

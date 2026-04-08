@@ -4,6 +4,7 @@
  */
 
 import { useNetworkState } from 'react-use';
+import { devLog, devWarn } from './devConsole';
 
 /**
  * 네트워크 상태 정보 인터페이스
@@ -175,7 +176,7 @@ export const checkNetworkConnection = async (): Promise<boolean> => {
     });
     return response.ok;
   } catch (error) {
-    console.warn('네트워크 연결 확인 실패:', error);
+    devWarn('네트워크 연결 확인 실패:', error);
     return false;
   }
 };
@@ -222,7 +223,7 @@ export const testNetworkQuality = async (): Promise<{
       success: false,
     };
   } catch (error) {
-    console.warn('네트워크 품질 테스트 실패:', error);
+    devWarn('네트워크 품질 테스트 실패:', error);
     return {
       latency: 0,
       downloadSpeed: 0,
@@ -311,17 +312,14 @@ export const logNetworkState = (
   const quality = getNetworkQuality(state);
   const timestamp = new Date().toISOString();
 
-  console.log(
-    `[${timestamp}] 네트워크 상태${context ? ` (${context})` : ''}:`,
-    {
-      온라인: state.isOnline ? '✅' : '❌',
-      연결상태: state.isConnected ? '✅' : '❌',
-      품질: quality,
-      다운로드: `${state.downlink}Mbps`,
-      지연시간: `${state.rtt}ms`,
-      연결타입: state.effectiveType,
-    }
-  );
+  devLog(`[${timestamp}] 네트워크 상태${context ? ` (${context})` : ''}:`, {
+    온라인: state.isOnline ? '✅' : '❌',
+    연결상태: state.isConnected ? '✅' : '❌',
+    품질: quality,
+    다운로드: `${state.downlink}Mbps`,
+    지연시간: `${state.rtt}ms`,
+    연결타입: state.effectiveType,
+  });
 };
 
 /**

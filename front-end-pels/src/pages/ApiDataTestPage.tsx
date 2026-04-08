@@ -13,6 +13,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { IS_DEV } from '../constants/config';
+import { devLog } from '../utils/devConsole';
 import {
   arrayToObject,
   countData,
@@ -115,14 +116,14 @@ const ApiDataTestPage: React.FC = () => {
     const products = sampleData.products;
 
     if (IS_DEV) {
-      console.log('🔄 [Map ↔ List 변환] 시작');
-      console.log('📦 원본 Object:', products);
+      devLog('🔄 [Map ↔ List 변환] 시작');
+      devLog('📦 원본 Object:', products);
     }
 
     // Object → Array 변환
     const productList = _.values(products);
     if (IS_DEV) {
-      console.log('📋 Object → Array 변환:', productList);
+      devLog('📋 Object → Array 변환:', productList);
     }
 
     // 일부 값 수정 (가격 10% 할인)
@@ -132,20 +133,20 @@ const ApiDataTestPage: React.FC = () => {
       discount: true,
     }));
     if (IS_DEV) {
-      console.log('💰 가격 수정 (10% 할인):', modifiedList);
+      devLog('💰 가격 수정 (10% 할인):', modifiedList);
     }
 
     // Array → Object 변환 (id를 키로)
     const modifiedObject = _.keyBy(modifiedList, 'id');
     if (IS_DEV) {
-      console.log('🔑 Array → Object 변환:', modifiedObject);
+      devLog('🔑 Array → Object 변환:', modifiedObject);
     }
 
     // 특정 조건으로 필터링된 리스트
     const expensiveItems = _.filter(modifiedList, item => item.price > 100);
     if (IS_DEV) {
-      console.log('💎 고가 상품 필터링 (>100):', expensiveItems);
-      console.log('✅ [Map ↔ List 변환] 완료');
+      devLog('💎 고가 상품 필터링 (>100):', expensiveItems);
+      devLog('✅ [Map ↔ List 변환] 완료');
     }
 
     return {
@@ -163,15 +164,15 @@ const ApiDataTestPage: React.FC = () => {
     const fields = selectedFields.split(',').map(f => f.trim());
 
     if (IS_DEV) {
-      console.log('📤 [필드 추출] 시작');
-      console.log('👥 원본 사용자 데이터:', users);
-      console.log('🎯 선택된 필드:', fields);
+      devLog('📤 [필드 추출] 시작');
+      devLog('👥 원본 사용자 데이터:', users);
+      devLog('🎯 선택된 필드:', fields);
     }
 
     // 특정 필드만 추출
     const extractedFields = _.map(users, user => _.pick(user, fields));
     if (IS_DEV) {
-      console.log('📋 추출된 필드:', extractedFields);
+      devLog('📋 추출된 필드:', extractedFields);
     }
 
     // API 요청 바디 생성 예시
@@ -185,7 +186,7 @@ const ApiDataTestPage: React.FC = () => {
       },
     };
     if (IS_DEV) {
-      console.log('📦 API 요청 바디:', apiRequestBody);
+      devLog('📦 API 요청 바디:', apiRequestBody);
     }
 
     // 중첩된 객체에서 특정 필드만 추출
@@ -195,8 +196,8 @@ const ApiDataTestPage: React.FC = () => {
       department: user.department,
     }));
     if (IS_DEV) {
-      console.log('🔗 중첩 추출:', nestedExtraction);
-      console.log('✅ [필드 추출] 완료');
+      devLog('🔗 중첩 추출:', nestedExtraction);
+      devLog('✅ [필드 추출] 완료');
     }
 
     return {
@@ -213,15 +214,15 @@ const ApiDataTestPage: React.FC = () => {
     const users = sampleData.users;
 
     if (IS_DEV) {
-      console.log('📋 [데이터 복제] 시작');
-      console.log('👥 원본 사용자 데이터:', users);
+      devLog('📋 [데이터 복제] 시작');
+      devLog('👥 원본 사용자 데이터:', users);
     }
 
     // 깊은 복사
     const clonedUsers = _.cloneDeep(users);
     if (IS_DEV) {
-      console.log('📄 깊은 복사 완료:', clonedUsers);
-      console.log(
+      devLog('📄 깊은 복사 완료:', clonedUsers);
+      devLog(
         '🔍 원본과 복제본 동일성:',
         users === clonedUsers ? '❌ 참조 동일' : '✅ 독립적'
       );
@@ -235,7 +236,7 @@ const ApiDataTestPage: React.FC = () => {
       index: index,
     }));
     if (IS_DEV) {
-      console.log('✏️ 복제본 수정:', modifiedUsers);
+      devLog('✏️ 복제본 수정:', modifiedUsers);
     }
 
     // 원본 데이터는 그대로 유지
@@ -249,12 +250,12 @@ const ApiDataTestPage: React.FC = () => {
       clonedSpecificUser.email = 'john.cloned@example.com';
     }
     if (IS_DEV) {
-      console.log('👤 특정 사용자 복제:', clonedSpecificUser);
-      console.log(
+      devLog('👤 특정 사용자 복제:', clonedSpecificUser);
+      devLog(
         '🔍 원본 무결성 확인:',
         originalUnchanged === users ? '✅ 보호됨' : '❌ 손상됨'
       );
-      console.log('✅ [데이터 복제] 완료');
+      devLog('✅ [데이터 복제] 완료');
     }
 
     return {
@@ -272,15 +273,15 @@ const ApiDataTestPage: React.FC = () => {
     const groupField = groupByField;
 
     if (IS_DEV) {
-      console.log('📊 [데이터 그룹핑] 시작');
-      console.log('👥 원본 사용자 데이터:', users);
-      console.log('🎯 그룹핑 필드:', groupField);
+      devLog('📊 [데이터 그룹핑] 시작');
+      devLog('👥 원본 사용자 데이터:', users);
+      devLog('🎯 그룹핑 필드:', groupField);
     }
 
     // 그룹핑
     const groupedByDepartment = _.groupBy(users, groupField);
     if (IS_DEV) {
-      console.log('🏢 부서별 그룹핑:', groupedByDepartment);
+      devLog('🏢 부서별 그룹핑:', groupedByDepartment);
     }
 
     // 집계 데이터
@@ -295,7 +296,7 @@ const ApiDataTestPage: React.FC = () => {
       })
     );
     if (IS_DEV) {
-      console.log('📈 부서별 통계:', departmentStats);
+      devLog('📈 부서별 통계:', departmentStats);
     }
 
     // 나이대별 그룹핑
@@ -306,7 +307,7 @@ const ApiDataTestPage: React.FC = () => {
       return '40s+';
     });
     if (IS_DEV) {
-      console.log('🎂 나이대별 그룹핑:', ageGroups);
+      devLog('🎂 나이대별 그룹핑:', ageGroups);
     }
 
     // 복합 조건 그룹핑
@@ -315,8 +316,8 @@ const ApiDataTestPage: React.FC = () => {
       user => `${user.department}-${user.age >= 30 ? 'senior' : 'junior'}`
     );
     if (IS_DEV) {
-      console.log('🔀 복합 조건 그룹핑:', complexGrouping);
-      console.log('✅ [데이터 그룹핑] 완료');
+      devLog('🔀 복합 조건 그룹핑:', complexGrouping);
+      devLog('✅ [데이터 그룹핑] 완료');
     }
 
     return {
@@ -350,32 +351,32 @@ const ApiDataTestPage: React.FC = () => {
     ];
 
     if (IS_DEV) {
-      console.log('🔄 [중복 제거 및 정렬] 시작');
-      console.log('👥 중복 포함 원본 데이터:', usersWithDuplicates);
+      devLog('🔄 [중복 제거 및 정렬] 시작');
+      devLog('👥 중복 포함 원본 데이터:', usersWithDuplicates);
     }
 
     // ID 기준 중복 제거
     const uniqueById = _.uniqBy(usersWithDuplicates, 'id');
     if (IS_DEV) {
-      console.log('🆔 ID 기준 중복 제거:', uniqueById);
+      devLog('🆔 ID 기준 중복 제거:', uniqueById);
     }
 
     // 이메일 기준 중복 제거
     const uniqueByEmail = _.uniqBy(usersWithDuplicates, 'email');
     if (IS_DEV) {
-      console.log('📧 이메일 기준 중복 제거:', uniqueByEmail);
+      devLog('📧 이메일 기준 중복 제거:', uniqueByEmail);
     }
 
     // 정렬 (이름 기준)
     const sortedByName = _.sortBy(uniqueById, 'name');
     if (IS_DEV) {
-      console.log('🔤 이름순 정렬:', sortedByName);
+      devLog('🔤 이름순 정렬:', sortedByName);
     }
 
     // 정렬 (나이 기준, 내림차순)
     const sortedByAgeDesc = _.orderBy(uniqueById, ['age'], ['desc']);
     if (IS_DEV) {
-      console.log('🎂 나이순 정렬 (내림차순):', sortedByAgeDesc);
+      devLog('🎂 나이순 정렬 (내림차순):', sortedByAgeDesc);
     }
 
     // 복합 정렬 (부서별, 그 다음 나이별)
@@ -385,7 +386,7 @@ const ApiDataTestPage: React.FC = () => {
       ['asc', 'desc']
     );
     if (IS_DEV) {
-      console.log('🔀 복합 정렬 (부서→나이):', sortedByMultipleFields);
+      devLog('🔀 복합 정렬 (부서→나이):', sortedByMultipleFields);
     }
 
     // 특정 조건으로 필터링 후 정렬
@@ -395,8 +396,8 @@ const ApiDataTestPage: React.FC = () => {
       ['asc', 'asc']
     );
     if (IS_DEV) {
-      console.log('🎯 필터링 후 정렬 (25세 이상):', filteredAndSorted);
-      console.log('✅ [중복 제거 및 정렬] 완료');
+      devLog('🎯 필터링 후 정렬 (25세 이상):', filteredAndSorted);
+      devLog('✅ [중복 제거 및 정렬] 완료');
     }
 
     return {
@@ -415,8 +416,8 @@ const ApiDataTestPage: React.FC = () => {
     const users = sampleData.users;
 
     if (IS_DEV) {
-      console.log('⚙️ [데이터 가공] 시작');
-      console.log('👥 원본 사용자 데이터:', users);
+      devLog('⚙️ [데이터 가공] 시작');
+      devLog('👥 원본 사용자 데이터:', users);
     }
 
     // 조건부 데이터 가공
@@ -450,7 +451,7 @@ const ApiDataTestPage: React.FC = () => {
       return processedUser;
     });
     if (IS_DEV) {
-      console.log('✏️ 가공된 사용자 데이터:', processedUsers);
+      devLog('✏️ 가공된 사용자 데이터:', processedUsers);
     }
 
     // 조건에 따른 분류
@@ -461,9 +462,9 @@ const ApiDataTestPage: React.FC = () => {
     const itUsers = _.filter(processedUsers, user => user.department === 'IT');
     const highEarners = _.filter(processedUsers, user => user.salary > 30000);
     if (IS_DEV) {
-      console.log('👴 시니어 사용자:', seniorUsers);
-      console.log('💻 IT 부서 사용자:', itUsers);
-      console.log('💰 고소득자:', highEarners);
+      devLog('👴 시니어 사용자:', seniorUsers);
+      devLog('💻 IT 부서 사용자:', itUsers);
+      devLog('💰 고소득자:', highEarners);
     }
 
     // 집계 통계
@@ -480,7 +481,7 @@ const ApiDataTestPage: React.FC = () => {
         ) || 0,
     };
     if (IS_DEV) {
-      console.log('📊 집계 통계:', statistics);
+      devLog('📊 집계 통계:', statistics);
     }
 
     // 최종 저장용 데이터 구조
@@ -494,8 +495,8 @@ const ApiDataTestPage: React.FC = () => {
       },
     };
     if (IS_DEV) {
-      console.log('💾 최종 저장 구조:', finalDataStructure);
-      console.log('✅ [데이터 가공] 완료');
+      devLog('💾 최종 저장 구조:', finalDataStructure);
+      devLog('✅ [데이터 가공] 완료');
     }
 
     return {
@@ -515,27 +516,27 @@ const ApiDataTestPage: React.FC = () => {
     const products = sampleData.products;
 
     if (IS_DEV) {
-      console.log('🔧 [LodashUtils API 함수들] 시작');
-      console.log('👥 원본 사용자 데이터:', users);
-      console.log('📦 원본 상품 데이터:', products);
+      devLog('🔧 [LodashUtils API 함수들] 시작');
+      devLog('👥 원본 사용자 데이터:', users);
+      devLog('📦 원본 상품 데이터:', products);
     }
 
     // 1) objectToArray - Object를 Array로 변환
     const productArray = objectToArray(products);
     if (IS_DEV) {
-      console.log('📋 objectToArray 결과:', productArray);
+      devLog('📋 objectToArray 결과:', productArray);
     }
 
     // 2) arrayToObject - Array를 Object로 변환
     const userObject = arrayToObject(users, 'id');
     if (IS_DEV) {
-      console.log('🔑 arrayToObject 결과:', userObject);
+      devLog('🔑 arrayToObject 결과:', userObject);
     }
 
     // 3) extractFields - 특정 필드만 추출
     const userFields = extractFields(users, ['id', 'name', 'email']);
     if (IS_DEV) {
-      console.log('📤 extractFields 결과:', userFields);
+      devLog('📤 extractFields 결과:', userFields);
     }
 
     // 4) extractAndTransform - 필드 추출 및 변환
@@ -545,14 +546,14 @@ const ApiDataTestPage: React.FC = () => {
       isSenior: user.age >= 30,
     }));
     if (IS_DEV) {
-      console.log('🔄 extractAndTransform 결과:', transformedUsers);
+      devLog('🔄 extractAndTransform 결과:', transformedUsers);
     }
 
     // 5) deepClone - 깊은 복사
     const clonedUsers = deepClone(users);
     if (IS_DEV) {
-      console.log('📄 deepClone 결과:', clonedUsers);
-      console.log(
+      devLog('📄 deepClone 결과:', clonedUsers);
+      devLog(
         '🔍 원본과 복제본 동일성:',
         users === clonedUsers ? '❌ 참조 동일' : '✅ 독립적'
       );
@@ -568,23 +569,23 @@ const ApiDataTestPage: React.FC = () => {
       totalAge: group.reduce((sum, user) => sum + user.age, 0),
     }));
     if (IS_DEV) {
-      console.log('📊 groupAndAggregate (그룹핑):', departmentGroups);
-      console.log('📈 groupAndAggregate (집계):', departmentStats);
+      devLog('📊 groupAndAggregate (그룹핑):', departmentGroups);
+      devLog('📈 groupAndAggregate (집계):', departmentStats);
     }
 
     // 7) removeDuplicates - 중복 제거
     const usersWithDuplicates = [...users, ...users.slice(0, 2)]; // 중복 추가
     const uniqueUsers = removeDuplicates(usersWithDuplicates, 'id');
     if (IS_DEV) {
-      console.log('🔄 removeDuplicates 결과:', uniqueUsers);
+      devLog('🔄 removeDuplicates 결과:', uniqueUsers);
     }
 
     // 8) sortData - 단일 필드 정렬
     const sortedByName = sortData(users, 'name', 'asc');
     const sortedByAge = sortData(users, 'age', 'desc');
     if (IS_DEV) {
-      console.log('🔤 sortData (이름순):', sortedByName);
-      console.log('🎂 sortData (나이순 내림차순):', sortedByAge);
+      devLog('🔤 sortData (이름순):', sortedByName);
+      devLog('🎂 sortData (나이순 내림차순):', sortedByAge);
     }
 
     // 9) sortDataMultiple - 복수 필드 정렬
@@ -594,15 +595,15 @@ const ApiDataTestPage: React.FC = () => {
       ['asc', 'desc']
     );
     if (IS_DEV) {
-      console.log('🔀 sortDataMultiple (부서→나이):', multiSorted);
+      devLog('🔀 sortDataMultiple (부서→나이):', multiSorted);
     }
 
     // 10) filterData - 조건부 필터링
     const seniorUsers = filterData(users, user => user.age >= 30);
     const itUsers = filterData(users, user => user.department === 'IT');
     if (IS_DEV) {
-      console.log('👴 filterData (30세 이상):', seniorUsers);
-      console.log('💻 filterData (IT 부서):', itUsers);
+      devLog('👴 filterData (30세 이상):', seniorUsers);
+      devLog('💻 filterData (IT 부서):', itUsers);
     }
 
     // 11) processData - 조건부 데이터 가공
@@ -612,7 +613,7 @@ const ApiDataTestPage: React.FC = () => {
       grade: user.age >= 30 ? 'Senior' : 'Junior',
     }));
     if (IS_DEV) {
-      console.log('⚙️ processData 결과:', processedUsers);
+      devLog('⚙️ processData 결과:', processedUsers);
     }
 
     // 12) createApiRequestBody - API 요청 바디 생성
@@ -625,29 +626,29 @@ const ApiDataTestPage: React.FC = () => {
       }
     );
     if (IS_DEV) {
-      console.log('📦 createApiRequestBody 결과:', apiRequest);
+      devLog('📦 createApiRequestBody 결과:', apiRequest);
     }
 
     // 13) generateStatistics - 통계 생성
     const userStats = generateStatistics(users, ['age']);
     if (IS_DEV) {
-      console.log('📊 generateStatistics 결과:', userStats);
+      devLog('📊 generateStatistics 결과:', userStats);
     }
 
     // 14) findData - 데이터 검색
     const foundUser = findData(users, { id: 1 });
     const foundByEmail = findData(users, { email: 'jane@example.com' });
     if (IS_DEV) {
-      console.log('🔍 findData (ID=1):', foundUser);
-      console.log('📧 findData (이메일):', foundByEmail);
+      devLog('🔍 findData (ID=1):', foundUser);
+      devLog('📧 findData (이메일):', foundByEmail);
     }
 
     // 15) hasData - 데이터 존재 여부 확인
     const hasUser1 = hasData(users, { id: 1 });
     const hasUser99 = hasData(users, { id: 99 });
     if (IS_DEV) {
-      console.log('✅ hasData (ID=1 존재):', hasUser1);
-      console.log('❌ hasData (ID=99 존재):', hasUser99);
+      devLog('✅ hasData (ID=1 존재):', hasUser1);
+      devLog('❌ hasData (ID=99 존재):', hasUser99);
     }
 
     // 16) countData - 데이터 카운트
@@ -655,9 +656,9 @@ const ApiDataTestPage: React.FC = () => {
     const itUserCount = countData(users, { department: 'IT' });
     const seniorUserCount = users.filter(user => user.age >= 30).length;
     if (IS_DEV) {
-      console.log('🔢 countData (전체):', totalUsers);
-      console.log('💻 countData (IT 부서):', itUserCount);
-      console.log('👴 countData (30세 이상):', seniorUserCount);
+      devLog('🔢 countData (전체):', totalUsers);
+      devLog('💻 countData (IT 부서):', itUserCount);
+      devLog('👴 countData (30세 이상):', seniorUserCount);
     }
 
     // 17) mergeData - 데이터 병합
@@ -679,19 +680,19 @@ const ApiDataTestPage: React.FC = () => {
     ];
     const mergedUsers = mergeData(users, additionalUsers, 'id');
     if (IS_DEV) {
-      console.log('🔗 mergeData 결과:', mergedUsers);
+      devLog('🔗 mergeData 결과:', mergedUsers);
     }
 
     // 18) paginateData - 페이지네이션
     const paginatedResult = paginateData(users, 1, 3);
     const secondPage = paginateData(users, 2, 3);
     if (IS_DEV) {
-      console.log('📄 paginateData (1페이지, 3개씩):', paginatedResult);
-      console.log('📄 paginateData (2페이지, 3개씩):', secondPage);
+      devLog('📄 paginateData (1페이지, 3개씩):', paginatedResult);
+      devLog('📄 paginateData (2페이지, 3개씩):', secondPage);
     }
 
     if (IS_DEV) {
-      console.log('✅ [LodashUtils API 함수들] 완료');
+      devLog('✅ [LodashUtils API 함수들] 완료');
     }
 
     return {
@@ -728,14 +729,14 @@ const ApiDataTestPage: React.FC = () => {
     }
 
     if (IS_DEV) {
-      console.log('🔧 [커스텀 JSON 처리] 시작');
-      console.log('📝 입력된 JSON:', customJsonData);
+      devLog('🔧 [커스텀 JSON 처리] 시작');
+      devLog('📝 입력된 JSON:', customJsonData);
     }
 
     try {
       const customData = JSON.parse(customJsonData);
       if (IS_DEV) {
-        console.log('✅ JSON 파싱 성공:', customData);
+        devLog('✅ JSON 파싱 성공:', customData);
       }
 
       // 데이터 타입에 따른 처리
@@ -751,7 +752,7 @@ const ApiDataTestPage: React.FC = () => {
           sorted: _.sortBy(customData),
         };
         if (IS_DEV) {
-          console.log('📋 배열 처리 결과:', processedData);
+          devLog('📋 배열 처리 결과:', processedData);
         }
       } else if (_.isObject(customData)) {
         // 객체인 경우
@@ -763,7 +764,7 @@ const ApiDataTestPage: React.FC = () => {
           size: _.size(customData),
         };
         if (IS_DEV) {
-          console.log('🔑 객체 처리 결과:', processedData);
+          devLog('🔑 객체 처리 결과:', processedData);
         }
       } else {
         processedData = {
@@ -772,12 +773,12 @@ const ApiDataTestPage: React.FC = () => {
           typeOf: typeof customData,
         };
         if (IS_DEV) {
-          console.log('🔢 원시값 처리 결과:', processedData);
+          devLog('🔢 원시값 처리 결과:', processedData);
         }
       }
 
       if (IS_DEV) {
-        console.log('✅ [커스텀 JSON 처리] 완료');
+        devLog('✅ [커스텀 JSON 처리] 완료');
       }
 
       return {
@@ -797,8 +798,8 @@ const ApiDataTestPage: React.FC = () => {
   // 모든 테스트 실행
   const runAllTests = () => {
     if (IS_DEV) {
-      console.log('🚀 [API 데이터 처리 테스트] 전체 실행 시작');
-      console.log('='.repeat(50));
+      devLog('🚀 [API 데이터 처리 테스트] 전체 실행 시작');
+      devLog('='.repeat(50));
     }
 
     const newResults: Record<string, any> = {};
@@ -813,9 +814,9 @@ const ApiDataTestPage: React.FC = () => {
     newResults.customJsonProcessing = testCustomJsonProcessing();
 
     if (IS_DEV) {
-      console.log('='.repeat(50));
-      console.log('🎉 [API 데이터 처리 테스트] 전체 실행 완료');
-      console.log('📊 결과 요약:', {
+      devLog('='.repeat(50));
+      devLog('🎉 [API 데이터 처리 테스트] 전체 실행 완료');
+      devLog('📊 결과 요약:', {
         총_테스트_수: Object.keys(newResults).length,
         성공한_테스트: Object.values(newResults).filter(result => !result.error)
           .length,

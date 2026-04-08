@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { PenTool, Pen } from 'lucide-react';
+import { devLog } from '../../../utils/devConsole';
 
 export interface SignatureElement {
   id: string;
@@ -28,7 +29,7 @@ export interface SignatureToolsProps {
 export class SignatureToolsManager {
   // 펜 서명 생성
   static createPenSignature(x: number, y: number): SignatureElement {
-    console.log('✒️ [SignatureTools] 펜 서명 생성:', { x, y });
+    devLog('✒️ [SignatureTools] 펜 서명 생성:', { x, y });
     return {
       id: `signature-pen-${Date.now()}`,
       type: 'signature-pen',
@@ -50,7 +51,7 @@ export class SignatureToolsManager {
     y: number,
     name: string = '홍길동'
   ): SignatureElement {
-    console.log('📝 [SignatureTools] 텍스트 서명 생성:', { x, y, name });
+    devLog('📝 [SignatureTools] 텍스트 서명 생성:', { x, y, name });
     return {
       id: `signature-text-${Date.now()}`,
       type: 'signature-text',
@@ -68,7 +69,7 @@ export class SignatureToolsManager {
 
   // 자유 그리기 서명 생성
   static createDrawSignature(x: number, y: number): SignatureElement {
-    console.log('🎨 [SignatureTools] 자유 그리기 서명 생성:', { x, y });
+    devLog('🎨 [SignatureTools] 자유 그리기 서명 생성:', { x, y });
     return {
       id: `signature-draw-${Date.now()}`,
       type: 'signature-draw',
@@ -90,7 +91,7 @@ export class SignatureToolsManager {
     y: number,
     text: string = '인'
   ): SignatureElement {
-    console.log('🔴 [SignatureTools] 도장 서명 생성:', { x, y, text });
+    devLog('🔴 [SignatureTools] 도장 서명 생성:', { x, y, text });
     return {
       id: `signature-stamp-${Date.now()}`,
       type: 'signature-stamp',
@@ -302,7 +303,7 @@ export const SignatureCanvas: React.FC<{
   const stopDrawing = () => {
     setIsDrawing(false);
     // 실제 구현에서는 경로를 SVG path로 변환하여 저장
-    console.log('서명 그리기 완료');
+    devLog('서명 그리기 완료');
   };
 
   return (

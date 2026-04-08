@@ -3,6 +3,8 @@
  * 현재 실행 중인 브라우저의 상세 정보를 수집하고 관리
  */
 
+import { devLog } from './devConsole';
+
 /**
  * 브라우저 정보 인터페이스
  */
@@ -378,17 +380,17 @@ export const logBrowserInfo = (): void => {
   const info = getBrowserInfo();
   const score = calculateCompatibilityScore(info);
 
-  console.log('🌐 Browser Information:');
-  console.log(`   Browser: ${info.name} ${info.version}`);
-  console.log(`   Engine: ${info.engine}`);
-  console.log(`   OS: ${info.os} ${info.osVersion}`);
-  console.log(`   Device: ${info.deviceType}`);
-  console.log(`   Screen: ${info.screenResolution}`);
-  console.log(`   Viewport: ${info.viewportSize}`);
-  console.log(`   Language: ${info.language}`);
-  console.log(`   Timezone: ${info.timezone}`);
-  console.log(`   Online: ${info.isOnline ? 'Yes' : 'No'}`);
-  console.log(`   Compatibility Score: ${score}%`);
+  devLog('🌐 Browser Information:');
+  devLog(`   Browser: ${info.name} ${info.version}`);
+  devLog(`   Engine: ${info.engine}`);
+  devLog(`   OS: ${info.os} ${info.osVersion}`);
+  devLog(`   Device: ${info.deviceType}`);
+  devLog(`   Screen: ${info.screenResolution}`);
+  devLog(`   Viewport: ${info.viewportSize}`);
+  devLog(`   Language: ${info.language}`);
+  devLog(`   Timezone: ${info.timezone}`);
+  devLog(`   Online: ${info.isOnline ? 'Yes' : 'No'}`);
+  devLog(`   Compatibility Score: ${score}%`);
 };
 
 /**

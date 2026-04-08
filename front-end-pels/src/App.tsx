@@ -31,6 +31,7 @@ import { ViewerPage } from './pages/ViewerPage';
 import { ReplayViewerPage } from './pages/ReplayViewerPage.tsx';
 import { getBrowserInfo, logBrowserInfo } from './utils';
 import { globalErrorHandler } from './utils/errorHandler';
+import { devLog } from './utils/devConsole';
 import NetworkTestPage from './pages/NetworkTestPage.tsx';
 
 /**
@@ -57,7 +58,7 @@ export default function App() {
     globalErrorHandler.init();
     // Show current MAIN_URL for verification
     // eslint-disable-next-line no-console
-    console.log(
+    devLog(
       '[env] ORIGIN =',
       getCurrentOrigin(),
       'MODE =',
@@ -77,15 +78,15 @@ export default function App() {
     // 브라우저 정보 및 기능 지원 여부 로그 출력
     const browserInfo = getBrowserInfo();
     // eslint-disable-next-line no-console
-    console.log('🔍 Browser Feature Support:');
+    devLog('🔍 Browser Feature Support:');
     // eslint-disable-next-line no-console
-    console.log('   Storage:', {
+    devLog('   Storage:', {
       localStorage: browserInfo.localStorageSupported,
       sessionStorage: browserInfo.sessionStorageSupported,
       indexedDB: browserInfo.indexedDBSupported,
     });
     // eslint-disable-next-line no-console
-    console.log('   Web APIs:', {
+    devLog('   Web APIs:', {
       webWorker: browserInfo.webWorkerSupported,
       serviceWorker: browserInfo.serviceWorkerSupported,
       webgl: browserInfo.webglSupported,
@@ -94,18 +95,18 @@ export default function App() {
       geolocation: browserInfo.geolocationSupported,
     });
     // eslint-disable-next-line no-console
-    console.log('   Graphics:', {
+    devLog('   Graphics:', {
       canvas: browserInfo.canvasSupported,
       svg: browserInfo.svgSupported,
     });
     // eslint-disable-next-line no-console
-    console.log('   CSS Features:', {
+    devLog('   CSS Features:', {
       cssGrid: browserInfo.cssGridSupported,
       flexbox: browserInfo.flexboxSupported,
       cssVariables: browserInfo.cssVariablesSupported,
     });
     // eslint-disable-next-line no-console
-    console.log('   JavaScript:', {
+    devLog('   JavaScript:', {
       es6: browserInfo.es6Supported,
       fetch: browserInfo.fetchSupported,
       promise: browserInfo.promiseSupported,
@@ -114,7 +115,7 @@ export default function App() {
       webAssembly: browserInfo.webAssemblySupported,
     });
     // eslint-disable-next-line no-console
-    console.log('   Device:', {
+    devLog('   Device:', {
       touch: browserInfo.touchSupported,
       online: browserInfo.isOnline,
       cookie: browserInfo.cookieEnabled,

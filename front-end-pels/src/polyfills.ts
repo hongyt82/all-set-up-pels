@@ -18,9 +18,11 @@ import 'core-js/stable';
 // Regenerator 런타임 (async/await 지원)
 import 'regenerator-runtime/runtime';
 
+import { devLog } from './utils/devConsole';
+
 // 추가 폴리필 (필요시)
 // import 'core-js/features/array/includes';
 // import 'core-js/features/object/assign';
 // import 'core-js/features/promise';
 
-console.log('🔧 오프라인 폴리필 로드 완료');
+devLog('🔧 오프라인 폴리필 로드 완료');

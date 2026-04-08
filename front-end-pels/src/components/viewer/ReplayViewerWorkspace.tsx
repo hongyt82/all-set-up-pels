@@ -12,6 +12,7 @@ import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
 import type { TemplatePage } from '../../types';
 import { BASE_PAGE_WIDTH, BASE_PAGE_HEIGHT } from '../../constants/pageSize';
+import { devWarn } from '../../utils/devConsole';
 
 export interface TemplatePathData {
   points: number[];
@@ -218,7 +219,7 @@ export const ReplayViewerWorkspace = forwardRef<
         try {
           await tryLoad(true);
         } catch (e1) {
-          console.warn(
+          devWarn(
             '[ReplayViewerWorkspace] load from url with CMap failed, retry without CMap',
             e1
           );
@@ -250,7 +251,7 @@ export const ReplayViewerWorkspace = forwardRef<
         try {
           renderTaskRef.current.cancel();
         } catch (e) {
-          console.warn('[ReplayViewerWorkspace] cancel renderTask failed', e);
+          devWarn('[ReplayViewerWorkspace] cancel renderTask failed', e);
         }
         renderTaskRef.current = null;
       }
@@ -308,10 +309,7 @@ export const ReplayViewerWorkspace = forwardRef<
         try {
           await task.promise;
         } catch (e) {
-          console.warn(
-            '[ReplayViewerWorkspace] render task error (ignored)',
-            e
-          );
+          devWarn('[ReplayViewerWorkspace] render task error (ignored)', e);
         } finally {
           renderTaskRef.current = null;
         }
@@ -345,7 +343,7 @@ export const ReplayViewerWorkspace = forwardRef<
         try {
           renderTaskRef.current.cancel();
         } catch (e) {
-          console.warn('[ReplayViewerWorkspace] cancel on cleanup failed', e);
+          devWarn('[ReplayViewerWorkspace] cancel on cleanup failed', e);
         }
         renderTaskRef.current = null;
       }
@@ -476,7 +474,7 @@ export const ReplayViewerWorkspace = forwardRef<
               borderRadius: 8,
             }}
           />
-{/*          <canvas
+          {/*          <canvas
             ref={drawCanvasRef}
             style={{
               position: 'absolute',
@@ -568,7 +566,10 @@ export const ReplayViewerWorkspace = forwardRef<
                               alignItems: 'center',
                               justifyContent: 'center',
                               color: '#1d4ed8',
-                              fontSize: Math.max(12, Math.min(width, height) * 0.12),
+                              fontSize: Math.max(
+                                12,
+                                Math.min(width, height) * 0.12
+                              ),
                               fontWeight: 700,
                               textAlign: 'center',
                               padding: 8,
@@ -804,7 +805,6 @@ export const ReplayViewerWorkspace = forwardRef<
               pointerEvents: 'none',
             }}
           />
-
 
           <div
             style={{
