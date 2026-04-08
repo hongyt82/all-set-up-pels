@@ -503,8 +503,9 @@ export const ViewerWorkspace = forwardRef<
       return;
     }
 
-    const srcW = logicalPages?.[currentPage - 1]?.width ?? pageBox.w;
-    const srcH = logicalPages?.[currentPage - 1]?.height ?? pageBox.h;
+    const lp = findLogicalPage(currentPage) as any;
+    const srcW = Number(lp?.width) || pageBox.w;
+    const srcH = Number(lp?.height) || pageBox.h;
 
     const sx = pageBox.w / srcW;
     const sy = pageBox.h / srcH;
@@ -1252,18 +1253,6 @@ export const ViewerWorkspace = forwardRef<
               borderRadius: 8,
             }}
           />
-          {/* 드로잉 캔버스 (pathData 표시 전용) */}
-          <canvas
-            ref={drawCanvasRef}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              width: pageBox.w,
-              height: pageBox.h,
-              pointerEvents: 'none', // ★ 중요: 입력 방해 방지
-            }}
-          />
 
           {/* 오버레이 */}
           <div
@@ -1325,32 +1314,71 @@ export const ViewerWorkspace = forwardRef<
                       const width = Math.round((a.width || 0) * sx);
                       const height = Math.round((a.height || 0) * sy);
 
-                      if (a.type === 'image') {
+                      const imageSrc = a.fileUrl || a.url || a.src || null;
+
+                      if (a.type === 'image' || a.type === 'camera') {
+                        if (imageSrc) {
+                          return (
+                            <div
+                              key={`att-img-${idx}`}
+                              style={{
+                                position: 'absolute',
+                                left,
+                                top,
+                                width,
+                                height,
+                              }}
+                            >
+                              <img
+                                src={imageSrc}
+                                alt="attachment"
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'contain',
+                                  display: 'block',
+                                }}
+                              />
+                            </div>
+                          );
+                        }
+
                         return (
                           <div
-                            key={`att-img-${idx}`}
+                            key={`att-img-placeholder-${idx}`}
                             style={{
                               position: 'absolute',
                               left,
                               top,
                               width,
                               height,
+                              border: '2px dashed rgba(59,130,246,0.75)',
+                              background: 'rgba(59,130,246,0.10)',
+                              borderRadius: 8,
+                              boxSizing: 'border-box',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#1d4ed8',
+                              fontSize: Math.max(
+                                12,
+                                Math.min(width, height) * 0.12
+                              ),
+                              fontWeight: 700,
+                              textAlign: 'center',
+                              padding: 8,
+                              overflow: 'hidden',
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            <img
-                              src={a.src}
-                              alt="attachment"
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'contain',
-                                display: 'block',
-                              }}
-                            />
+                            IMAGE BOX
                           </div>
                         );
                       }
                       if (a.type === 'video') {
+                        const videoSrc = a.fileUrl || a.url || a.src || null;
+                        if (!videoSrc) return null;
+
                         return (
                           <div
                             key={`att-video-${idx}`}
@@ -1363,7 +1391,7 @@ export const ViewerWorkspace = forwardRef<
                             }}
                           >
                             <video
-                              src={a.src}
+                              src={videoSrc}
                               width={width}
                               height={height}
                               controls={a.controls ?? true}
@@ -1559,6 +1587,19 @@ export const ViewerWorkspace = forwardRef<
                 );
               })()}
           </div>
+
+          {/* 드로잉 캔버스 (pathData 표시 전용) */}
+          <canvas
+            ref={drawCanvasRef}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: pageBox.w,
+              height: pageBox.h,
+              pointerEvents: 'none',
+            }}
+          />
 
           {/* 페이지 표시 */}
           <div

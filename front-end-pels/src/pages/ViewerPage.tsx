@@ -299,6 +299,47 @@ export function ViewerPage() {
     wsRef.current?.goToPage(targetLogicalPage);
   }
 
+  function getOriginFromUrl(url?: string | null) {
+    if (!url) return '';
+    try {
+      return new URL(url).origin;
+    } catch {
+      return '';
+    }
+  }
+
+  function toImageUrl(url?: string | null, fileBaseUrl?: string) {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    if (!fileBaseUrl) return url;
+    return `${fileBaseUrl}/${String(url).replace(/^\/+/, '')}`;
+  }
+
+  function normalizeAttachment(att: any, fileBaseUrl?: string) {
+    if (!att) return att;
+
+    const normalizedSrc = toImageUrl(
+      att.url ??
+        att.fileUrl ??
+        att.src ??
+        att.URL_INFO ??
+        att.imagePath ??
+        null,
+      fileBaseUrl
+    );
+
+    return {
+      ...att,
+      x: att.x ?? att.posX ?? att.IMG_X_CRDNT ?? 0,
+      y: att.y ?? att.posY ?? att.IMG_Y_CRDNT ?? 0,
+      width: att.width ?? att.WDTH_NUMV ?? 0,
+      height: att.height ?? att.HDTH_NUMV ?? 0,
+      fileUrl: normalizedSrc,
+      url: normalizedSrc,
+      src: normalizedSrc,
+    };
+  }
+
   const [hasDialogInPage, setHasDialogInPage] = useState(false);
   const [hasQrInPage, setHasQrInPage] = useState(false);
 
@@ -963,6 +1004,8 @@ export function ViewerPage() {
       const { PDF_PATH, FRM_OVER_JSON, FRM_CONS_JSON } = metaRes.data;
       if (!PDF_PATH) return;
 
+      const fileBaseUrl = getOriginFromUrl(PDF_PATH);
+
       if (isProd) {
         // 서버에서도 PDF를 File 로 만들어야 함
         const res = await fetch(PDF_PATH);
@@ -976,8 +1019,7 @@ export function ViewerPage() {
         setCurrentFile('viewer.pdf');
         setFileSize(`${(file.size / 1024 / 1024).toFixed(2)} MB`);
         setFileUrl(URL.createObjectURL(file));
-
-        wsRef.current?.loadPdfFile(file);
+        // wsRef.current?.loadPdfFile(file);
       } else {
         // 로컬에서만 proxy 사용
         const pdfRes = await axios.get('/proxy/pdf', {
@@ -1001,8 +1043,7 @@ export function ViewerPage() {
         setCurrentFile('viewer.pdf');
         setFileSize(`${(file.size / 1024 / 1024).toFixed(2)} MB`);
         setFileUrl(URL.createObjectURL(file));
-
-        wsRef.current?.loadPdfFile(file);
+        // wsRef.current?.loadPdfFile(file);
       }
 
       if (FRM_OVER_JSON) {
@@ -1028,7 +1069,9 @@ export function ViewerPage() {
         const attachmentMap: Record<number, any[]> = {};
         (parsed.pages || []).forEach((pg: any) => {
           attachmentMap[pg.page] = Array.isArray(pg.attachments)
-            ? pg.attachments
+            ? pg.attachments.map((att: any) =>
+                normalizeAttachment(att, fileBaseUrl)
+              )
             : [];
         });
         setAttachmentsByPage(attachmentMap);
