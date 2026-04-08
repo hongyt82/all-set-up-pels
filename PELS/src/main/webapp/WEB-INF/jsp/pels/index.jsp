@@ -153,7 +153,7 @@
                             </li>
                              -->
                             <li class="">
-                                <a href="javascript:addTab(3, 'Outcome_Search_C', 'Outcome_Search.do?PRSTS_CFY=C','나의문서 완료')">
+                                <a href="javascript:addTab(3, 'Exam_Search_C', 'Exam_Search.do?PRSTS_CFY=C','나의문서 완료')">
                                     점검완료
                                 </a>
                                 <b class="arrow"></b>

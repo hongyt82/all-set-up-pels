@@ -1,8 +1,8 @@
 package com.khnp.pels.exam.controller;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,21 +22,18 @@ import java.util.Properties;
 import javax.annotation.Resource;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -64,9 +61,7 @@ public class PELSExamController {
 	private JsonXssFilter jsonXssFilter = new JsonXssFilter();
 	
 	@Resource(name = "utilProperties")
-	private Properties utilProperties;
-
-    private String URL = "http://218.157.239.4:19090/";
+	private Properties utilProperties;	
 
 	/**
 	 * 나의문서 > 준비 및 수행중
@@ -95,7 +90,7 @@ public class PELSExamController {
 		String SH_PRCDOC_NO = StringUtil.nvl(request.getParameter("SH_PRCDOC_NO"), "");
 		String SH_PRCDOC_NM = StringUtil.nvl(request.getParameter("SH_PRCDOC_NM"), "");
 		String SH_CHCK_TITL = StringUtil.nvl(request.getParameter("SH_CHCK_TITL"), "");
-		String SH_SORT = StringUtil.nvl(request.getParameter("SH_SORT"), "CHCK_STRT_DT");
+		String SH_SORT = StringUtil.nvl(request.getParameter("SH_SORT"), "LAST_MDF_DT");
 		String PRSTS_CFY = StringUtil.nvl(request.getParameter("PRSTS_CFY"), "");
 		
 		paramMap.put("PRCDOC_NO", SH_PRCDOC_NO);
@@ -422,7 +417,7 @@ public class PELSExamController {
 			paramMap.put("ATFL_NO", ATFL_NO);
 			paramMap.put("ATFL_PTH_NM", PELS_DIR + "/upload/" + filepath);
 			paramMap.put("ATFL_ORSRC_TITL_NM", FILE_URL);
-			paramMap.put("ATFL_PHCL_NM", "upload/" + filepath + "/" + newfileName);
+			paramMap.put("ATFL_PHCL_NM", filepath + "/" + newfileName);
 			paramMap.put("ATFL_SZ", String.valueOf(size));
 			paramMap.put("ATFL_SEQ", ATFL_SEQ);
 			ret = pelsExamService.insert("InsertFile", paramMap);
@@ -785,12 +780,14 @@ public class PELSExamController {
 		System.out.println("========================================================================");
 		System.out.println("USER_ID : " + USER_ID);
 		System.out.println("========================================================================");
+
 		
-		
+		String PWPL_ID = StringUtil.nvl(request.getParameter("PWPL_ID"), "");
 		String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
 		String PRCDOC_NO = StringUtil.nvl(request.getParameter("PRCDOC_NO"), "");
 		String PRCDOC_NM = StringUtil.nvl(request.getParameter("PRCDOC_NM"), "");
 		String CHCK_TITL = StringUtil.nvl(request.getParameter("CHCK_TITL"), "");
+		mav.addObject("PWPL_ID", PWPL_ID);
 		mav.addObject("CHCK_SNO", CHCK_SNO);
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
@@ -800,114 +797,8 @@ public class PELSExamController {
 		
 		return mav;
 	}
-
-
-    /**
-     * 시험(점검)관리 > 시험(점검)준비
-     * @param request
-     * @return
-     */
-    /*@RequestMapping(value= {"/Exam_Json_M.do"}, method = {RequestMethod.GET, RequestMethod.POST})
-    public ModelAndView Exam_Json_M(HttpServletRequest request) {
-        ModelAndView mav = new ModelAndView();
-
-        String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
-        String ATFL_NO  = StringUtil.nvl(request.getParameter("ATFL_NO"), "1");
-
-        HashMap<String, Object> paramMap = new HashMap<>();
-        paramMap.put("CHCK_SNO", CHCK_SNO);
-        paramMap.put("ATFL_NO", ATFL_NO);
-
-        Map<String, String> mapTemp = pelsExamService.getDetail("ExamJsonDetail", paramMap);
-
-        HashMap<String, Object> paramMap2 = new HashMap<>();
-        paramMap2.put("PDF_PATH", URL + "upload/" + mapTemp.get("ATFL_PHCL_NM"));
-
-        Object clobObj = mapTemp.get("WRTE_JSON_DCR");   // 맞는지 확인
-        String json = "";
-        try { json = clobToString((Clob) clobObj); } catch (Exception e) {}
-        paramMap2.put("FRM_OVER_JSON", json);
-
-        clobObj = mapTemp.get("CMP_JSON_DCR");           // 이것도 확인
-        json = "";
-        try { json = clobToString((Clob) clobObj); } catch (Exception e) {}
-        paramMap2.put("FRM_CONS_JSON", json);
-
-        JSONObject JSONDATA = new JSONObject(paramMap2);
-        mav.addObject("JSONDATA", JSONDATA);
-        mav.setViewName("/pels/Json");
-
-        return mav;
-    }*/
-
-    /* 추가시작 */
-    @RequestMapping(value = "/api/Exam_Json_M", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
-    @ResponseBody
-    public Map<String, Object> Exam_Json_M_API(HttpServletRequest request) throws Exception {
-
-//        String PELS_IP_URL = utilProperties.getProperty("PELS_IP_URL");
-
-        HttpSession session = request.getSession();
-        String USER_ID = (String) session.getAttribute("LOGIN_USER_ID");
-        String USER_NM = (String) session.getAttribute("LOGIN_USER_NM");
-
-        String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("USER_ID", USER_ID);
-        result.put("USER_NM", USER_NM);
-
-        if ("".equals(CHCK_SNO)) {
-            return result;
-        }
-
-        /*
-         * ========================= 1. 시험 기본 정보 조회 =========================
-         */
-        HashMap<String, Object> paramMap = new HashMap<String, Object>();
-        paramMap.put("CHCK_SNO", CHCK_SNO);
-
-        Map<String, String> mapTemp = pelsExamService.getDetail("ExamJsonDetail", paramMap);
-
-        if (mapTemp == null) {
-            return result;
-        }
-
-        /*
-         * ========================= 2. PDF 경로 =========================
-         */
-//        result.put("PDF_PATH", PELS_IP_URL + "/upload/" + mapTemp.get("ATFL_PHCL_NM"));
-        result.put("PDF_PATH", URL + "upload/" + mapTemp.get("ATFL_PHCL_NM"));
-
-        /*
-         * ========================= 3. Overlay JSON =========================
-         */
-        Object overClob = mapTemp.get("WRTE_JSON_DCR");
-        String json = "";
-        try {
-            json = clobToString((Clob) overClob);
-        } catch (Exception e) {}
-        result.put("FRM_OVER_JSON", json);
-
-        /*
-         * ========================= 4. Rule JSON =========================
-         */
-        Object consClob = mapTemp.get("CMP_JSON_DCR");
-        json = "";
-        try {
-            json = clobToString((Clob) consClob);
-        } catch (Exception e) {}
-        result.put("FRM_CONS_JSON", json);
-
-
-        return result;
-    }
-    /* 추가끝 */
-
-
-
-
-    /**
+	
+	/**
 	 * 
 	 * @param request
 	 * @return
@@ -927,13 +818,13 @@ public class PELSExamController {
 		System.out.println("========================================================================");
 		
 		
+		String PWPL_ID = StringUtil.nvl(request.getParameter("PWPL_ID"), "");
 		String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
-        String PWPL_ID = StringUtil.nvl(request.getParameter("PWPL_ID"), "");
 		String PRCDOC_NO = StringUtil.nvl(request.getParameter("PRCDOC_NO"), "");
 		String PRCDOC_NM = StringUtil.nvl(request.getParameter("PRCDOC_NM"), "");
 		String CHCK_TITL = StringUtil.nvl(request.getParameter("CHCK_TITL"), "");
+		mav.addObject("PWPL_ID", PWPL_ID);
 		mav.addObject("CHCK_SNO", CHCK_SNO);
-        mav.addObject("PWPL_ID", PWPL_ID);
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);
@@ -1070,4 +961,6 @@ public class PELSExamController {
 		
 		return mav;
 	}
+	
+	
 }

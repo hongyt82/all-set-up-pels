@@ -203,7 +203,7 @@
 					<div class="RealPanel">
 						<div class="Title">
 							<div class="TitleArea">
-								<span class="SubTitle">시험수행현황 A2</span><span class="count">총 ${TCNT} 건</span>
+								<span class="SubTitle">시험수행현황</span><span class="count">총 ${TCNT} 건</span>
 							</div>
 							<div class="ControlArea">
 								<a class="InfoButton" href="javascript:downloadExcelFile();"><span class="Text">엑셀 다운로드</span></a>

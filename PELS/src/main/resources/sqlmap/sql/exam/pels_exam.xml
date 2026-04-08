@@ -10,6 +10,7 @@
 			<if test='SH_SORT == "LAST_MDF_DT"'>
 			SELECT ROW_NUMBER() OVER (ORDER BY A.LAST_MDF_DT DESC, A.CHCK_STRT_DT DESC) AS LISTNUM,
 			</if>
+			    A.PWPL_ID,
 				A.CHCK_SNO,
 				A.PRCDOC_SNO,
 				TO_CHAR(CHCK_STRT_DT, 'YYYY-MM-DD')  AS CHCK_STRT_DT,
@@ -58,7 +59,12 @@
 			   AND A.CHCK_END_DT <![CDATA[<=]]> #{CHCK_END_DT}
 			</if>
 			<if test='PRSTS_CFY != ""'>
-			   AND A.PRSTS_CFY = #{PRSTS_CFY}
+				<if test='PRSTS_CFY == "R"'>
+				   AND A.PRSTS_CFY IN ('R','F')
+				</if>
+				<if test='PRSTS_CFY != "R"'>
+				   AND A.PRSTS_CFY =  #{PRSTS_CFY}
+				</if>
 			</if>
 			<if test='CHCK_TITL != ""'>
 			   AND A.CHCK_TITL LIKE '%'||#{CHCK_TITL}||'%'
@@ -99,7 +105,8 @@
 	
 	
 	<select id="ExamDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
-		SELECT 
+		SELECT
+		    A.PWPL_ID, 
 			A.CHCK_SNO,
 			A.PRCDOC_SNO,
 			A.CHCK_STRT_DT,
@@ -237,9 +244,9 @@
 			RG_DT,
 			TO_CHAR(RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
 		FROM GE_PL_CHCK0101_D A
-		WHERE CHCK_SNO = #{CHCK_SNO, jdbcType=BIGINT}
-        <if test="ATFL_NO != null and ATFL_NO != ''">
-		   AND ATFL_NO  = #{ATFL_NO, jdbcType=VARCHAR}
+		WHERE CHCK_SNO = #{CHCK_SNO}
+		<if test='ATFL_NO != ""'>
+		   AND ATFL_NO  = #{ATFL_NO}
 		</if>
 	</select>	
 	

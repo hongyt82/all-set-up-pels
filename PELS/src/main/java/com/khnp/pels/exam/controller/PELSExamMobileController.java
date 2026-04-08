@@ -62,6 +62,7 @@ public class PELSExamMobileController {
 		HashMap<String, Object> paramMap = new HashMap<String, Object>();
 		
 		String USER_ID = StringUtil.nvl(request.getParameter("USER_ID"), ""); 
+		String PRSTS_CFY = StringUtil.nvl(request.getParameter("PRSTS_CFY"), ""); 
 		
 		paramMap.put("CHCK_STRT_DT", "");
 		paramMap.put("CHCK_END_DT", "");
@@ -69,7 +70,7 @@ public class PELSExamMobileController {
 		paramMap.put("PRCDOC_NO", "");
 		paramMap.put("PRCDOC_NM", "");
 		paramMap.put("CHCK_TITL", "");
-		paramMap.put("PRSTS_CFY", "");
+		paramMap.put("PRSTS_CFY", PRSTS_CFY);
 		paramMap.put("SH_SORT", "CHCK_STRT_DT");
 		
 		int DISPSTART = 0, DISPEND = 100;
@@ -77,7 +78,6 @@ public class PELSExamMobileController {
 		paramMap.put("DISPEND", DISPEND);
 		
 		// 진행상태구분 R:준비, A:허가 F:수행, S:불만족, C:완료, X:불만족완료
-		paramMap.put("PRSTS_CFY", "");
 		paramMap.put("CHKPR_ID", USER_ID);
 		
 		List<Map<String, Object>> examList = (ArrayList) pelsExamService.getList("ExamList", paramMap);
@@ -91,7 +91,6 @@ public class PELSExamMobileController {
 		ModelAndView mav = new ModelAndView();
 		HashMap<String, Object> paramMapReturn = new HashMap<String, Object>();
 
-		
 		HashMap<String, Object> paramMap = new HashMap<String, Object>();
 		
 		String PELS_IP_URL = utilProperties.getProperty("PELS_IP_URL");
@@ -115,8 +114,7 @@ public class PELSExamMobileController {
 		paramMap.put("ATFL_NO", "1");
 		Map<String, String> examJsonDetail = pelsExamService.getDetail("ExamJsonDetail", paramMap);
 		
-		
-		paramMapReturn.put("PDF_PATH", PELS_IP_URL + "/" + examJsonDetail.get("ATFL_PHCL_NM"));
+		paramMapReturn.put("PDF_PATH", PELS_IP_URL + "/upload/" + examJsonDetail.get("ATFL_PHCL_NM"));
 		Object clobObj = examJsonDetail.get("WRTE_JSON_DCR");
 		String json = "";
 		try {
@@ -231,7 +229,70 @@ public class PELSExamMobileController {
 		resultMap.put("resultCd", resultCd);
 		
 		return resultMap;
+	}
+	
+	@RequestMapping(value = "/api/Exam_Json_M", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+	@ResponseBody
+	public Map<String, Object> Exam_Json_M_API(HttpServletRequest request) throws Exception {
+
+		String PELS_IP_URL = utilProperties.getProperty("PELS_IP_URL");
+		
+		HttpSession session = request.getSession();
+		String USER_ID = (String) session.getAttribute("LOGIN_USER_ID");
+		String USER_NM = (String) session.getAttribute("LOGIN_USER_NM");
+
+		String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("USER_ID", USER_ID);
+		result.put("USER_NM", USER_NM);
+
+		if ("".equals(CHCK_SNO)) {
+			return result;
+		}
+
+		/*
+		 * ========================= 1. 시험 기본 정보 조회 =========================
+		 */
+		HashMap<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put("CHCK_SNO", CHCK_SNO);
+		paramMap.put("ATFL_NO", "1");
+		Map<String, String> mapTemp = pelsExamService.getDetail("ExamJsonDetail", paramMap);
+		
+		if (mapTemp == null) {
+			return result;
+		}
+
+		/*
+		 * ========================= 2. PDF 경로 =========================
+		 */
+		result.put("PDF_PATH", PELS_IP_URL + "/upload/" + mapTemp.get("ATFL_PHCL_NM"));
+		
+		System.out.println("PDF_PATH = " + PELS_IP_URL + "/upload/" + mapTemp.get("ATFL_PHCL_NM"));
+
+		/*
+		 * ========================= 3. Overlay JSON =========================
+		 */
+		Object overClob = mapTemp.get("WRTE_JSON_DCR");
+		if (overClob instanceof Clob) {
+			result.put("FRM_OVER_JSON", clobToString((Clob) overClob));
+		} else {
+			result.put("FRM_OVER_JSON", null);
+		}
+
+		/*
+		 * ========================= 4. Rule JSON =========================
+		 */
+		Object consClob = mapTemp.get("CMP_JSON_DCR");
+		if (consClob instanceof Clob) {
+			result.put("FRM_CONS_JSON", clobToString((Clob) consClob));
+		} else {
+			result.put("FRM_CONS_JSON", null);
+		}
+
+		return result;
 	}	
+	
 	
 	@RequestMapping(value = "/proxy/pdf", method = RequestMethod.GET)
 	public void proxyPdf(@RequestParam("path") String path, HttpServletResponse response) throws Exception {
@@ -325,7 +386,6 @@ public class PELSExamMobileController {
 		
 		ArrayList PrcdocList = (ArrayList) pelsExamService.getList("ProcedureList", paramMap);
 		mav.addObject("PrcdocList", PrcdocList);
-		
 
 		if("".equals(SH_DOC_TYP_CD))
 			SH_DOC_TYP_CD = "FP0";

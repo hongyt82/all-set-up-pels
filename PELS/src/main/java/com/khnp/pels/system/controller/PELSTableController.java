@@ -53,7 +53,7 @@ public class PELSTableController {
 	 * @param request
 	 * @return
 	 */
-	@RequestMapping(value= {"/Table_Search.do", "/Table_Search_M.do"}, method = {RequestMethod.GET, RequestMethod.POST})
+	@RequestMapping(value= {"/Table_Search.do"}, method = {RequestMethod.GET, RequestMethod.POST})
 	public ModelAndView tableSearch (HttpServletRequest request) {
 		ModelAndView mav = new ModelAndView();
 		HashMap<String, Object> paramMap = new HashMap<String, Object>();

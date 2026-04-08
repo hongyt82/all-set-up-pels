@@ -280,5 +280,10 @@ public class PELSCommonController {
 		
 		return resultMap;
 	}    
+	
+    @RequestMapping(value= {"/e-link-v2/**"}, method = {RequestMethod.GET, RequestMethod.POST})
+    public String forward (HttpServletRequest request) {
+        return "forward:/static/e-link-v2/index.html";
+    }	
 }
 
