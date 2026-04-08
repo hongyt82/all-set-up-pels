@@ -27,10 +27,8 @@
 	}
 
 	function pageLoad(){
-		document.getElementById("iframPdfEditor").src = "<%= request.getContextPath() %>/e-link-v2/replayviewer?&PWPL_ID=${PWPL_ID}&CHCK_SNO=${CHCK_SNO}";
-        <%--document.getElementById("iframPdfEditor").src = "http://localhost:4008/e-link-v2/replayviewer?CHCK_SNO=${CHCK_SNO}";--%>
-        <%--document.getElementById("iframPdfEditor").src = "http://localhost:4008/e-link-v2/replayviewer?CHCK_SNO=${CHCK_SNO}&PWPL_ID=${PWPL_ID}";--%>
-        <%--document.getElementById("iframPdfEditor").src = "http://localhost:4008/e-link-v2/replayviewer?CHCK_SNO=${CHCK_SNO}&PWPL_ID=2230";--%>
+		<%--document.getElementById("iframPdfEditor").src = "<%= request.getContextPath() %>/e-link-v2/replayviewer?&PWPL_ID=${PWPL_ID}&CHCK_SNO=${CHCK_SNO}";--%>
+        document.getElementById("iframPdfEditor").src = "http://localhost:4008/e-link-v2/replayviewer?CHCK_SNO=${CHCK_SNO}&PWPL_ID=2230";
 	}
 </script>
 <body class="no-skin real-skin" onload="javascript:pageLoad();">
