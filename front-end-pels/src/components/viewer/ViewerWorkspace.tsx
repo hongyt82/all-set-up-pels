@@ -1507,27 +1507,27 @@ export const ViewerWorkspace = forwardRef<
                                     gap: 0,
                                   }}
                                 >
-                                <span
-                                  style={{
-                                    color:
-                                      wphp === 'wp' ? '#d32f2f' : '#bdbdbd',
-                                  }}
-                                >
-                                  WP
-                                </span>
+                                  <span
+                                    style={{
+                                      color:
+                                        wphp === 'wp' ? '#d32f2f' : '#bdbdbd',
+                                    }}
+                                  >
+                                    WP
+                                  </span>
                                   <span
                                     style={{ color: '#888', margin: '0 1px' }}
                                   >
-                                  /
-                                </span>
+                                    /
+                                  </span>
                                   <span
                                     style={{
                                       color:
                                         wphp === 'hp' ? '#d32f2f' : '#bdbdbd',
                                     }}
                                   >
-                                  HP
-                                </span>
+                                    HP
+                                  </span>
                                 </div>
 
                                 <div style={labelCellStyle}>입회일</div>

@@ -299,8 +299,6 @@ export function ViewerPage() {
     wsRef.current?.goToPage(targetLogicalPage);
   }
 
-
-
   function getOriginFromUrl(url?: string | null) {
     if (!url) return '';
     try {
@@ -321,7 +319,12 @@ export function ViewerPage() {
     if (!att) return att;
 
     const normalizedSrc = toImageUrl(
-      att.url ?? att.fileUrl ?? att.src ?? att.URL_INFO ?? att.imagePath ?? null,
+      att.url ??
+        att.fileUrl ??
+        att.src ??
+        att.URL_INFO ??
+        att.imagePath ??
+        null,
       fileBaseUrl
     );
 
@@ -1067,8 +1070,8 @@ export function ViewerPage() {
         (parsed.pages || []).forEach((pg: any) => {
           attachmentMap[pg.page] = Array.isArray(pg.attachments)
             ? pg.attachments.map((att: any) =>
-              normalizeAttachment(att, fileBaseUrl)
-            )
+                normalizeAttachment(att, fileBaseUrl)
+              )
             : [];
         });
         setAttachmentsByPage(attachmentMap);
