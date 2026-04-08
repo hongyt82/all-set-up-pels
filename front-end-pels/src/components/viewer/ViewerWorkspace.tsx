@@ -503,8 +503,9 @@ export const ViewerWorkspace = forwardRef<
       return;
     }
 
-    const srcW = logicalPages?.[currentPage - 1]?.width ?? pageBox.w;
-    const srcH = logicalPages?.[currentPage - 1]?.height ?? pageBox.h;
+    const lp = findLogicalPage(currentPage) as any;
+    const srcW = Number(lp?.width) || pageBox.w;
+    const srcH = Number(lp?.height) || pageBox.h;
 
     const sx = pageBox.w / srcW;
     const sy = pageBox.h / srcH;
