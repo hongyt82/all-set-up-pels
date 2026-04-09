@@ -170,7 +170,7 @@
 
 <body class="no-skin real-skin real-popup">
 <form id="form" name="form" method="post">
-<input type="hidden" name="SH_DOC_TYP_CD"" value="${SH_DOC_TYP_CD}">
+<input type="hidden" name="SH_DOC_TYP_CD" value="${SH_DOC_TYP_CD}">
 <input type="hidden" name="SH_PRCDOC_NO" value="${SH_PRCDOC_NO}">
 <input type="hidden" name="SH_PRT_NO" value="${SH_PRT_NO}">
 

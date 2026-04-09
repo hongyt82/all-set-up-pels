@@ -17,6 +17,11 @@
     SimpleDateFormat format = new SimpleDateFormat("yy/MM/dd");
     String SignDate = format.format(nowDate);
 
+	String elinkRoot = (String) request.getAttribute("ELINK_V2_ROOT");
+	if (elinkRoot == null) {
+		elinkRoot = request.getContextPath();
+	}
+
 %>
 <script>
 	function fnParent () {
@@ -26,7 +31,7 @@
 	}
 
 	function pageLoad(){
-		document.getElementById("iframPdfEditor").src = "<%= request.getContextPath() %>/e-link-v2/viewer?PWPL_ID=${PWPL_ID}&CHCK_SNO=${CHCK_SNO}";
+		document.getElementById("iframPdfEditor").src = "<%= elinkRoot %>/e-link-v2/viewer?PWPL_ID=${PWPL_ID}&CHCK_SNO=${CHCK_SNO}";
 	}
 </script>
 <body class="no-skin real-skin" onload="javascript:pageLoad();">
@@ -73,7 +78,7 @@
 	</div>
 </div>
 </form>
-<div id="OZViewer" style="width:100%-40px;height:85%; margin: 0px 20px 20px 20px;">
+<div id="OZViewer" style="width:100%40px;height:85%; margin: 0px 20px 20px 20px;">
 	<iframe id="iframPdfEditor" style="width:100%; height:100%; border:0"></iframe>
 </div>
 </body>

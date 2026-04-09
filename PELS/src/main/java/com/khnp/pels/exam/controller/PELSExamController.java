@@ -52,6 +52,11 @@ import common.xss.JsonXssFilter;
 public class PELSExamController {
 
 	private static final Logger log = LoggerFactory.getLogger(PELSExamController.class);
+
+	private static final String PELS_ELINK_V2_BASE_URL_KEY = "PELS_ELINK_V2_BASE_URL";
+	private static final String START_MODE_SYS_KEY = "startMode";
+	/** {@code -DstartMode=local} 일 때만 사용 (util/VM 미설정·루프백 접속 시 Vite 기본) */
+	private static final String ELINK_V2_LOCAL_VITE_ORIGIN = "http://localhost:4008";
 	
 	@Autowired
 	private PELSExamService pelsExamService;
@@ -62,6 +67,73 @@ public class PELSExamController {
 	
 	@Resource(name = "utilProperties")
 	private Properties utilProperties;	
+
+    /*************************************************************************/
+	/**
+	 * iframe용 e-link-v2 기준 URL을 모델에 넣는다.
+	 * {@code -DstartMode=local} 인 경우에만 VM·util의 {@code PELS_ELINK_V2_BASE_URL} 및 루프백 시 Vite 기본 주소를 적용한다.
+	 * 그 외 {@code startMode} 에는 항상 {@code contextPath} 만 사용한다.
+	 */
+	private void addElinkV2Root(HttpServletRequest request, ModelAndView mav) {
+		mav.addObject("ELINK_V2_ROOT", resolveElinkV2Root(request));
+	}
+
+	private String resolveElinkV2Root(HttpServletRequest request) {
+		if (!isLocalStartMode()) {
+			return request.getContextPath();
+		}
+		String configured = configuredElinkV2BaseUrl();
+		if (configured.isEmpty() && isLoopbackHost(request.getServerName())) {
+			configured = ELINK_V2_LOCAL_VITE_ORIGIN;
+		}
+		if (configured.isEmpty()) {
+			return request.getContextPath();
+		}
+		return trimTrailingSlashes(configured);
+	}
+
+    /**
+     * Local Mode 일때만 체크
+     * @return
+     */
+	private static boolean isLocalStartMode() {
+		return "local".equalsIgnoreCase(StringUtil.nvl(System.getProperty(START_MODE_SYS_KEY), ""));
+	}
+
+    /**
+     * Property 에서 URL 가져옴
+     * @return
+     */
+	private String configuredElinkV2BaseUrl() {
+		String fromVm = System.getProperty(PELS_ELINK_V2_BASE_URL_KEY);
+		if (fromVm != null) {
+			return fromVm.trim();
+		}
+		return StringUtil.nvl(utilProperties.getProperty(PELS_ELINK_V2_BASE_URL_KEY), "").trim();
+	}
+
+    /**
+     * Loop Back 체크
+     * @param host
+     * @return
+     */
+	private static boolean isLoopbackHost(String host) {
+		return "127.0.0.1".equals(host) || "localhost".equalsIgnoreCase(host);
+	}
+
+    /**
+     * slash 처리
+     * @param s
+     * @return
+     */
+	private static String trimTrailingSlashes(String s) {
+		String t = s;
+		while (t.endsWith("/")) {
+			t = t.substring(0, t.length() - 1);
+		}
+		return t;
+	}
+    /*************************************************************************/
 
 	/**
 	 * 나의문서 > 준비 및 수행중
@@ -750,12 +822,13 @@ public class PELSExamController {
 		String USER_NM = (String) session.getAttribute("LOGIN_USER_NM");
 		
 		System.out.println("========================================================================");
-		System.out.println("USER_ID : " + USER_ID);
+		System.out.println("USER_ID :" + USER_ID);
 		System.out.println("========================================================================");
 		
 		
 		String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
 		mav.addObject("CHCK_SNO", CHCK_SNO);
+        addElinkV2Root(request, mav);
 			
 		mav.setViewName("/pels/popup/KhnpViewer");
 		
@@ -792,6 +865,7 @@ public class PELSExamController {
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);
+		addElinkV2Root(request, mav);
 			
 		mav.setViewName("/pels/exam/Exam_KhnpViewer");
 		
@@ -828,6 +902,7 @@ public class PELSExamController {
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);
+		addElinkV2Root(request, mav);
 			
 		mav.setViewName("/pels/exam/Exam_KhnpReplayViewer");
 		

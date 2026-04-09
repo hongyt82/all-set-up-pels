@@ -1,4 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+	String elinkRoot = (String) request.getAttribute("ELINK_V2_ROOT");
+	if (elinkRoot == null) {
+		elinkRoot = request.getContextPath();
+	}
+%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -20,7 +26,7 @@
 <script type="text/javascript">
 // @kysoft
 function pageLoad(){
-	document.getElementById("iframPdfEditor").src = "<%= request.getContextPath() %>/e-link-v2/editor?FRM_UNQ_KY_VAL=${FRM_UNQ_KY_VAL}";
+	document.getElementById("iframPdfEditor").src = "<%= elinkRoot %>/e-link-v2/editor?FRM_UNQ_KY_VAL=${FRM_UNQ_KY_VAL}";
 }
 
 </script>
