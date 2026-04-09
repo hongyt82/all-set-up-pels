@@ -993,8 +993,6 @@ export function ViewerPage() {
     const CHCK_SNO = params.get('CHCK_SNO');
     if (!CHCK_SNO) return;
 
-    const isProd = import.meta.env.PROD;
-
     const load = async () => {
       const metaRes = await axios.get('/api/Exam_Json_M', {
         params: { CHCK_SNO },
@@ -1006,22 +1004,8 @@ export function ViewerPage() {
 
       const fileBaseUrl = getOriginFromUrl(PDF_PATH);
 
-      if (isProd) {
-        // 서버에서도 PDF를 File 로 만들어야 함
-        const res = await fetch(PDF_PATH);
-        const blob = await res.blob();
-
-        const file = new File([blob], 'viewer.pdf', {
-          type: 'application/pdf',
-        });
-
-        setPdfFile(file);
-        setCurrentFile('viewer.pdf');
-        setFileSize(`${(file.size / 1024 / 1024).toFixed(2)} MB`);
-        setFileUrl(URL.createObjectURL(file));
-        // wsRef.current?.loadPdfFile(file);
-      } else {
-        // 로컬에서만 proxy 사용
+      // PDF origin이 다르면 프록시 사용
+      if (shouldUsePdfProxy(PDF_PATH)) {
         const pdfRes = await axios.get('/proxy/pdf', {
           params: { path: PDF_PATH },
           responseType: 'blob',
@@ -1032,18 +1016,29 @@ export function ViewerPage() {
           type: 'application/pdf',
         });
 
-        // 디버깅
-        const ct = pdfRes.headers?.['content-type'];
-        devLog('[PDF PROXY] content-type=', ct, 'size=', pdfRes.data?.size);
+        setPdfFile(file);
+        setCurrentFile('viewer.pdf');
+        setFileSize(`${(file.size / 1024 / 1024).toFixed(2)} MB`);
+        setFileUrl(URL.createObjectURL(file));
+      } else {
+        const res = await fetch(PDF_PATH, {
+          credentials: 'include',
+        });
 
-        const textHead = await (pdfRes.data as Blob).slice(0, 50).text();
-        devLog('[PDF PROXY] head=', JSON.stringify(textHead));
+        if (!res.ok) {
+          throw new Error(`PDF load failed: ${PDF_PATH}`);
+        }
+
+        const blob = await res.blob();
+
+        const file = new File([blob], 'viewer.pdf', {
+          type: 'application/pdf',
+        });
 
         setPdfFile(file);
         setCurrentFile('viewer.pdf');
         setFileSize(`${(file.size / 1024 / 1024).toFixed(2)} MB`);
         setFileUrl(URL.createObjectURL(file));
-        // wsRef.current?.loadPdfFile(file);
       }
 
       if (FRM_OVER_JSON) {
@@ -1114,6 +1109,16 @@ export function ViewerPage() {
         applyRuleJsonObject(JSON.parse(FRM_CONS_JSON));
       }
     };
+
+    function shouldUsePdfProxy(pdfPath: string) {
+      try {
+        const pdfOrigin = new URL(pdfPath).origin;
+        return pdfOrigin !== window.location.origin;
+      } catch {
+        return true;
+      }
+    }
+
 
     load().catch(err => {
       console.error('[Viewer][DB] load failed', err);
