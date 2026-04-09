@@ -154,11 +154,12 @@ export default defineConfig(({ mode }) => {
         "/api": {
           target: "http://localhost:8484",
           changeOrigin: true,
-          // rewrite: (path) => path.replace(/^\/api/, ""),
+          rewrite: path => `/pels${path}`,
         },
-        "/proxy": {
-          target: "http://localhost:8484",
+        '/proxy': {
+          target: 'http://localhost:8484',
           changeOrigin: true,
+          rewrite: path => `/pels${path}`,
         },
       },
     },

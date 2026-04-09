@@ -191,10 +191,14 @@ function decodeStrokeBinary(
   };
 }
 
-function getOriginFromUrl(url?: string | null) {
+function getBaseUrl(url?: string | null) {
   if (!url) return '';
   try {
-    return new URL(url).origin;
+    const parsed = new URL(url);
+    const pathname = parsed.pathname || '';
+    const uploadIdx = pathname.indexOf('/upload/');
+    const basePath = uploadIdx >= 0 ? pathname.slice(0, uploadIdx) : '';
+    return `${parsed.origin}${basePath}`;
   } catch {
     return '';
   }
@@ -729,36 +733,10 @@ export function ReplayViewerPage() {
 
         const { PDF_PATH, FRM_OVER_JSON } = metaRes.data;
 
-        const origin = getOriginFromUrl(PDF_PATH);
+        const origin = getBaseUrl(PDF_PATH);
         setFileBaseUrl(origin);
 
         if (!PDF_PATH) return;
-
-        // 로컬에서는 direct fetch 실패 가능성으로 프록시 사용
-        /*const isProd = import.meta.env.PROD;
-        const viewerFileName = getFilenameFromPath(PDF_PATH);
-
-        if (isProd) {
-          const res = await fetch(PDF_PATH);
-          const blob = await res.blob();
-          const file = new File([blob], viewerFileName, {
-            type: 'application/pdf',
-          });
-
-          await handleLoadedFile(file, FRM_OVER_JSON);
-        } else {
-          const pdfRes = await axios.get('/proxy/pdf', {
-            params: { path: PDF_PATH },
-            responseType: 'blob',
-            withCredentials: true,
-          });
-
-          const file = new File([pdfRes.data], viewerFileName, {
-            type: 'application/pdf',
-          });
-
-          await handleLoadedFile(file, FRM_OVER_JSON);
-        }*/
         const viewerFileName = getFilenameFromPath(PDF_PATH);
 
         // PDF origin이 다르면 프록시 사용
@@ -822,7 +800,7 @@ export function ReplayViewerPage() {
           withCredentials: true,
         });
 
-        const fileBaseUrl = getOriginFromUrl(PDF_PATH);
+        const fileBaseUrl = getBaseUrl(PDF_PATH);
 
         const nextEvents: ReplayEventItem[] = Array.isArray(eventRes.data?.data)
           ? [...eventRes.data.data]

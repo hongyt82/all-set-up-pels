@@ -299,10 +299,14 @@ export function ViewerPage() {
     wsRef.current?.goToPage(targetLogicalPage);
   }
 
-  function getOriginFromUrl(url?: string | null) {
+  function getBaseUrl(url?: string | null) {
     if (!url) return '';
     try {
-      return new URL(url).origin;
+      const parsed = new URL(url);
+      const pathname = parsed.pathname || '';
+      const uploadIdx = pathname.indexOf('/upload/');
+      const basePath = uploadIdx >= 0 ? pathname.slice(0, uploadIdx) : '';
+      return `${parsed.origin}${basePath}`;
     } catch {
       return '';
     }
@@ -1002,7 +1006,7 @@ export function ViewerPage() {
       const { PDF_PATH, FRM_OVER_JSON, FRM_CONS_JSON } = metaRes.data;
       if (!PDF_PATH) return;
 
-      const fileBaseUrl = getOriginFromUrl(PDF_PATH);
+      const fileBaseUrl = getBaseUrl(PDF_PATH);
 
       // PDF origin이 다르면 프록시 사용
       if (shouldUsePdfProxy(PDF_PATH)) {
