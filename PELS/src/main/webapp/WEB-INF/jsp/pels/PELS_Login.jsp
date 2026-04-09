@@ -7,7 +7,7 @@
 	<meta http-equiv="Cache-Control" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <meta http-equiv="Pragma" content="no-cache" />
-	<link href="/resources/assets/css/Login1.css" rel="stylesheet" />
+	<link href="<%=request.getContextPath()%>/resources/assets/css/Login1.css" rel="stylesheet" />
 	<style>
 	.support {
 	    margin-left: 40px;
@@ -16,14 +16,14 @@
 	    font-size: 12px;
 	}
 	</style>
-	<script src="/resources/assets/js/ace-extra.min.js"></script>
+	<script src="<%=request.getContextPath()%>/resources/assets/js/ace-extra.min.js"></script>
 	<script type="text/javascript">
-		window.jQuery || document.write("<script src='/resources/assets/js/jquery.min.js'>"+"<"+"/script>");
+		window.jQuery || document.write("<script src='<%=request.getContextPath()%>/resources/assets/js/jquery.min.js'>"+"<"+"/script>");
 	</script>
 	<script type="text/javascript">
-		if('ontouchstart' in document.documentElement) document.write("<script src='/resources/common.jspf/js/jquery.mobile.custom.min.js'>"+"<"+"/script>");
+		if('ontouchstart' in document.documentElement) document.write("<script src='<%=request.getContextPath()%>/resources/common.jspf/js/jquery.mobile.custom.min.js'>"+"<"+"/script>");
 	</script>
-	<script type="text/javascript" src="/resources/assets/datepicker/jquery-ui.min.js" ></script>
+	<script type="text/javascript" src="<%=request.getContextPath()%>/resources/assets/datepicker/jquery-ui.min.js" ></script>
 </head>
 <script>
 	$(function() {
@@ -40,13 +40,13 @@
 		
 		$.ajax({
 			type: 'POST',
-			url: 'PELS_loginChk.do',
+			url: '<%=request.getContextPath()%>/PELS_loginChk.do',
 			data: params,
 			dataType: 'JSON',
 			contentType: "application/x-www-form-urlencoded; charset=utf-8",
 			success: function (resultData) {
 				if (resultData.result == "success") {
-					location.href = '/index.do'
+					location.href = '<%=request.getContextPath()%>/index.do'
 				} else {
 					alert('로그인 실패. 아이디와 비밀번호를 다시 확인해주세요.')	
 				}

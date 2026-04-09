@@ -8,7 +8,7 @@
 	// 등록 화면으로 이동
 	function fnExamInput () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Input_M.do"
+		form.action = "<%=request.getContextPath()%>/Exam_Input_M.do"
 		form.submit()
 	}
 	
@@ -44,7 +44,7 @@
 		}
 		
 		let form = document.getElementById('form')
-		form.action = "Exam_Detail.do?TST_UNQ_KY_VAL=" + chkParam;
+		form.action = "<%=request.getContextPath()%>/Exam_Detail.do?TST_UNQ_KY_VAL=" + chkParam;
 		form.target = "_self";
 		form.submit()
 	}
@@ -52,7 +52,7 @@
 	// 시험(점검)준비 조회
 	function fnSearch () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Search1.do"
+		form.action = "<%=request.getContextPath()%>/Exam_Search1.do"
 		form.target = "_self";
 		form.submit()
 	}
@@ -60,7 +60,7 @@
 	function fnPage (page) {
 		let form = document.getElementById('form')
 		form.PAGE.value = page;
-		form.action = "Exam_Search1.do"
+		form.action = "<%=request.getContextPath()%>/Exam_Search1.do"
 		form.target = "_self";
 		form.submit()
 	}				
@@ -100,7 +100,7 @@
 		
 		$.ajax({
 			type: 'POST',
-			url: 'Exam_Delete_Ajax.do',
+			url: '<%=request.getContextPath()%>/Exam_Delete_Ajax.do',
 			data: params,
 			dataType: 'JSON',
 			contentType: "application/x-www-form-urlencoded; charset=utf-8",
@@ -119,7 +119,7 @@
 		window.open("", "PopupOpen", "width="+  screen.width + ",height=" +  screen.height + ",fullscreen=yes");
 		
 		let form = document.getElementById('formPopup')
-		form.action = "KhnpViewer.do";
+		form.action = "<%=request.getContextPath()%>/KhnpViewer.do";
 		form.target = "PopupOpen"; 
 		form.TST_UNQ_KY_VAL.value = TST_UNQ_KY_VAL;
 		form.submit()
@@ -128,7 +128,7 @@
 	
 	function downloadExcelFile () {
 		let form = document.getElementById('form')
-		form.action = '/Exam_Excel.do'
+		form.action = '<%=request.getContextPath()%>/Exam_Excel.do'
 		form.submit()
 	}	
 </script>
@@ -259,7 +259,7 @@
 											</td>
 											<td align="center">
 												<!-- <a class="SubButton" href="javascript:MM_openViewer('${exam.TST_UNQ_KY_VAL}');"><span class="Text">보기</span></a> -->
-												<a class="SubButton" href="Exam_KhnpViewer.do?TST_UNQ_KY_VAL=${exam.TST_UNQ_KY_VAL}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_TITL}&TITL_NM=${exam.TITL_NM}"><span class="Text">보기</span></a>
+												<a class="SubButton" href="<%=request.getContextPath()%>/Exam_KhnpViewer.do?TST_UNQ_KY_VAL=${exam.TST_UNQ_KY_VAL}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_TITL}&TITL_NM=${exam.TITL_NM}"><span class="Text">보기</span></a>
 											</td>
 										</tr>
 									</c:forEach>

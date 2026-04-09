@@ -13,7 +13,7 @@
 			
 			$.ajax({
 				type: 'POST',
-				url: 'Table_List.do',
+				url: '<%=request.getContextPath()%>/Table_List.do',
 				data: '',
 				dataType: 'JSON',
 				contentType: "application/x-www-form-urlencoded; charset=utf-8",
@@ -47,7 +47,7 @@
 			
 			$.ajax({
 				type: 'POST',
-				url: 'ColList.do',
+				url: '<%=request.getContextPath()%>/ColList.do',
 				data: params,
 				dataType: 'JSON',
 				contentType: "application/x-www-form-urlencoded; charset=utf-8",
@@ -89,7 +89,7 @@
 			
 			$.ajax({
 				type: 'POST',
-				url: 'Table_Data_Ajax.do',
+				url: '<%=request.getContextPath()%>/Table_Data_Ajax.do',
 				data: params,
 				dataType: 'JSON',
 				contentType: "application/x-www-form-urlencoded; charset=utf-8",
@@ -226,7 +226,7 @@
 			let form = document.getElementById('form');
 			form.TABLE_NAME.value = $('#S_TABLE_LIST').val();
 			form.TABLE_DESC.value = $('#S_TABLE_LIST option:selected').text();
-			form.action = '/Table_Data_Excel.do';
+			form.action = '<%=request.getContextPath()%>/Table_Data_Excel.do';
 			form.submit();
 		}
 		

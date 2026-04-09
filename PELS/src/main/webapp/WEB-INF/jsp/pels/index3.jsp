@@ -56,7 +56,7 @@
 							</a>
 						</li>						
 						<li>
-							<a href="/PELS_Login.do">
+							<a href="<%=request.getContextPath()%>/PELS_Login.do">
 								<i class="ace-icon fa fa-power-off"></i>
 								Logout
 							</a>
@@ -139,13 +139,13 @@
 						<b class="arrow"></b>
 						<ul class="submenu">
                             <li class="">
-                                <a href="javascript:addTab(11, 'Month_Search', 'Month_Search.do','월별 정주기시험 계획표');">
+                                <a href="javascript:addTab(11, 'Month_Search', '<%=request.getContextPath()%>/Month_Search.do','월별 정주기시험 계획표');">
                                     	월별 정주기시험 계획표
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(12, 'Exam_Schedule_Search', 'Exam_Schedule_Search.do','정주기시험 계획');">
+                                <a href="javascript:addTab(12, 'Exam_Schedule_Search', '<%=request.getContextPath()%>/Exam_Schedule_Search.do','정주기시험 계획');">
 										정주기시험 계획
 								</a>
                                 <b class="arrow"></b>
@@ -160,13 +160,13 @@
 						<b class="arrow"></b>
                         <ul class="submenu">
                             <li class="">
-                                <a href="javascript:addTab(21, 'Exam_Monitoring_P', 'Exam_Monitoring.do?PRCDOC_CFY=P','정주기시험 준비/수행 ');">
+                                <a href="javascript:addTab(21, 'Exam_Monitoring_P', '<%=request.getContextPath()%>/Exam_Monitoring.do?PRCDOC_CFY=P','정주기시험 준비/수행 ');">
                                     	정주기시험 준비/수행
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(22, 'Outcome_Search_P', 'Outcome_Search.do?PRCDOC_CFY=P','정주기시험 점검결과')">
+                                <a href="javascript:addTab(22, 'Outcome_Search_P', '<%=request.getContextPath()%>/Outcome_Search.do?PRCDOC_CFY=P','정주기시험 점검결과')">
                                     	정주기시험 점검결과
                                 </a>
                                 <b class="arrow"></b>

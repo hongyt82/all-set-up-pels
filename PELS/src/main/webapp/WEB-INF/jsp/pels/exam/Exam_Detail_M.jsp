@@ -10,7 +10,7 @@
 	
 	function fnSearch () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Monitoring.do"
+		form.action = "<%=request.getContextPath()%>/Exam_Monitoring.do"
 		form.submit()
 	}
 	
@@ -31,7 +31,7 @@
 		
 		$.ajax({
 			type: 'POST',
-			url: 'Exam_Update_Ajax.do',
+			url: '<%=request.getContextPath()%>/Exam_Update_Ajax.do',
 			data: params,
 			dataType: 'JSON',
 			contentType: "application/x-www-form-urlencoded; charset=utf-8",
@@ -145,7 +145,7 @@
                                     <td class="Value" colspan="3">
                                     	<input name="CHKPR_ID" id="CHKPR_ID" type="text" class="TextBox" style="width:100px;" value='${examDetail.CHKPR_ID}' readonly>
                                     	<input name="CHKPR_FNM" id="CHKPR_FNM" title="점검자" type="text" class="TextBox" style="width:100px;" value='${examDetail.CHKPR_FNM}'  readonly required>
-                                    	<a class="InfoButton" href="javascript:MM_openBrWindow('User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','2');"><span class='Wrap'><span class="Text">찾기</span></span></a>
+                                    	<a class="InfoButton" href="javascript:MM_openBrWindow('<%=request.getContextPath()%>/User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','2');"><span class='Wrap'><span class="Text">찾기</span></span></a>
                                    	</td>
                                 </tr>
                              	</table>

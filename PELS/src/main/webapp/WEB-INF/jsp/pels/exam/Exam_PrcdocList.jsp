@@ -34,13 +34,13 @@
 	function fnPage (page) {
 		let form = document.getElementById('form')
 		form.PAGE.value = page;
-		form.action = "Form_Popup.do"
+		form.action = "<%=request.getContextPath()%>/Form_Popup.do"
 		form.submit()
 	}	
 
 	function fnSearch () {
 		let form = document.getElementById('form')
-		form.action = "Exam_SapList.do"
+		form.action = "<%=request.getContextPath()%>/Exam_SapList.do"
 		form.submit()
 	}	
 </script>

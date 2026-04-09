@@ -139,13 +139,13 @@
 						<b class="arrow"></b>
 						<ul class="submenu">
                             <li class="">
-                                <a href="javascript:addTab(11, 'Month_Search', 'Month_Search.do','월별 시험계획표');">
+                                <a href="javascript:addTab(11, 'Month_Search', '<%=request.getContextPath()%>/Month_Search.do','월별 시험계획표');">
                                     	월별 시험계획표
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(12, 'Schedule_Search', 'Schedule_Search.do','정주기시험 일정');">
+                                <a href="javascript:addTab(12, 'Schedule_Search', '<%=request.getContextPath()%>/Schedule_Search.do','정주기시험 일정');">
 										정주기시험 일정
 								</a>
                                 <b class="arrow"></b>
@@ -160,13 +160,13 @@
 						<b class="arrow"></b>
                         <ul class="submenu">
                             <li class="">
-                                <a href="javascript:addTab(31, 'Exam_Search', 'Exam_Search.do','시험(점검)준비');">
+                                <a href="javascript:addTab(31, 'Exam_Search', '<%=request.getContextPath()%>/Exam_Search.do','시험(점검)준비');">
                                     	시험(점검) 준비
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(32, 'Exam_Monitoring', 'Exam_Monitoring.do','시험(점검)수행 ');">
+                                <a href="javascript:addTab(32, 'Exam_Monitoring', '<%=request.getContextPath()%>/Exam_Monitoring.do','시험(점검)수행 ');">
                                     	시험(점검) 수행
                                 </a>
                                 <b class="arrow"></b>
@@ -181,25 +181,25 @@
                         <b class="arrow"></b>
                         <ul class="submenu">
                             <li class="">
-                                <a href="javascript:addTab(41, 'Outcome_Search', 'Outcome_Search.do','결과관리_정주기시험');">
+                                <a href="javascript:addTab(41, 'Outcome_Search', '<%=request.getContextPath()%>/Outcome_Search.do','결과관리_정주기시험');">
                                     	정주기시험
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                               <a href="javascript:addTab(42, 'Outcome_Atct_Search', 'Outcome_Atct_Search.do','결과관리_점검지');">
+                               <a href="javascript:addTab(42, 'Outcome_Atct_Search', '<%=request.getContextPath()%>/Outcome_Atct_Search.do','결과관리_점검지');">
                                     	점검지
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(43, 'Outcome_Etc_Search', 'Outcome_Etc_Search.do','결과관리_일반양식');">
+                                <a href="javascript:addTab(43, 'Outcome_Etc_Search', '<%=request.getContextPath()%>/Outcome_Etc_Search.do','결과관리_일반양식');">
                                     	일반양식
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(44, 'Outcome_Job_Search', 'Outcome_Job_Search.do','결과관리_작업전회의');">
+                                <a href="javascript:addTab(44, 'Outcome_Job_Search', '<%=request.getContextPath()%>/Outcome_Job_Search.do','결과관리_작업전회의');">
                                     	작업전회의 이력
                                 </a>
                                 <b class="arrow"></b>

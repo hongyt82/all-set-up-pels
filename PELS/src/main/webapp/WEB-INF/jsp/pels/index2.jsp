@@ -139,19 +139,19 @@
 						<b class="arrow"></b>
 						<ul class="submenu">
                             <li class="">
-                                <a href="javascript:addTab(1, 'Job_Search', 'Job_Search.do?PLANT_TYPE=2&USER_ID=97111413&USER_NM=강효상&PLANT=3320&DEPT_NM=발전2파트','작업전회의관리');">
+                                <a href="javascript:addTab(1, 'Job_Search', '<%=request.getContextPath()%>/Job_Search.do?PLANT_TYPE=2&USER_ID=97111413&USER_NM=강효상&PLANT=3320&DEPT_NM=발전2파트','작업전회의관리');">
                                     	작업전회의 관리
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(2, 'JobForm_Input1', 'JobForm_Input.do?FRM_UNQ_KY_VAL=1','일반작업전회의 서식등록');">
+                                <a href="javascript:addTab(2, 'JobForm_Input1', '<%=request.getContextPath()%>/JobForm_Input.do?FRM_UNQ_KY_VAL=1','일반작업전회의 서식등록');">
                                     	일반작업전회의 서식등록
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(3, 'JobForm_Input2', 'JobForm_Input.do?FRM_UNQ_KY_VAL=2','정비작업전회의 서식등록');">
+                                <a href="javascript:addTab(3, 'JobForm_Input2', '<%=request.getContextPath()%>/JobForm_Input.do?FRM_UNQ_KY_VAL=2','정비작업전회의 서식등록');">
                                     	정비작업전회의 서식등록
                                 </a>
                                 <b class="arrow"></b>
@@ -187,7 +187,7 @@
 					</ul>
 				</div>
 				<!-- /section:basics/content.util-area -->
-				<iframe src="Main.do" name="mainFrame0" id="mainFrame0" class="iframeStyle2" style="visibility:visible;display:block;"></iframe>
+				<iframe src="<%=request.getContextPath()%>/Main.do" name="mainFrame0" id="mainFrame0" class="iframeStyle2" style="visibility:visible;display:block;"></iframe>
 			</div>		
 			
 		</div>
@@ -513,7 +513,7 @@
 		    }
 		    
 			var logOn = function(div) {
-				var url = "mfmsgwid.do"; //"/mfms/account/easanha.do";
+				var url = "<%=request.getContextPath()%>/mfmsgwid.do"; //"/mfms/account/easanha.do";
 		        var p = new Object();
 		        p["userId"] = "";
 	

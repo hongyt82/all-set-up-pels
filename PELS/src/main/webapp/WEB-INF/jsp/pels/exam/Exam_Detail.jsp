@@ -36,7 +36,7 @@
 	
 	function fnSearch () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Monitoring.do"
+		form.action = "<%=request.getContextPath()%>/Exam_Monitoring.do"
 		form.submit()
 	}	
 	
@@ -96,7 +96,7 @@
 		$.ajax({
 			type: 'POST',
 			enctype: 'multipart/form-data',
-			url: 'Exam_Update_Ajax.do',
+			url: '<%=request.getContextPath()%>/Exam_Update_Ajax.do',
 			data: formData,
 			processData: false,
 			contentType: false,
@@ -216,7 +216,7 @@
                                           <td class="Value">
                                           	<input name="CHKPR_ID" id="CHKPR_ID" type="text" class="TextBox" style="width:100px;" value='${CHKPR_ID}' readonly>
                                      	<input name="CHKPR_FNM" id="CHKPR_FNM" title="점검자" type="text" class="TextBox" style="width:100px;" value='${CHKPR_FNM}'  readonly required>
-                                     	<a class="InfoButton" href="javascript:MM_openBrWindow('User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','2');"><span class='Wrap'><span class="Text">찾기</span></span></a>
+                                     	<a class="InfoButton" href="javascript:MM_openBrWindow('<%=request.getContextPath()%>/User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','2');"><span class='Wrap'><span class="Text">찾기</span></span></a>
                                     	</td>
                                      <th class="Title"><span class="Label">오더번호</span> </th>
                                      <td class="Value">
@@ -228,7 +228,7 @@
                                      <td class="Value">
                                      	<input name="CNMR_ID" id="CNMR_ID" type="text" class="TextBox" style="width:100px;" value='${CNMR_ID}' readonly>
                                      	<input name="CNMR_FNM" id="CNMR_FNM" title="확인자" type="text" class="TextBox" style="width:100px;" value='${CNMR_FNM}'  readonly required>
-                                        	<a class="InfoButton" href="javascript:MM_openBrWindow('User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','3');"><span class='Wrap'><span class="Text">찾기</span></span></a>
+                                        	<a class="InfoButton" href="javascript:MM_openBrWindow('<%=request.getContextPath()%>/User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','3');"><span class='Wrap'><span class="Text">찾기</span></span></a>
                                        	</td>
                                         <th class="Title"><span class="Label">입회여부</span> </th>
                                         <td class="Value">
@@ -238,7 +238,7 @@
 											</select>
                                         	&nbsp; 입회자 <input name="ATWT_ID" id="ATWT_ID" type="text" class="TextBox" style="width:100px;" value='${ATWT_ID}' readonly>
                                      	<input name="ATWT_FNM" id="ATWT_FNM" title="입회자" type="text" class="TextBox" style="width:100px;" value='${ATWT_FNM}'  readonly>
-                                     	<a class="InfoButton" href="javascript:MM_openBrWindow('User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','4');"><span class='Wrap'><span class="Text">찾기</span></span></a>
+                                     	<a class="InfoButton" href="javascript:MM_openBrWindow('<%=request.getContextPath()%>/User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','4');"><span class='Wrap'><span class="Text">찾기</span></span></a>
                                      </td>
                                  </tr>
                                  

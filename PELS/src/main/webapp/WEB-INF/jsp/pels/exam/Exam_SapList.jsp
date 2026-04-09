@@ -8,25 +8,25 @@
 	function fnPage (page) {
 		let form = document.getElementById('form')
 		form.PAGE.value = page;
-		form.action = "Form_Popup.do"
+		form.action = "<%=request.getContextPath()%>/Form_Popup.do"
 		form.submit()
 	}	
 
 	function fnSearch () {
 		let form = document.getElementById('form')
-		form.action = "Exam_SapList.do"
+		form.action = "<%=request.getContextPath()%>/Exam_SapList.do"
 		form.submit()
 	}
 	
 	function fnFormBack () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Input_M.do"
+		form.action = "<%=request.getContextPath()%>/Exam_Input_M.do"
 		form.submit()
 	}
 	
 	function MM_Click(DOC_TYP, PRCDOC_NO, DOC_PART_NO, PRCDOC_NM, PRCDOC_RVSN_NO) {
 		let form = document.getElementById('form')
-		form.action = "Exam_SapFileList.do"
+		form.action = "<%=request.getContextPath()%>/Exam_SapFileList.do"
 		form.DOC_TYP_CD.value = DOC_TYP;
 		form.PRCDOC_NO.value = PRCDOC_NO;
 		form.PRCDOC_NM.value = PRCDOC_NM;

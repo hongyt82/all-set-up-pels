@@ -56,7 +56,7 @@
 							</a>
 						</li>						
 						<li>
-							<a href="/PELS_Login.do">
+							<a href="<%=request.getContextPath()%>/PELS_Login.do">
 								<i class="ace-icon fa fa-power-off"></i>
 								Logout
 							</a>
@@ -139,33 +139,33 @@
 						<b class="arrow"></b>
                         <ul class="submenu">
                             <li class="">
-                                <a href="javascript:addTab(1, 'Exam_Search_R', 'Exam_Search.do?PRSTS_CFY=R','나의문서 대기중');">
+                                <a href="javascript:addTab(1, 'Exam_Search_R', '<%=request.getContextPath()%>/Exam_Search.do?PRSTS_CFY=R','나의문서 대기중');">
                                     준비 및 수행중
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <!-- 
                             <li class="">
-                                <a href="javascript:addTab(2, 'Outcome_Search_F', 'Outcome_Search.do?PRCDOC_CFY=P&PRSTS_CFY=F','나의문서 진행중')">
+                                <a href="javascript:addTab(2, 'Outcome_Search_F', '<%=request.getContextPath()%>/Outcome_Search.do?PRCDOC_CFY=P&PRSTS_CFY=F','나의문서 진행중')">
                                     진행중
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                              -->
                             <li class="">
-                                <a href="javascript:addTab(3, 'Exam_Search_C', 'Exam_Search.do?PRSTS_CFY=C','나의문서 완료')">
+                                <a href="javascript:addTab(3, 'Exam_Search_C', '<%=request.getContextPath()%>/Exam_Search.do?PRSTS_CFY=C','나의문서 완료')">
                                     점검완료
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(4, 'Outcome_Etc_Search', 'Outcome_Etc_Search.do','기타양식');">
+                                <a href="javascript:addTab(4, 'Outcome_Etc_Search', '<%=request.getContextPath()%>/Outcome_Etc_Search.do','기타양식');">
                                     기타양식(PDF 등록)
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(4, 'Outcome_Etc_Search', 'Outcome_Etc_Search.do','기타양식');">
+                                <a href="javascript:addTab(4, 'Outcome_Etc_Search', '<%=request.getContextPath()%>/Outcome_Etc_Search.do','기타양식');">
                                     기타양식(PDF 점검현황)
                                 </a>
                                 <b class="arrow"></b>
@@ -180,19 +180,19 @@
 						<b class="arrow"></b>
                         <ul class="submenu">
                             <li class="">
-                                <a href="javascript:addTab(11, 'Outcome_Search_2110', 'Outcome_Search.do?PRCDOC_CFY=P&PPCD=2110','고리1발전소');">
+                                <a href="javascript:addTab(11, 'Outcome_Search_2110', '<%=request.getContextPath()%>/Outcome_Search.do?PRCDOC_CFY=P&PPCD=2110','고리1발전소');">
                                    	1발전소
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(12, 'Outcome_Search_2120', 'Outcome_Search.do?PRCDOC_CFY=P&PPCD=2120','고리2발전소');">
+                                <a href="javascript:addTab(12, 'Outcome_Search_2120', '<%=request.getContextPath()%>/Outcome_Search.do?PRCDOC_CFY=P&PPCD=2120','고리2발전소');">
                                    	2발전소
                                 </a>
                                 <b class="arrow"></b>
                             </li>
                             <li class="">
-                                <a href="javascript:addTab(13, 'Outcome_Search_2130', 'Outcome_Search.do?PRCDOC_CFY=P&PPCD=2130','고리3발전소');">
+                                <a href="javascript:addTab(13, 'Outcome_Search_2130', '<%=request.getContextPath()%>/Outcome_Search.do?PRCDOC_CFY=P&PPCD=2130','고리3발전소');">
                                    	3발전소
                                 </a>
                                 <b class="arrow"></b>
@@ -420,7 +420,7 @@
 		<!-- basic scripts -->
 		<!--[if !IE]> -->
 		<script type="text/javascript">
-			window.jQuery || document.write("<script src='/resources/assets/js/jquery.min.js'>"+"<"+"/script>");
+			window.jQuery || document.write("<script src='<%=request.getContextPath()%>/resources/assets/js/jquery.min.js'>"+"<"+"/script>");
 		</script>
 
 		<!-- <![endif]-->
@@ -431,24 +431,24 @@
 		</script>
 		<![endif]-->
 		<script type="text/javascript">
-			if('ontouchstart' in document.documentElement) document.write("<script src='/resources/assets/js/jquery.mobile.custom.min.js'>"+"<"+"/script>");
+			if('ontouchstart' in document.documentElement) document.write("<script src='<%=request.getContextPath()%>/resources/assets/js/jquery.mobile.custom.min.js'>"+"<"+"/script>");
 		</script>
-		<script src="/resources/assets/js/bootstrap.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/bootstrap.min.js"></script>
 
 		<!--[if lte IE 8]>
 		  <script src="../assets/js/excanvas.min.js"></script>
 		<![endif]-->
-		<script src="/resources/assets/js/jquery-ui.custom.min.js"></script>
-		<script src="/resources/assets/js/jquery.ui.touch-punch.min.js"></script>
-		<script src="/resources/assets/js/jquery.easypiechart.min.js"></script>
-		<script src="/resources/assets/js/jquery.sparkline.min.js"></script>
-		<script src="/resources/assets/js/flot/jquery.flot.min.js"></script>
-		<script src="/resources/assets/js/flot/jquery.flot.pie.min.js"></script>
-		<script src="/resources/assets/js/flot/jquery.flot.resize.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/jquery-ui.custom.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/jquery.ui.touch-punch.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/jquery.easypiechart.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/jquery.sparkline.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/flot/jquery.flot.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/flot/jquery.flot.pie.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/flot/jquery.flot.resize.min.js"></script>
 
 		<!-- ace scripts -->
-		<script src="/resources/assets/js/ace-elements.min.js"></script>
-		<script src="/resources/assets/js/ace.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/ace-elements.min.js"></script>
+		<script src="<%=request.getContextPath()%>/resources/assets/js/ace.min.js"></script>
 		<script>
 		function menuExpand(dom) {
 			

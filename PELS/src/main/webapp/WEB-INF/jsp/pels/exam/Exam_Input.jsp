@@ -44,7 +44,7 @@
 			$.ajax({
 				type: 'POST',
 				enctype: 'multipart/form-data',
-				url: 'Exam_Insert_Ajax.do',
+				url: '<%=request.getContextPath()%>/Exam_Insert_Ajax.do',
 				data: formData,
 				processData: false,
 				contentType: false,
@@ -67,7 +67,7 @@
 		
 		function fnSearch () {
 			let form = document.getElementById('form')
-			form.action = "Exam_Search.do"
+			form.action = "<%=request.getContextPath()%>/Exam_Search.do"
 			form.submit()
 		}
 		
@@ -77,7 +77,7 @@
 		}
 		
 		function MM_Click(DOC_TYP_CD, PRCDOC_NO, PRT_NO, PRCDOC_TITL, PRCDOC_RVSN_NO) {
-			window.open('Exam_SapFileList.do?SE_DOC_TYP_CD=' + DOC_TYP_CD +'&SE_PRT_NO=' + PRT_NO +'&SE_PRCDOC_NO=' + PRCDOC_NO + '&SE_PRCDOC_TITL='+PRCDOC_TITL + '&SE_PRCDOC_RVSN_NO=09','','width=1000,height=600');
+			window.open('<%=request.getContextPath()%>/Exam_SapFileList.do?SE_DOC_TYP_CD=' + DOC_TYP_CD +'&SE_PRT_NO=' + PRT_NO +'&SE_PRCDOC_NO=' + PRCDOC_NO + '&SE_PRCDOC_TITL='+PRCDOC_TITL + '&SE_PRCDOC_RVSN_NO=09','','width=1000,height=600');
 		}
 		
 		// 팝업 선택된 값 세팅
@@ -166,7 +166,7 @@
 										</td>
 									</tr>
 								</table>
-								<a class="SearchButton" href="javascript:MM_openBrWindow('Exam_SapList.do','','width=1000,height=600','1');"><span class='Text'>SAP 조회</span></a>
+								<a class="SearchButton" href="javascript:MM_openBrWindow('<%=request.getContextPath()%>/Exam_SapList.do','','width=1000,height=600','1');"><span class='Text'>SAP 조회</span></a>
 							</div>
 						</div>
 					</div>				
@@ -233,7 +233,7 @@
                                                      	<input name="FILE_URL4" id="FILE_URL4" title="파일경로" type="hidden" class="TextBox" readonly>
                                                      	<input name="FILE_URL5" id="FILE_URL5" title="파일경로" type="hidden" class="TextBox" readonly>
                                                      	<!--  
-                                                     	<a href="javascript:MM_openBrWindow('Exam_PrcdocList.do','','width=1000,height=600','1');" class="InfoButton">
+                                                     	<a href="javascript:MM_openBrWindow('<%=request.getContextPath()%>/Exam_PrcdocList.do','','width=1000,height=600','1');" class="InfoButton">
                                                      		<span class='Wrap'>
                                                      			<span class="Text">절차서선택</span>
                                                      		</span>
@@ -284,13 +284,13 @@
                                                      <td class="Value">
                                                      	<input name="CNMR_ID" id="CNMR_ID" type="text" class="TextBox" style="width:100px;" value='' readonly>
                                                      	<input name="CNMR_FNM" id="CNMR_FNM" title="확인자" type="text" class="TextBox" style="width:100px;" value=''  readonly>
-                                                     	<a class="InfoButton" href="javascript:MM_openBrWindow('User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','3');"><span class='Wrap'><span class="Text">찾기</span></span></a>
+                                                     	<a class="InfoButton" href="javascript:MM_openBrWindow('<%=request.getContextPath()%>/User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','3');"><span class='Wrap'><span class="Text">찾기</span></span></a>
                                                     	</td>
                                                      <th class="Title"><span class="Label">입회여부</span> </th>
                                                      <td class="Value">
                                                      	&nbsp; 입회자 <input name="ATWT_EMP_ID" id="ATWT_EMP_ID" type="text" class="TextBox" style="width:100px;" value='${ATWT_EMP_ID}' readonly>
                                                      	<input name="ATWT_FNM" id="ATWT_FNM" title="입회자" type="text" class="TextBox" style="width:100px;" value='${ATWT_FNM}'  readonly>
-                                                     	<a class="InfoButton" href="javascript:MM_openBrWindow('User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','4');"><span class='Wrap'><span class="Text">찾기</span></span></a>
+                                                     	<a class="InfoButton" href="javascript:MM_openBrWindow('<%=request.getContextPath()%>/User_Popup.do?PPCD=233','UserPopup','width=1000,height=600','4');"><span class='Wrap'><span class="Text">찾기</span></span></a>
                                                      </td>
                                                  </tr>
                                              </table>

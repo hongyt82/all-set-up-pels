@@ -18,7 +18,7 @@
 		// 팝업 오픈
 		function MM_openBrWindow(theURL,winName,features, flag) {
 			let form = document.getElementById('form')
-			form.action = "Exam_SapList.do"
+			form.action = "<%=request.getContextPath()%>/Exam_SapList.do"
 			form.submit()
 		}
 		
@@ -34,12 +34,12 @@
 			form.PRCDOC_NM.value = PRCDOC_NM;
 			form.PRCDOC_RVSN_NO.value = PRCDOC_RVSN_NO;
 			
-			form.action = "Exam_SapFileList.do"
+			form.action = "<%=request.getContextPath()%>/Exam_SapFileList.do"
 			form.submit()
 		}
 		
 		function MM1_Click(DOC_TYP_CD, PRCDOC_NO, PRT_NO, PRCDOC_NM, PRCDOC_RVSN_NO) {
-			window.open('Exam_SapFileList.do?SE_DOC_TYP_CD=' + DOC_TYP_CD +'&SE_PRT_NO=' + PRT_NO +'&SE_PRCDOC_NO=' + PRCDOC_NO + '&SE_PRCDOC_NM='+PRCDOC_NM + '&SE_PRCDOC_RVSN_NO=09','','width=1000,height=600');
+			window.open('<%=request.getContextPath()%>/Exam_SapFileList.do?SE_DOC_TYP_CD=' + DOC_TYP_CD +'&SE_PRT_NO=' + PRT_NO +'&SE_PRCDOC_NO=' + PRCDOC_NO + '&SE_PRCDOC_NM='+PRCDOC_NM + '&SE_PRCDOC_RVSN_NO=09','','width=1000,height=600');
 		}
 	</script>
 	<style>
@@ -131,7 +131,7 @@
 										</td>
 									</tr>
 								</table>
-								<a class="SearchButton" href="javascript:MM_openBrWindow('Exam_SapList.do','','width=1000,height=600','1');"><span class='Text'>SAP 조회</span></a>
+								<a class="SearchButton" href="javascript:MM_openBrWindow('<%=request.getContextPath()%>/Exam_SapList.do','','width=1000,height=600','1');"><span class='Text'>SAP 조회</span></a>
 							</div>
 						</div>
 					</div>				

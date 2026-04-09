@@ -33,7 +33,7 @@
 		$.ajax({
 			type: 'POST',
 			enctype: 'multipart/form-data',
-			url: 'Exam_Insert_Ajax.do',
+			url: '<%=request.getContextPath()%>/Exam_Insert_Ajax.do',
 			data: formData,
 			processData: false,
 			contentType: false,
@@ -90,13 +90,13 @@
 	
 	function fnInputBack () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Input_M.do?USER_ID=${CHKPR_ID}"; 
+		form.action = "<%=request.getContextPath()%>/Exam_Input_M.do?USER_ID=${CHKPR_ID}";
 		form.submit()
 	}		
 	
 	function fnFormBack () {
 		let form = document.getElementById('form')
-		form.action = "Exam_SapList.do"
+		form.action = "<%=request.getContextPath()%>/Exam_SapList.do"
 		form.submit()
 	}	
 </script>

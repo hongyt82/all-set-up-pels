@@ -27,7 +27,7 @@
 
 	function fnParent () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Search.do?PRSTS_CFY=R"
+		form.action = "<%=request.getContextPath()%>/Exam_Search.do?PRSTS_CFY=R"
 		form.submit()
 	}
 

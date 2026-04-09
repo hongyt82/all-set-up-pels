@@ -34,7 +34,7 @@ function _GetToken(frm)
 		 //alert("GetToken result : " + ret)
 		
 		if(ret == null || ret == "") {
-			location.href = "/error.do";
+			location.href = "<%=request.getContextPath()%>/error.do";
 		} else {
 			frm.ssotoken.value = ret;
 			frm.submit();
@@ -45,7 +45,7 @@ function _GetToken(frm)
 </head>
 <!--action URL은 업무 경로에 맞게 설정 부탁드립니다. -->
 <body onload="javascript:_GetToken(document.form_);">
-<form name="form_" ID="Form1" action="LoginSSO.do" method="post" target="_self">
+<form name="form_" ID="Form1" action="<%=request.getContextPath()%>/LoginSSO.do" method="post" target="_self">
 	<input name="ssotoken" type="hidden" ID="ssotoken">
 </form>
 </body>
@@ -66,10 +66,10 @@ function _GetToken(frm)
 		String sabun = sso.getValueUserID(); 		//사번을 추출한다.
 		session.setAttribute("ssotoken", ssotoken);	// ssotoken을 세션에 담는다.
 		session.setAttribute("sabun", sabun);		// ssotoken을 세션에 담는다.
-		response.sendRedirect("/Login.do");			// 업무에 맞게 페이지 설정
+		response.sendRedirect("<%=request.getContextPath()%>/Login.do");			// 업무에 맞게 페이지 설정
 	} else {
-		//response.sendRedirect("/errorLogin.do");	// 에러처리
-		response.sendRedirect("/PELS_Login.do");	// 에러처리
+		//response.sendRedirect("<%=request.getContextPath()%>/errorLogin.do");	// 에러처리
+		response.sendRedirect("<%=request.getContextPath()%>/PELS_Login.do");	// 에러처리
 	}
 }
 %>

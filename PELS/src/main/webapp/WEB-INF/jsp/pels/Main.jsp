@@ -26,7 +26,7 @@
 														<span class="SubTitle"> ▷  정주시시험 준비/수행</span>
 														</div>
 														<div class="ControlArea">
-															<a class="InfoButton" href="javascript:viewMore(21, 'Exam_Monitoring_P', 'Exam_Monitoring.do?PRCDOC_CFY=P','정주기시험 준비/수행 ');"><span class="Text">More >></span></a> </div>
+															<a class="InfoButton" href="javascript:viewMore(21, 'Exam_Monitoring_P', '<%=request.getContextPath()%>/Exam_Monitoring.do?PRCDOC_CFY=P','정주기시험 준비/수행 ');"><span class="Text">More >></span></a> </div>
 													</div>
 													<div class="ContentPanel" style="height:300px;width:780px;">				 
 															<div class="StatusGrid" style="width:100%; border-top-color: rgb(53, 74, 95); border-top-width: 1px; border-top-style: solid;">
@@ -64,7 +64,7 @@
 														<div class="TitleArea">
 														<span class="SubTitle"> ▷  점검지A(DB화) 점검계획수립</span>
 														</div>
-														<div class="ControlArea"><a class="InfoButton" href="javascript:viewMore(31, 'Exam_Monitoring_M', 'Exam_Monitoring.do?PRCDOC_CFY=M','점검 계획 수립');"><span class="Text">More >></span></a></div>
+														<div class="ControlArea"><a class="InfoButton" href="javascript:viewMore(31, 'Exam_Monitoring_M', '<%=request.getContextPath()%>/Exam_Monitoring.do?PRCDOC_CFY=M','점검 계획 수립');"><span class="Text">More >></span></a></div>
 													</div>
 													<div class="ContentPanel" style="height:300px;width:780px;">				 
 															<div class="StatusGrid" style="width:100%; border-top-color: rgb(53, 74, 95); border-top-width: 1px; border-top-style: solid;">
@@ -104,7 +104,7 @@
 														<div class="TitleArea">
 														<span class="SubTitle"> ▷  공지사항</span>
 														</div>
-														<div class="ControlArea"><a class="InfoButton" href="javascript:viewMore(53, 'Board_Search_C', 'Board_Search.do?GRUP_CFY_CD=C','공지사항');"><span class="Text">More >></span></a></div>
+														<div class="ControlArea"><a class="InfoButton" href="javascript:viewMore(53, 'Board_Search_C', '<%=request.getContextPath()%>/Board_Search.do?GRUP_CFY_CD=C','공지사항');"><span class="Text">More >></span></a></div>
 													</div>
 													<div class="ContentPanel" style="height:300px;width:780px;">				 
 															<div class="StatusGrid" style="width:100%; border-top-color: rgb(53, 74, 95); border-top-width: 1px; border-top-style: solid;">
@@ -142,7 +142,7 @@
 														<div class="TitleArea">
 														<span class="SubTitle"> ▷  고장신고 및 개선의견</span>
 														</div>
-														<div class="ControlArea"><a class="InfoButton" href="javascript:viewMore(51, 'Board_Search_A', 'Board_Search.do?GRUP_CFY_CD=A','고장신고 및 개선의견');"><span class="Text">More >></span></a></div>
+														<div class="ControlArea"><a class="InfoButton" href="javascript:viewMore(51, 'Board_Search_A', '<%=request.getContextPath()%>/Board_Search.do?GRUP_CFY_CD=A','고장신고 및 개선의견');"><span class="Text">More >></span></a></div>
 													</div>
 													<div class="ContentPanel" style="height:300px;width:780px;">				 
 															<div class="StatusGrid" style="width:100%; border-top-color: rgb(53, 74, 95); border-top-width: 1px; border-top-style: solid;">
@@ -184,7 +184,7 @@
 	</div><!-- /.page-content -->	
 	<script type="text/javascript">
 		function openPop (target) {
-			const pUrl = '/Photo_POP.do?PHTO_YN='+target.getAttribute('div')+'&PHTO_PTH_INFO='+target.src.replace('_thumbnail', '')
+			const pUrl = '<%=request.getContextPath()%>/Photo_POP.do?PHTO_YN='+target.getAttribute('div')+'&PHTO_PTH_INFO='+target.src.replace('_thumbnail', '')
 			const pName = '_blank'
 			const pOption = 'top=200, left=400, width=1200, height=800, status=no, menubar=no, toolbar=no, resizable=no'
 			window.open(pUrl, pName, pOption)
@@ -196,7 +196,7 @@
 		}
 		
 		function notice(){
-			const pUrl = '/Notice.do'
+			const pUrl = '<%=request.getContextPath()%>/Notice.do'
 			const pName = '_blank'
 			const pOption = 'top=200, left=400, width=800, height=600, status=no, menubar=no, toolbar=no, resizable=no'
 			window.open(pUrl, pName, pOption)

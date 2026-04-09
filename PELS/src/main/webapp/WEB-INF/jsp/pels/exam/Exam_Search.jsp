@@ -8,7 +8,7 @@
 	// 등록 화면으로 이동
 	function fnExamInput () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Input.do"
+		form.action = "<%=request.getContextPath()%>/Exam_Input.do"
 		form.submit()
 	}
 	
@@ -51,7 +51,7 @@
 		form.PRCDOC_NM.value = chkParam2;
 		form.CHCK_TITL.value = chkParam3;
 		form.PWPL_ID.value = chkParam4;
-		form.action = "Exam_KhnpReplayViewer.do";
+		form.action = "<%=request.getContextPath()%>/Exam_KhnpReplayViewer.do";
 		form.target = "_self";
 		form.submit()
 	}
@@ -88,7 +88,7 @@
 		}
 		
 		let form = document.getElementById('form')
-		form.action = "Exam_Detail.do?TST_UNQ_KY_VAL=" + chkParam;
+		form.action = "<%=request.getContextPath()%>/Exam_Detail.do?TST_UNQ_KY_VAL=" + chkParam;
 		form.target = "_self";
 		form.submit()
 	}
@@ -96,7 +96,7 @@
 	// 시험(점검)준비 조회
 	function fnSearch () {
 		let form = document.getElementById('form')
-		form.action = "Exam_Search.do"
+		form.action = "<%=request.getContextPath()%>/Exam_Search.do"
 		form.target = "_self";
 		form.submit()
 	}
@@ -104,7 +104,7 @@
 	function fnPage (page) {
 		let form = document.getElementById('form')
 		form.PAGE.value = page;
-		form.action = "Exam_Search.do"
+		form.action = "<%=request.getContextPath()%>/Exam_Search.do"
 		form.target = "_self";
 		form.submit()
 	}				
@@ -144,7 +144,7 @@
 		
 		$.ajax({
 			type: 'POST',
-			url: 'Exam_Delete_Ajax.do',
+			url: '<%=request.getContextPath()%>/Exam_Delete_Ajax.do',
 			data: params,
 			dataType: 'JSON',
 			contentType: "application/x-www-form-urlencoded; charset=utf-8",
@@ -163,7 +163,7 @@
 		window.open("", "PopupOpen", "width="+  screen.width + ",height=" +  screen.height + ",fullscreen=yes");
 		
 		let form = document.getElementById('formPopup')
-		form.action = "KhnpViewer.do";
+		form.action = "<%=request.getContextPath()%>/KhnpViewer.do";
 		form.target = "PopupOpen"; 
 		form.TST_UNQ_KY_VAL.value = TST_UNQ_KY_VAL;
 		form.submit()
@@ -172,7 +172,7 @@
 	
 	function downloadExcelFile () {
 		let form = document.getElementById('form')
-		form.action = '/Exam_Excel.do'
+		form.action = '<%=request.getContextPath()%>/Exam_Excel.do'
 		form.submit()
 	}	
 </script>
@@ -334,7 +334,7 @@
 											<td align="center">${exam.PRSTS_CFY_NM}</td>
 											<td align="center">
 												<!-- <a class="SubButton" href="javascript:MM_openViewer('${exam.TST_UNQ_KY_VAL}');"><span class="Text">보기</span></a> -->
-												<a class="SubButton" href="Exam_KhnpViewer.do?PWPL_ID=${exam.PWPL_ID}&CHCK_SNO=${exam.CHCK_SNO}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_NM}&CHCK_TITL=${exam.CHCK_TITL}"><span class="Text">보기</span></a>
+												<a class="SubButton" href="<%=request.getContextPath()%>/Exam_KhnpViewer.do?PWPL_ID=${exam.PWPL_ID}&CHCK_SNO=${exam.CHCK_SNO}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_NM}&CHCK_TITL=${exam.CHCK_TITL}"><span class="Text">보기</span></a>
 											</td>
 											<td align="center">${exam.FM_RG_DT}</td>
 										</tr>

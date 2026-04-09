@@ -8,7 +8,7 @@
 		// 테이블 조회
 		function fnSearch () {
 			let form = document.getElementById('form')
-			form.action = "Table_Search.do"
+			form.action = "<%=request.getContextPath()%>/Table_Search.do"
 			form.target = "_self";
 			form.submit()
 		}
@@ -16,7 +16,7 @@
 		function fnPage (page) {
 			let form = document.getElementById('form')
 			form.PAGE.value = page;
-			form.action = "Sign_Search.do"
+			form.action = "<%=request.getContextPath()%>/Sign_Search.do"
 			form.target = "_self";
 			form.submit()
 		}	
@@ -26,7 +26,7 @@
 			
 			$.ajax({
 				type: 'POST',
-				url: 'Table_Detail_Search.do',
+				url: '<%=request.getContextPath()%>/Table_Detail_Search.do',
 				data: params,
 				dataType: 'json',
 				contentType: "application/x-www-form-urlencoded; charset=utf-8",
