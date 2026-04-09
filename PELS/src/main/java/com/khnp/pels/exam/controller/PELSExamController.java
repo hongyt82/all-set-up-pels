@@ -39,6 +39,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.khnp.pels.common.util.ElinkV2RootUtil;
 import com.khnp.pels.common.enums.AtflGrupNm;
 import com.khnp.pels.exam.dto.PdfInfo;
 import com.khnp.pels.exam.dto.PdfJson;
@@ -52,10 +53,6 @@ import common.xss.JsonXssFilter;
 public class PELSExamController {
 
 	private static final Logger log = LoggerFactory.getLogger(PELSExamController.class);
-
-	private static final String PELS_ELINK_V2_BASE_URL_KEY = "PELS_ELINK_V2_BASE_URL";
-	/** localhost 접속 시 기본 Vite origin (util/VM 미설정 시) */
-	private static final String ELINK_V2_LOCAL_VITE_ORIGIN = "http://localhost:4008";
 	
 	@Autowired
 	private PELSExamService pelsExamService;
@@ -66,72 +63,6 @@ public class PELSExamController {
 	
 	@Resource(name = "utilProperties")
 	private Properties utilProperties;	
-
-    /*************************************************************************/
-	/**
-	 * iframe용 e-link-v2 기준 URL을 모델에 넣는다.
-	 * localhost(루프백) 접속일 때만 VM·util의 {@code PELS_ELINK_V2_BASE_URL} 및 (미설정 시) Vite 기본 주소를 적용한다.
-	 * 그 외에는 항상 {@code contextPath} 만 사용한다.
-	 */
-	private void addElinkV2Root(HttpServletRequest request, ModelAndView mav) {
-		mav.addObject("ELINK_V2_ROOT", resolveElinkV2Root(request));
-	}
-
-    /**
-     * Property 값 제대로 가져오지 못하거나 빈값 , 그리고 localhost , 127.0.0.1 에 해당하는 host 이면
-     * ELINK_V2_LOCAL_VITE_ORIGIN 값을 사용하여 리턴하도록 수정.
-     * @param request
-     * @return
-     */
-	private String resolveElinkV2Root(HttpServletRequest request) {
-		if (!isLoopbackHost(request.getServerName())) {
-			return request.getContextPath();
-		}
-		String configured = configuredElinkV2BaseUrl();
-		if (configured.isEmpty() && isLoopbackHost(request.getServerName())) {
-			configured = ELINK_V2_LOCAL_VITE_ORIGIN;
-		}
-        System.out.println("======Local Vite=====" + configured);
-		if (configured.isEmpty()) {
-			return request.getContextPath();
-		}
-		return trimTrailingSlashes(configured);
-	}
-
-    /**
-     * Property 에서 URL 가져옴
-     * @return
-     */
-	private String configuredElinkV2BaseUrl() {
-		String fromVm = System.getProperty(PELS_ELINK_V2_BASE_URL_KEY);
-		if (fromVm != null) {
-			return fromVm.trim();
-		}
-		return StringUtil.nvl(utilProperties.getProperty(PELS_ELINK_V2_BASE_URL_KEY), "").trim();
-	}
-
-    /**
-     * Loop Back 체크
-     * @param host
-     * @return
-     */
-	private static boolean isLoopbackHost(String host) {
-		return "127.0.0.1".equals(host) || "localhost".equalsIgnoreCase(host);
-	}
-
-    /**
-     * slash 처리
-     * @param s
-     * @return
-     */
-	private static String trimTrailingSlashes(String s) {
-		String t = s;
-		while (t.endsWith("/")) {
-			t = t.substring(0, t.length() - 1);
-		}
-		return t;
-	}
-    /*************************************************************************/
 
 	/**
 	 * 나의문서 > 준비 및 수행중
@@ -826,7 +757,7 @@ public class PELSExamController {
 		
 		String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
 		mav.addObject("CHCK_SNO", CHCK_SNO);
-        addElinkV2Root(request, mav);
+		ElinkV2RootUtil.addToModel(request, mav, utilProperties);
 			
 		mav.setViewName("/pels/popup/KhnpViewer");
 		
@@ -863,7 +794,7 @@ public class PELSExamController {
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);
-		addElinkV2Root(request, mav);
+		ElinkV2RootUtil.addToModel(request, mav, utilProperties);
 			
 		mav.setViewName("/pels/exam/Exam_KhnpViewer");
 		
@@ -900,7 +831,7 @@ public class PELSExamController {
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);
-		addElinkV2Root(request, mav);
+		ElinkV2RootUtil.addToModel(request, mav, utilProperties);
 			
 		mav.setViewName("/pels/exam/Exam_KhnpReplayViewer");
 		
