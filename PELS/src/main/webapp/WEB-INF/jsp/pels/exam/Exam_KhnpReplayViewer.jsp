@@ -21,7 +21,7 @@
 	if (elinkRoot == null) {
 		elinkRoot = request.getContextPath();
 	}
-
+    System.out.println("ElinkRoot ReplayViewer Host : " + elinkRoot);
 %>
 <script>
 

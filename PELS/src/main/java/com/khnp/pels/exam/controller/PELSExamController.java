@@ -54,8 +54,7 @@ public class PELSExamController {
 	private static final Logger log = LoggerFactory.getLogger(PELSExamController.class);
 
 	private static final String PELS_ELINK_V2_BASE_URL_KEY = "PELS_ELINK_V2_BASE_URL";
-	private static final String START_MODE_SYS_KEY = "startMode";
-	/** {@code -DstartMode=local} 일 때만 사용 (util/VM 미설정·루프백 접속 시 Vite 기본) */
+	/** localhost 접속 시 기본 Vite origin (util/VM 미설정 시) */
 	private static final String ELINK_V2_LOCAL_VITE_ORIGIN = "http://localhost:4008";
 	
 	@Autowired
@@ -71,33 +70,32 @@ public class PELSExamController {
     /*************************************************************************/
 	/**
 	 * iframe용 e-link-v2 기준 URL을 모델에 넣는다.
-	 * {@code -DstartMode=local} 인 경우에만 VM·util의 {@code PELS_ELINK_V2_BASE_URL} 및 루프백 시 Vite 기본 주소를 적용한다.
-	 * 그 외 {@code startMode} 에는 항상 {@code contextPath} 만 사용한다.
+	 * localhost(루프백) 접속일 때만 VM·util의 {@code PELS_ELINK_V2_BASE_URL} 및 (미설정 시) Vite 기본 주소를 적용한다.
+	 * 그 외에는 항상 {@code contextPath} 만 사용한다.
 	 */
 	private void addElinkV2Root(HttpServletRequest request, ModelAndView mav) {
 		mav.addObject("ELINK_V2_ROOT", resolveElinkV2Root(request));
 	}
 
+    /**
+     * Property 값 제대로 가져오지 못하거나 빈값 , 그리고 localhost , 127.0.0.1 에 해당하는 host 이면
+     * ELINK_V2_LOCAL_VITE_ORIGIN 값을 사용하여 리턴하도록 수정.
+     * @param request
+     * @return
+     */
 	private String resolveElinkV2Root(HttpServletRequest request) {
-		if (!isLocalStartMode()) {
+		if (!isLoopbackHost(request.getServerName())) {
 			return request.getContextPath();
 		}
 		String configured = configuredElinkV2BaseUrl();
 		if (configured.isEmpty() && isLoopbackHost(request.getServerName())) {
 			configured = ELINK_V2_LOCAL_VITE_ORIGIN;
 		}
+        System.out.println("======Local Vite=====" + configured);
 		if (configured.isEmpty()) {
 			return request.getContextPath();
 		}
 		return trimTrailingSlashes(configured);
-	}
-
-    /**
-     * Local Mode 일때만 체크
-     * @return
-     */
-	private static boolean isLocalStartMode() {
-		return "local".equalsIgnoreCase(StringUtil.nvl(System.getProperty(START_MODE_SYS_KEY), ""));
 	}
 
     /**

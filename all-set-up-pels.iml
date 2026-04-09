@@ -30,5 +30,16 @@
     <orderEntry type="library" name="Maven: org.springframework:spring-webmvc:5.2.0.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.apache.pdfbox:pdfbox:3.0.6" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.20.1" level="project" />
+    <orderEntry type="module-library" scope="PROVIDED">
+      <library>
+        <CLASSES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.20" level="project" />
+    <orderEntry type="library" name="Maven: jakarta.validation:jakarta.validation-api:2.0.2" level="project" />
   </component>
 </module>
