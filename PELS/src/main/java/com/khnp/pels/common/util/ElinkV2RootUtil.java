@@ -21,8 +21,8 @@ import common.util.StringUtil;
  * 현재의 사항과 연관된 JSP
  * - webapp/WEB-INF/jsp/pels/Exam_KhnpReplayViewer.jsp
  * - webapp/WEB-INF/jsp/pels/Exam_KhnpViewer.jsp
- * - webapp/WEB-INF/jsp/pels/Exam_KhnpEditor.jsp
- * - webapp/WEB-INF/jsp/pels/Exam_KhnpViewer.jsp
+ * - webapp/WEB-INF/jsp/pels/popup/KhnpEditor.jsp
+ * - webapp/WEB-INF/jsp/pels/popup/KhnpViewer.jsp
  * {@code
  *   String elinkRoot = (String) request.getAttribute("ELINK_V2_ROOT");
  * 	    if (elinkRoot == null) {
