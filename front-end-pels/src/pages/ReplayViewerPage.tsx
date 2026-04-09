@@ -734,7 +734,8 @@ export function ReplayViewerPage() {
 
         if (!PDF_PATH) return;
 
-        const isProd = import.meta.env.PROD;
+        // 로컬에서는 direct fetch 실패 가능성으로 프록시 사용
+        /*const isProd = import.meta.env.PROD;
         const viewerFileName = getFilenameFromPath(PDF_PATH);
 
         if (isProd) {
@@ -757,6 +758,47 @@ export function ReplayViewerPage() {
           });
 
           await handleLoadedFile(file, FRM_OVER_JSON);
+        }*/
+        const viewerFileName = getFilenameFromPath(PDF_PATH);
+
+        // PDF origin이 다르면 프록시 사용
+        if (shouldUsePdfProxy(PDF_PATH)) {
+          const pdfRes = await axios.get('/proxy/pdf', {
+            params: { path: PDF_PATH },
+            responseType: 'blob',
+            withCredentials: true,
+          });
+
+          const file = new File([pdfRes.data], viewerFileName, {
+            type: 'application/pdf',
+          });
+
+          await handleLoadedFile(file, FRM_OVER_JSON);
+        } else {
+          const res = await fetch(PDF_PATH, {
+            credentials: 'include',
+          });
+
+          if (!res.ok) {
+            throw new Error(`PDF load failed: ${PDF_PATH}`);
+          }
+
+          const blob = await res.blob();
+          const file = new File([blob], viewerFileName, {
+            type: 'application/pdf',
+          });
+
+          await handleLoadedFile(file, FRM_OVER_JSON);
+        }
+
+
+        function shouldUsePdfProxy(pdfPath: string) {
+          try {
+            const pdfOrigin = new URL(pdfPath).origin;
+            return pdfOrigin !== window.location.origin;
+          } catch {
+            return true;
+          }
         }
 
         if (FRM_OVER_JSON) {

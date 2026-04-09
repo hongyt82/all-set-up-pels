@@ -391,13 +391,8 @@ export function EditorPage() {
 
       if (!PDF_PATH) return;
 
-      const isProd = import.meta.env.PROD;
-
-      if (isProd) {
-        // 서버: 정적 리소스 직접 로딩
-        await wsRef.current?.loadPdfFromUrl?.(PDF_PATH);
-      } else {
-        // 로컬: proxy 사용
+      // PDF origin이 다르면 프록시 사용
+      if (shouldUsePdfProxy(PDF_PATH)) {
         const pdfRes = await axios.get('/proxy/pdf', {
           params: { path: PDF_PATH },
           responseType: 'blob',
@@ -408,6 +403,17 @@ export function EditorPage() {
         });
 
         wsRef.current?.loadPdfFile(file);
+      } else {
+        await wsRef.current?.loadPdfFromUrl?.(PDF_PATH);
+      }
+
+      function shouldUsePdfProxy(pdfPath: string) {
+        try {
+          const pdfOrigin = new URL(pdfPath).origin;
+          return pdfOrigin !== window.location.origin;
+        } catch {
+          return true;
+        }
       }
 
       // Constraint
