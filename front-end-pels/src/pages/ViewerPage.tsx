@@ -1123,7 +1123,6 @@ export function ViewerPage() {
       }
     }
 
-
     load().catch(err => {
       console.error('[Viewer][DB] load failed', err);
     });

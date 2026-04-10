@@ -769,7 +769,6 @@ export function ReplayViewerPage() {
           await handleLoadedFile(file, FRM_OVER_JSON);
         }
 
-
         function shouldUsePdfProxy(pdfPath: string) {
           try {
             const pdfOrigin = new URL(pdfPath).origin;

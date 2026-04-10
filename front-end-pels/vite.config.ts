@@ -47,7 +47,6 @@ export default defineConfig(({ mode }) => {
 
   // Dev-only API proxy to avoid CORS during local development
   // It forwards requests hitting the API base path to the API origin from VITE_API_URL
-  let devProxy: Record<string, any> | undefined
 
   // Only enable proxy in development mode and when API URL is available
   if (mode === 'dev' || mode === 'localdev') {
@@ -57,28 +56,7 @@ export default defineConfig(({ mode }) => {
     if (apiUrl) {
       try {
         const parsedUrl = new URL(apiUrl)
-        const apiOrigin = `${parsedUrl.protocol}//${parsedUrl.host}`
-
         if (isProxyDotDoEnabled) {
-          // Legacy JSP-style endpoints (.do) proxy configuration
-          devProxy = {
-            '^/.+\\.do($|\\?)': {
-              target: apiOrigin,
-              changeOrigin: true,
-              secure: false,
-              // Add error handling for connection refused
-              onError: (err: any, req: any, res: any) => {
-                console.warn(`[vite] Legacy API proxy error for ${req.url}:`, err.message)
-                // Return a mock response instead of failing
-                res.writeHead(200, { 'Content-Type': 'application/json' })
-                res.end(JSON.stringify({
-                  error: 'Legacy API server not available',
-                  message: 'Mock response for development',
-                  data: []
-                }))
-              },
-            },
-          }
         } else {
           // Standard API proxy configuration
           const apiPath = parsedUrl.pathname.endsWith('/')
@@ -87,28 +65,9 @@ export default defineConfig(({ mode }) => {
 
           // Use a STRICT proxy mount that matches '/api' or '/api/...', but NOT '/api-test'
           const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')
-          const strictMount = apiPath === '/'
+          apiPath === '/'
             ? '^/$'
-            : `^${escapeRegExp(apiPath || '/api')}(?:/|$)`
-
-          devProxy = {
-            [strictMount]: {
-              target: apiOrigin,
-              changeOrigin: true,
-              secure: false,
-              // Add error handling for connection refused
-              onError: (err: any, req: any, res: any) => {
-                console.warn(`[vite] API proxy error for ${req.url}:`, err.message)
-                // Return a mock response instead of failing
-                res.writeHead(200, { 'Content-Type': 'application/json' })
-                res.end(JSON.stringify({
-                  error: 'API server not available',
-                  message: 'Mock response for development',
-                  data: []
-                }))
-              },
-            },
-          }
+            : `^${escapeRegExp(apiPath || '/api')}(?:/|$)`;
         }
       } catch (error) {
         console.warn(`[vite] Invalid API URL configuration:`, error)
