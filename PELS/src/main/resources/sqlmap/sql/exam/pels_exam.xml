@@ -79,28 +79,33 @@
 		FROM GE_PL_CHCK01_M A
 		JOIN GE_PL_PRCDOC01_M C
 		ON A.PRCDOC_SNO = C.PRCDOC_SNO
-		<if test='PRCDOC_NO != ""'>
-		   AND C.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
-		</if>
-		<if test='PRCDOC_NM != ""'>
-		   AND C.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
-		</if>
-		WHERE A.DLT_YN = 'N'
-		<if test='CHKPR_ID != ""'>
-		   AND A.CHKPR_ID = #{CHKPR_ID}
-		</if>
-		<if test='CHCK_STRT_DT != ""'>
-		   AND A.CHCK_STRT_DT >= #{CHCK_STRT_DT}
-		</if>
-		<if test='CHCK_END_DT != ""'>
-		   AND A.CHCK_END_DT <![CDATA[<=]]> #{CHCK_END_DT}
-		</if>
-		<if test='PRSTS_CFY != ""'>
-		   AND A.PRSTS_CFY = #{PRSTS_CFY}
-		</if>
-		<if test='TITL_NM != ""'>
-		   AND A.CHCK_TITL LIKE '%'||#{CHCK_TITL}||'%'
-		</if>
+        <if test='PRCDOC_NO != ""'>
+            AND C.PRCDOC_NO LIKE '%'||#{PRCDOC_NO}||'%'
+        </if>
+        <if test='PRCDOC_NM != ""'>
+            AND C.PRCDOC_NM LIKE '%'||#{PRCDOC_NM}||'%'
+        </if>
+        WHERE A.DLT_YN = 'N'
+        <if test='CHKPR_ID != ""'>
+            AND A.CHKPR_ID = #{CHKPR_ID}
+        </if>
+        <if test='CHCK_STRT_DT != ""'>
+            AND A.CHCK_STRT_DT >= #{CHCK_STRT_DT}
+        </if>
+        <if test='CHCK_END_DT != ""'>
+            AND A.CHCK_END_DT <![CDATA[<=]]> #{CHCK_END_DT}
+        </if>
+        <if test='PRSTS_CFY != ""'>
+            <if test='PRSTS_CFY == "R"'>
+                AND A.PRSTS_CFY IN ('R','F')
+            </if>
+            <if test='PRSTS_CFY != "R"'>
+                AND A.PRSTS_CFY =  #{PRSTS_CFY}
+            </if>
+        </if>
+        <if test='CHCK_TITL != ""'>
+            AND A.CHCK_TITL LIKE '%'||#{CHCK_TITL}||'%'
+        </if>
 	</select>
 	
 	
