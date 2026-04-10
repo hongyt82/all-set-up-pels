@@ -45,33 +45,17 @@ export default defineConfig(({ mode }) => {
   const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === undefined
   const bindHost = env.VITE_HOST || (isLocalHost ? (host || 'localhost') : '0.0.0.0')
 
-  // Dev-only API proxy to avoid CORS during local development
-  // It forwards requests hitting the API base path to the API origin from VITE_API_URL
-
-  // Only enable proxy in development mode and when API URL is available
+  // Dev-only: log if VITE_API_URL / VITE_API_LEGACY_URL (per VITE_PROXY_DOT_DO) is not a valid URL.
+  // Actual proxy mounts are fixed under server.proxy below. (실제 Proxy Mount 처리 하단의 사항으로 처리하며)
+  // 기존 apiPath 부분 리턴하는 부분 없고 사용하지 않아 apiUrl 구문 하나로 정리함 그리고 warn try catch
   if (mode === 'dev' || mode === 'localdev') {
     const isProxyDotDoEnabled = String(env.VITE_PROXY_DOT_DO).toLowerCase() === 'true'
     const apiUrl = isProxyDotDoEnabled ? env.VITE_API_LEGACY_URL : env.VITE_API_URL
-
     if (apiUrl) {
       try {
-        const parsedUrl = new URL(apiUrl)
-        if (isProxyDotDoEnabled) {
-        } else {
-          // Standard API proxy configuration
-          const apiPath = parsedUrl.pathname.endsWith('/')
-            ? parsedUrl.pathname.slice(0, -1)
-            : parsedUrl.pathname || '/'
-
-          // Use a STRICT proxy mount that matches '/api' or '/api/...', but NOT '/api-test'
-          const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')
-          apiPath === '/'
-            ? '^/$'
-            : `^${escapeRegExp(apiPath || '/api')}(?:/|$)`;
-        }
+        new URL(apiUrl)
       } catch (error) {
         console.warn(`[vite] Invalid API URL configuration:`, error)
-        // ignore parse errors
       }
     }
   }
