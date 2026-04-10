@@ -60,6 +60,7 @@ export default defineConfig(({ mode }) => {
     }
   }
   return {
+    base: '/pels/',
     plugins: [react(), tailwindcss()],
     // 전역 상수 정의 (빌드 시점에 주입)
     define: {
@@ -69,6 +70,9 @@ export default defineConfig(({ mode }) => {
     },
     // Edge 브라우저 호환성을 위한 빌드 설정
     build: {
+      // 빌드 경로
+      outDir: "../PELS/src/main/webapp/static/e-link-v2",
+      emptyOutDir: true,
       // Edge 79+ (Chromium 기반) 지원을 위한 타겟 설정
       target: ['edge79', 'chrome79', 'firefox72', 'safari13'],
       // 소스맵 생성 (개발 시 디버깅용)
@@ -85,7 +89,11 @@ export default defineConfig(({ mode }) => {
             ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
             pdf: ['pdf-lib', 'pdfjs-dist'],
             moment: ['moment']
-          }
+          },
+          // Hash로 이름 변경 안됨
+          entryFileNames: 'assets/[name].js',
+          chunkFileNames: 'assets/[name].js',
+          assetFileNames: 'assets/[name].[ext]'
         }
       }
     },
@@ -94,15 +102,13 @@ export default defineConfig(({ mode }) => {
       port: port || 4008,
       strictPort: true,
       proxy: {
-        "/api": {
-          target: "http://localhost:8484",
-          changeOrigin: true,
-          rewrite: path => `/pels${path}`,
-        },
-        '/proxy': {
+        '/pels/api': {
           target: 'http://localhost:8484',
           changeOrigin: true,
-          rewrite: path => `/pels${path}`,
+        },
+        '/pels/proxy': {
+          target: 'http://localhost:8484',
+          changeOrigin: true,
         },
       },
     },
