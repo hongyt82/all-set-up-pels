@@ -726,7 +726,7 @@ export function ReplayViewerPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const metaRes = await axios.get('/api/Exam_Json_M', {
+        const metaRes = await axios.get('/pels/api/Exam_Json_M', {
           params: { CHCK_SNO: chckSno },
           withCredentials: true,
         });
@@ -741,7 +741,7 @@ export function ReplayViewerPage() {
 
         // PDF origin이 다르면 프록시 사용
         if (shouldUsePdfProxy(PDF_PATH)) {
-          const pdfRes = await axios.get('/proxy/pdf', {
+          const pdfRes = await axios.get('/pels/proxy/pdf', {
             params: { path: PDF_PATH },
             responseType: 'blob',
             withCredentials: true,
@@ -791,7 +791,7 @@ export function ReplayViewerPage() {
           setAttachmentsByPage(attachmentMap);
         }
 
-        const eventRes = await axios.get('/api/events', {
+        const eventRes = await axios.get('/pels/api/events', {
           params: {
             pwplId,
             chckSno: chckSno,
@@ -917,7 +917,7 @@ export function ReplayViewerPage() {
         > = {};
 
         for (const pageNo of strokeFetchPageNos) {
-          const strokeRes = await axios.get('/api/events/strokes', {
+          const strokeRes = await axios.get('/pels/api/events/strokes', {
             params: {
               pwplId,
               chckSno,

@@ -998,7 +998,7 @@ export function ViewerPage() {
     if (!CHCK_SNO) return;
 
     const load = async () => {
-      const metaRes = await axios.get('/api/Exam_Json_M', {
+      const metaRes = await axios.get('/pels/api/Exam_Json_M', {
         params: { CHCK_SNO },
         withCredentials: true,
       });
@@ -1010,7 +1010,7 @@ export function ViewerPage() {
 
       // PDF origin이 다르면 프록시 사용
       if (shouldUsePdfProxy(PDF_PATH)) {
-        const pdfRes = await axios.get('/proxy/pdf', {
+        const pdfRes = await axios.get('/pels/proxy/pdf', {
           params: { path: PDF_PATH },
           responseType: 'blob',
           withCredentials: true,

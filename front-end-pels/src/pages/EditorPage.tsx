@@ -365,7 +365,7 @@ export function EditorPage() {
     if (pageInfo.total > 0) return;
 
     const load = async () => {
-      const metaRes = await axios.get('/api/Form_Json_M.do', {
+      const metaRes = await axios.get('/pels/api/Form_Json_M.do', {
         params: { FRM_UNQ_KY_VAL },
         withCredentials: true,
       });
@@ -393,7 +393,7 @@ export function EditorPage() {
 
       // PDF origin이 다르면 프록시 사용
       if (shouldUsePdfProxy(PDF_PATH)) {
-        const pdfRes = await axios.get('/proxy/pdf', {
+        const pdfRes = await axios.get('/pels/proxy/pdf', {
           params: { path: PDF_PATH },
           responseType: 'blob',
         });

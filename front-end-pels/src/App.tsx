@@ -127,7 +127,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <Router>
+      <Router basename="/pels">
         <DynamicTitle />
         <RouteGuard config={customRouteGuardConfig} />
         <Routes>
