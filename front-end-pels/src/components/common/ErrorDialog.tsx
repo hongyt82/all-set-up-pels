@@ -4,7 +4,6 @@
  * InfoDialog, ConfirmDialog와 통일된 디자인 적용
  */
 
-import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +24,6 @@ import {
 } from 'lucide-react';
 
 export function ErrorDialog() {
-  const navigate = useNavigate();
   const {
     isErrorOpen,
     errorType,
@@ -89,10 +87,8 @@ export function ErrorDialog() {
 
   // 확인 버튼 클릭 핸들러
   const handleConfirm = () => {
-    // 404 에러인 경우 홈으로 이동
     if (errorType === 'not-found') {
       resetError();
-      navigate('/');
       return;
     }
 

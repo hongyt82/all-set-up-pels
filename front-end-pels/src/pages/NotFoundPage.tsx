@@ -16,7 +16,7 @@ export function NotFoundPage() {
     // 404 에러 다이얼로그 표시
     showError(
       'not-found',
-      '요청하신 페이지가 존재하지 않습니다.\n홈으로 돌아가시겠습니까?',
+      '요청하신 페이지가 존재하지 않거나 이동되었습니다.',
       `경로: ${window.location.pathname}`,
       404
     );
@@ -50,12 +50,12 @@ export function NotFoundPage() {
           </code>
         </div>
 
-        {/* 홈으로 버튼 */}
         <button
-          onClick={() => navigate('/')}
+          type="button"
+          onClick={() => navigate(-1)}
           className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
-          홈으로 돌아가기
+          확인
         </button>
       </div>
     </div>

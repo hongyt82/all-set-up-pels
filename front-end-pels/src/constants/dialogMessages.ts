@@ -80,9 +80,8 @@ export const DIALOG_MESSAGES = {
     // 404 Not Found
     NOT_FOUND: {
       title: '페이지를 찾을 수 없습니다',
-      description:
-        '요청하신 페이지가 존재하지 않습니다.\n홈으로 돌아가시겠습니까?',
-      confirmText: '홈으로',
+      description: '요청하신 페이지가 존재하지 않거나 이동되었습니다.',
+      confirmText: '확인',
     },
     // 400대 클라이언트 에러
     CLIENT_ERROR: {
