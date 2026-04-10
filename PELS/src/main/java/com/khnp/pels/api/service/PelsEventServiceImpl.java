@@ -6,11 +6,13 @@ import com.khnp.pels.api.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import javax.annotation.Resource;import java.util.List;import java.util.Properties;
 
 /**
  * 이벤트 서비스 구현
@@ -22,11 +24,14 @@ public class PelsEventServiceImpl implements PelsEventService {
 
 	private static final Logger logger = LoggerFactory.getLogger(PelsEventServiceImpl.class);
 
-	@Autowired
-	PelsEventDao pelsEventDao;
+	@Resource(name = "utilProperties")
+	private Properties utilProperties;
 
 	@Autowired
-	PelsEventConverter pelsEventConverter;
+	private PelsEventDao pelsEventDao;
+
+	@Autowired
+	private PelsEventConverter pelsEventConverter;
 
 	/**
 	 * 수행기록 이벤트 벌크 목록 조회
@@ -35,9 +40,25 @@ public class PelsEventServiceImpl implements PelsEventService {
 	 */
 	@Override
 	public List<TstEventResponse> getTstEventBulkList(TstEventEntity eventEntity) {
-		return pelsEventDao.selectTstEventList(eventEntity);
+		List<TstEventResponse> tstEventBulkList = pelsEventDao.selectTstEventList(eventEntity);
+
+		// 이미지 URL Prefix 포함
+		String pelsIpUrl = utilProperties.getProperty("PELS_IP_URL");  // BASE URL
+		for(TstEventResponse tstEvent : tstEventBulkList){
+			switch(tstEvent.getEventTypSqno()) {
+				case IMAGE_RESIZE:
+				case IMAGE_UPSERT:
+					if(tstEvent.getImage().getUrlInfo() != null && !tstEvent.getImage().getUrlInfo().isEmpty()) {
+						tstEvent.getImage().setUrlInfo(pelsIpUrl + "/" + tstEvent.getImage().getUrlInfo());
+					}
+					break;
+				default:
+			}
+		}
+
+		return tstEventBulkList;
 	}
-	
+
 	/**
 	 * 페이지별 이벤트 스트로크 목록 조회
 	 * @param eventEntity 이벤트 객체
