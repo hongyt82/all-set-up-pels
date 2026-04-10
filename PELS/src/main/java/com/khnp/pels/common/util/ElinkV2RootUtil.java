@@ -39,7 +39,7 @@ public final class ElinkV2RootUtil {
 
 	private static final String BASE_URL_KEY = "PELS_ELINK_V2_BASE_URL";
 
-	private static final String LOCAL_DEFAULT_ORIGIN = "http://localhost:4008";
+	private static final String LOCAL_DEFAULT_ORIGIN = "http://localhost:4008/pels";
 
     /**
      * Controller 쪽에 선언하여 사용하는 메인 실행부
@@ -69,7 +69,8 @@ public final class ElinkV2RootUtil {
 		if (configured.isEmpty()) {
 			configured = LOCAL_DEFAULT_ORIGIN;
 		}
-		return trimTrailingSlashes(configured);
+		//return trimTrailingSlashes(configured);
+        return configured;
 	}
 
 	private static String configuredBaseUrl(Properties utilProperties) {
