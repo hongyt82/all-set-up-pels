@@ -23,6 +23,9 @@ interface ViewerHeaderProps {
   hasQrDialog?: boolean;
   onShowDialog?: () => void;
   onShowQrDialog?: () => void;
+  hideDialogControls?: boolean;
+  hidePdfSave?: boolean;
+  hideValueJsonSave?: boolean;
 }
 
 export function ViewerHeader({
@@ -44,6 +47,9 @@ export function ViewerHeader({
   hasQrDialog = false,
   onShowDialog,
   onShowQrDialog,
+  hideDialogControls = false,
+  hidePdfSave = false,
+  hideValueJsonSave = false,
 }: ViewerHeaderProps) {
   const [hasPdfLoaded, setHasPdfLoaded] = useState(false);
   const pdfReady = isDbMode ? hasPdf : hasPdfLoaded;
@@ -97,7 +103,7 @@ export function ViewerHeader({
     <div
       className="viewer-header flex items-center justify-between px-6"
       style={{
-        height: '60px',
+        height: '50px',
         background: 'linear-gradient(90deg, #00b894, #00cec9)',
         color: '#ffffff',
       }}
@@ -154,7 +160,7 @@ export function ViewerHeader({
       {/* RIGHT (Dialog/QR + controls) */}
       <div className="flex items-center gap-3">
         {/* ✅ Dialog/QR: 더 눈에 띄는 스타일 + 오른쪽에 붙임 */}
-        {(onShowDialog || onShowQrDialog) && (
+        {!hideDialogControls && (onShowDialog || onShowQrDialog) && (
           <div className="flex items-center gap-2">
             {onShowDialog && (
               <Button
@@ -197,7 +203,7 @@ export function ViewerHeader({
         )}
 
         {/* 기존 오른쪽 컨트롤 */}
-        <div className="viewer-controls flex items-center space-x-2 bg-white/10 px-4 py-2 rounded-lg">
+        <div className="viewer-controls flex items-center space-x-2 bg-white/10 px-4 py-0.5 rounded-lg">
           <Button onClick={onZoomOut} variant="ghost" size="sm" title="축소">
             <ZoomOut className="h-4 w-4" />
           </Button>
@@ -212,7 +218,7 @@ export function ViewerHeader({
 
           <div className="w-px h-6 bg-white/20 mx-2" />
 
-          {!isDbMode && (
+          {!isDbMode && !hideValueJsonSave && (
             <Button
               onClick={onSaveJsonWithValues}
               variant="ghost"
@@ -229,20 +235,22 @@ export function ViewerHeader({
             </Button>
           )}
 
-          <Button
-            onClick={onSavePdf}
-            variant="ghost"
-            size="sm"
-            className={`text-xs px-3 py-1 rounded-lg ${
-              isDbMode || pdfReady
-                ? 'bg-white/20 hover:bg-white/30'
-                : 'bg-white/10 opacity-40 cursor-not-allowed'
-            }`}
-            disabled={!isDbMode && !pdfReady}
-            title="서식화된 PDF 저장"
-          >
-            PDF 저장
-          </Button>
+          {!hidePdfSave && (
+            <Button
+              onClick={onSavePdf}
+              variant="ghost"
+              size="sm"
+              className={`text-xs px-3 py-1 rounded-lg ${
+                isDbMode || pdfReady
+                  ? 'bg-white/20 hover:bg-white/30'
+                  : 'bg-white/10 opacity-40 cursor-not-allowed'
+              }`}
+              disabled={!isDbMode && !pdfReady}
+              title="서식화된 PDF 저장"
+            >
+              PDF 저장
+            </Button>
+          )}
         </div>
       </div>
     </div>

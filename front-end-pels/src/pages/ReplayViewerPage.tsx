@@ -388,6 +388,7 @@ export function ReplayViewerPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showReplayInfoPanel, setShowReplayInfoPanel] = useState(false);
 
   const wsRef = useRef<ReplayViewerWorkspaceHandle | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -1124,7 +1125,7 @@ export function ReplayViewerPage() {
 
   const currentReplayEventLabel = currentReplayEvent
     ? getReplayEventLabel(currentReplayEvent.EVENT_TYP_SQNO)
-    : '처음 상태';
+    : '처음 상태1';
 
   const currentReplayUserName =
     currentReplayEvent?.USER_NM?.trim() || currentReplayEvent?.USER_ID || '';
@@ -1141,6 +1142,32 @@ export function ReplayViewerPage() {
           currentReplayEvent.PAGE_CNT
         )}`
       : '';
+
+  const replayInfoItems = [
+    {
+      key: 'event',
+      title: '이벤트',
+      value: currentReplayEventLabel,
+    },
+    currentReplayUserName
+      ? {
+          key: 'user',
+          title: '사용자',
+          value: currentReplayUserName,
+        }
+      : null,
+    currentReplayPageText || pageMoveText
+      ? {
+          key: 'page',
+          title: '페이지',
+          value: pageMoveText || currentReplayPageText,
+        }
+      : null,
+  ].filter(Boolean) as Array<{
+    key: string;
+    title: string;
+    value: string;
+  }>;
 
   const totalEvents = events.length;
 
@@ -1165,6 +1192,9 @@ export function ReplayViewerPage() {
           hasQrDialog={false}
           onShowDialog={() => {}}
           onShowQrDialog={() => {}}
+          hideDialogControls={true}
+          hidePdfSave={true}
+          hideValueJsonSave={true}
         />
       </div>
 
@@ -1265,58 +1295,6 @@ export function ReplayViewerPage() {
             className="flex-1"
           />
         </div>
-
-        <div className="mt-2 flex items-center gap-2">
-          <div
-            style={{
-              padding: '6px 10px',
-              borderRadius: 999,
-              background: 'rgba(15, 23, 42, 0.82)',
-              color: '#fff',
-              fontSize: 12,
-              fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {currentReplayEventLabel}
-          </div>
-
-          {currentReplayUserName && (
-            <div
-              style={{
-                padding: '5px 10px',
-                borderRadius: 999,
-                background: 'rgba(14, 165, 233, 0.92)',
-                color: '#f8fafc',
-                fontSize: 11,
-                fontWeight: 600,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {currentReplayUserName}
-            </div>
-          )}
-
-          {(currentReplayPageText || pageMoveText) && (
-            <div
-              style={{
-                padding: '5px 10px',
-                borderRadius: 999,
-                background: 'rgba(255, 255, 255, 0.92)',
-                color: '#0f172a',
-                fontSize: 11,
-                fontWeight: 500,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-                whiteSpace: 'nowrap',
-                border: '1px solid rgba(148,163,184,0.35)',
-              }}
-            >
-              {pageMoveText || currentReplayPageText}
-            </div>
-          )}
-        </div>
       </div>
 
       <div
@@ -1366,6 +1344,85 @@ export function ReplayViewerPage() {
           onPageChange={handlePageChange}
         />
       </div>
+      {/* 🔹 Rule 목록 토글 버튼 & 패널 */}
+      <button
+        type="button"
+        className=" fixed
+                    right-4
+                    top-29
+                    z-40
+                    px-3
+                    py-1
+                    rounded-full
+                    text-[11px]
+                    bg-slate-800
+                    text-slate-100
+                    border border-slate-600
+                    hover:bg-slate-700
+                  "
+        onClick={() => setShowReplayInfoPanel(prev => !prev)}
+      >
+        Replay 정보
+      </button>
+
+      {showReplayInfoPanel && (
+        <div
+          className=" fixed
+                      right-4
+                      top-29
+                      w-[200px]
+                      max-h-[60vh]
+                      bg-slate-900
+                      text-slate-50
+                      border border-slate-700
+                      rounded-xl
+                      shadow-xl
+                      p-3
+                      flex
+                      flex-col
+                      gap-2
+                      z-40
+                    "
+        >
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs font-semibold">Replay 정보</div>
+            <button
+              type="button"
+              className="text-[10px] px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600"
+              onClick={() => setShowReplayInfoPanel(false)}
+            >
+              닫기
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto mt-1 space-y-1">
+            {replayInfoItems.map(item => (
+              <div
+                key={item.key}
+                className=" w-full
+                            text-left
+                            text-[11px]
+                            px-2 py-1.5
+                            rounded
+                          bg-slate-800
+                            border border-slate-700/60
+                            flex flex-col
+                            gap-0.5
+                          "
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400">
+                    {item.title}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-100 font-medium break-all">
+                  {item.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </BaseLayout>
   );
 }
