@@ -39,7 +39,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.khnp.pels.common.util.ElinkV2RootUtil;
+//import com.khnp.pels.common.util.ElinkV2RootUtil;
 import com.khnp.pels.common.enums.AtflGrupNm;
 import com.khnp.pels.exam.dto.PdfInfo;
 import com.khnp.pels.exam.dto.PdfJson;
@@ -757,7 +757,7 @@ public class PELSExamController {
 		
 		String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
 		mav.addObject("CHCK_SNO", CHCK_SNO);
-		ElinkV2RootUtil.addToModel(request, mav, utilProperties);
+		//ElinkV2RootUtil.addToModel(request, mav, utilProperties);
 			
 		mav.setViewName("/pels/popup/KhnpViewer");
 		
@@ -794,7 +794,7 @@ public class PELSExamController {
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);
-		ElinkV2RootUtil.addToModel(request, mav, utilProperties);
+		//ElinkV2RootUtil.addToModel(request, mav, utilProperties);
 			
 		mav.setViewName("/pels/exam/Exam_KhnpViewer");
 		
@@ -831,7 +831,7 @@ public class PELSExamController {
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);
-		ElinkV2RootUtil.addToModel(request, mav, utilProperties);
+		//ElinkV2RootUtil.addToModel(request, mav, utilProperties);
 			
 		mav.setViewName("/pels/exam/Exam_KhnpReplayViewer");
 		
