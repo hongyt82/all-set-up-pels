@@ -8,11 +8,10 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.*;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -35,29 +34,36 @@ public class ValidStrokeFile {
      */
     public List<TstEventEntity> validMappingEntityList(List<TstEventMeta> eventMetaList, List<MultipartFile> mpFiles) {
 
-        // stroke path files 검증
-        if(mpFiles==null || mpFiles.isEmpty()){
-            throw new RestBadRequestException("MultipartFiles is empty");
-        }
+        // 스트로크 추가(3) 존재 여부 확인
+        boolean hasAddStroke = eventMetaList.stream()
+                .anyMatch(eventMeta -> EventType.STROKE_ADD.equals(eventMeta.getEventTypSqno()));
 
-        // fileMap 생성
-        Map<String, MultipartFile> fileMap = Optional.of(mpFiles)
-                .orElse(Collections.emptyList())
-                .stream()
-                .collect(Collectors.toMap(
-                        file -> {
-                            StrokeFilename sf = StrokeFilename.parse(file.getOriginalFilename());
-                            return sf.toFilename();
-                        },
-                        Function.identity()
-                ));
+        Map<String, MultipartFile> fileMap;  // 스트로크 file map
+        if(hasAddStroke){
+            // stroke path files 검증
+            if(mpFiles==null || mpFiles.isEmpty()){
+                throw new RestBadRequestException("MultipartFiles is empty");
+            }
+
+            // fileMap 생성
+            fileMap = mpFiles.stream()
+                    .collect(Collectors.toMap(
+                            file -> {
+                                StrokeFilename sf = StrokeFilename.parse(file.getOriginalFilename());
+                                return sf.toFilename();
+                            },
+                            Function.identity()
+                    ));
+        } else {
+            fileMap = null;
+        }
 
         // 스트로크 파일 체크 및 Entity 생성
         return eventMetaList.stream()
                 .map(meta -> {
                     if(meta.getEventTypSqno().equals(EventType.STROKE_ADD)){
                         String strkFileNm = StrokeFilename.toFilename(meta);
-                        MultipartFile file = fileMap.get(strkFileNm);
+                        MultipartFile file = Objects.requireNonNull(fileMap).get(strkFileNm);
                         if(file == null){
                             throw new RestBadRequestException("Stroke filename does not match meta: " + strkFileNm);
                         }
