@@ -27,7 +27,7 @@
 
 	function fnParent () {
 		let form = document.getElementById('form')
-		form.action = "<%=request.getContextPath()%>/Exam_Search.do?PRSTS_CFY=R"
+		form.action = "<%=request.getContextPath()%>/Exam_Search.do"
 		form.submit()
 	}
 
@@ -39,6 +39,7 @@
 <form id="form" name="form" method="post">
 <input type="hidden" name="CHCK_SNO" value="${CHCK_SNO}">
 <input type="hidden" name="ATFL_PHCL_NM" value="${ATFL_PHCL_NM}">
+<input type="hidden" name="PRSTS_CFY" value="${PRSTS_CFY}">
 
 <div class="page-content">
 	<div class="page-content-area">

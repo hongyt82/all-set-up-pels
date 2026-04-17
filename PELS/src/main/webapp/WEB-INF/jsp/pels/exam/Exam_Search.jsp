@@ -20,13 +20,15 @@
 		const chkElements2 = $('#form input[name=PRCDOC_NM]')
 		const chkElements3 = $('#form input[name=CHCK_TITL]')
 		const chkElements4 = $('#form input[name=PWPL_ID]')
+		const chkElements5 = $('#form input[name=PRSTS_CFY]')
 		let chkCnt = 0;
 		let chkParam = '';
 		let chkParam1 = '';
 		let chkParam2 = '';
 		let chkParam3 = '';
 		let chkParam4 = '';
-		for (let i = 0; i < chkElements.length; i++) { 
+		let chkParam5 = '';
+		for (let i = 0; i < chkElements.length; i++) {
 			if ($(chkElements[i]).is(':checked')) {
 				chkCnt++;
 				chkParam = $(chkElements[i]).val();
@@ -34,6 +36,7 @@
 				chkParam2 = $(chkElements2[i]).val();
 				chkParam3 = $(chkElements3[i]).val();
 				chkParam4 = $(chkElements4[i]).val();
+				chkParam5 = $(chkElements5[i]).val();
 			}
 		}
 		
@@ -51,6 +54,7 @@
 		form.PRCDOC_NM.value = chkParam2;
 		form.CHCK_TITL.value = chkParam3;
 		form.PWPL_ID.value = chkParam4;
+		form.PRSTS_CFY.value = chkParam5;
 		form.action = "<%=request.getContextPath()%>/Exam_KhnpReplayViewer.do";
 		form.target = "_self";
 		form.submit()
@@ -121,7 +125,7 @@
 		for (let i = 0; i < chkElements.length; i++) { 
 			if ($(chkElements[i]).is(':checked')) {
 				chkCnt++;
-				chkParam = $(chkElements[i]).val();
+				chkParam = $(chkElements[i]).val();1
 				chkParam1 = $(chkElement1[i]).val();
 				chkParam2 = $(chkElement2[i]).val();
 			}
@@ -183,6 +187,7 @@
 <input type="hidden" name="PRCDOC_NO" id="PRCDOC_NO" value="">
 <input type="hidden" name="PRCDOC_NM" id="PRCDOC_NM" value="">
 <input type="hidden" name="CHCK_TITL" id="CHCK_TITL" value="">
+<input type="hidden" name="PRSTS_CFY" id="PRSTS_CFY" value="">
 </form>
 <form id="form" name="form" method="post">
 <input type="hidden" name="PAGE" value="${PAGE}">
@@ -334,7 +339,7 @@
 											<td align="center">${exam.PRSTS_CFY_NM}</td>
 											<td align="center">
 												<!-- <a class="SubButton" href="javascript:MM_openViewer('${exam.TST_UNQ_KY_VAL}');"><span class="Text">보기</span></a> -->
-												<a class="SubButton" href="<%=request.getContextPath()%>/Exam_KhnpViewer.do?PWPL_ID=${exam.PWPL_ID}&CHCK_SNO=${exam.CHCK_SNO}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_NM}&CHCK_TITL=${exam.CHCK_TITL}"><span class="Text">보기</span></a>
+												<a class="SubButton" href="<%=request.getContextPath()%>/Exam_KhnpViewer.do?PWPL_ID=${exam.PWPL_ID}&CHCK_SNO=${exam.CHCK_SNO}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_NM}&CHCK_TITL=${exam.CHCK_TITL}&PRSTS_CFY=${PRSTS_CFY}"><span class="Text">보기</span></a>
 											</td>
 											<td align="center">${exam.FM_RG_DT}</td>
 										</tr>

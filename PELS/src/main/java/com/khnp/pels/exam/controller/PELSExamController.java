@@ -765,7 +765,7 @@ public class PELSExamController {
 	}	
 	
 	/**
-	 * 
+	 * Viewer 페이지 호출
 	 * @param request
 	 * @return
 	 */
@@ -789,11 +789,13 @@ public class PELSExamController {
 		String PRCDOC_NO = StringUtil.nvl(request.getParameter("PRCDOC_NO"), "");
 		String PRCDOC_NM = StringUtil.nvl(request.getParameter("PRCDOC_NM"), "");
 		String CHCK_TITL = StringUtil.nvl(request.getParameter("CHCK_TITL"), "");
+		String PRSTS_CFY = StringUtil.nvl(request.getParameter("PRSTS_CFY"), "R");
 		mav.addObject("PWPL_ID", PWPL_ID);
 		mav.addObject("CHCK_SNO", CHCK_SNO);
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);
+		mav.addObject("PRSTS_CFY", PRSTS_CFY);
 		//ElinkV2RootUtil.addToModel(request, mav, utilProperties);
 			
 		mav.setViewName("/pels/exam/Exam_KhnpViewer");
@@ -826,11 +828,13 @@ public class PELSExamController {
 		String PRCDOC_NO = StringUtil.nvl(request.getParameter("PRCDOC_NO"), "");
 		String PRCDOC_NM = StringUtil.nvl(request.getParameter("PRCDOC_NM"), "");
 		String CHCK_TITL = StringUtil.nvl(request.getParameter("CHCK_TITL"), "");
+		String PRSTS_CFY = StringUtil.nvl(request.getParameter("PRSTS_CFY"), "R");
 		mav.addObject("PWPL_ID", PWPL_ID);
 		mav.addObject("CHCK_SNO", CHCK_SNO);
 		mav.addObject("PRCDOC_NO", PRCDOC_NO);
 		mav.addObject("PRCDOC_NM", PRCDOC_NM);
 		mav.addObject("CHCK_TITL", CHCK_TITL);
+		mav.addObject("PRSTS_CFY", PRSTS_CFY);
 		//ElinkV2RootUtil.addToModel(request, mav, utilProperties);
 			
 		mav.setViewName("/pels/exam/Exam_KhnpReplayViewer");
