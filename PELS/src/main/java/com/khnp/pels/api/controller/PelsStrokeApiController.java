@@ -108,7 +108,7 @@ public class PelsStrokeApiController {
      * @param metaJson 이벤트 스트로크 JSON
      * @return ApiResponse
      */
-    @DeleteMapping
+    @PostMapping
     public ResponseEntity<ApiResponse<Void>> deleteTstEventStroke (
             @RequestBody String metaJson
     ) {
