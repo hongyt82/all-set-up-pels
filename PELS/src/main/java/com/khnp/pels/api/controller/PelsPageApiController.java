@@ -97,7 +97,7 @@ public class PelsPageApiController {
      * @param metaJson 이벤트 페이지 메터 JSON
      * @return ApiResponse
      */
-    @DeleteMapping
+    @PostMapping
     public ResponseEntity<ApiResponse<Void>> deleteTstEventPage (
             @RequestBody String metaJson
     ) {
