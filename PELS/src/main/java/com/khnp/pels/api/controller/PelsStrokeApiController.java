@@ -78,6 +78,7 @@ public class PelsStrokeApiController {
      * @return ApiResponse
      */
     @PostMapping(
+            value = "/insert",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -108,7 +109,7 @@ public class PelsStrokeApiController {
      * @param metaJson 이벤트 스트로크 JSON
      * @return ApiResponse
      */
-    @PostMapping
+    @PostMapping("/delete")
     public ResponseEntity<ApiResponse<Void>> deleteTstEventStroke (
             @RequestBody String metaJson
     ) {

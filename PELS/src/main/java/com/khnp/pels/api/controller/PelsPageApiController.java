@@ -73,6 +73,7 @@ public class PelsPageApiController {
      * @return ApiResponse
      */
     @PostMapping(
+            value = "/insert",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -97,7 +98,7 @@ public class PelsPageApiController {
      * @param metaJson 이벤트 페이지 메터 JSON
      * @return ApiResponse
      */
-    @PostMapping
+    @PostMapping("/delete")
     public ResponseEntity<ApiResponse<Void>> deleteTstEventPage (
             @RequestBody String metaJson
     ) {

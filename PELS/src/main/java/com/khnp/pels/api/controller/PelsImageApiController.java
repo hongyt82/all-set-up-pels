@@ -46,7 +46,7 @@ public class PelsImageApiController {
      * @return ApiResponse
      */
     @PostMapping(
-            value="/bulk",
+            value = "/bulk",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -73,6 +73,7 @@ public class PelsImageApiController {
      * @return ApiResponse
      */
     @PostMapping(
+            value = "/insert",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -97,7 +98,7 @@ public class PelsImageApiController {
      * @param metaJson 시험(점검) 스트로크 JSON 문자열
      * @return ApiResponse
      */
-    @PostMapping
+    @PostMapping("/delete")
     public ResponseEntity<ApiResponse<Void>> deleteTstEventImage (
             @RequestBody String metaJson
     ) {
