@@ -15,19 +15,17 @@
 	
 	// 리플레이
 	function fnExamReplay() {
-		const chkElements = $('#form input[name=CHK_ITEM]')
-		const chkElements1 = $('#form input[name=PRCDOC_NO]')
-		const chkElements2 = $('#form input[name=PRCDOC_NM]')
-		const chkElements3 = $('#form input[name=CHCK_TITL]')
-		const chkElements4 = $('#form input[name=PWPL_ID]')
-		const chkElements5 = $('#form input[name=PRSTS_CFY]')
+		const chkElements = $('#form input[name=CHK_ITEM]');
+		const chkElements1 = $('#form input[name=PRCDOC_NO]');
+		const chkElements2 = $('#form input[name=PRCDOC_NM]');
+		const chkElements3 = $('#form input[name=CHCK_TITL]');
+		const chkElements4 = $('#form input[name=PWPL_ID]');
 		let chkCnt = 0;
 		let chkParam = '';
 		let chkParam1 = '';
 		let chkParam2 = '';
 		let chkParam3 = '';
 		let chkParam4 = '';
-		let chkParam5 = '';
 		for (let i = 0; i < chkElements.length; i++) {
 			if ($(chkElements[i]).is(':checked')) {
 				chkCnt++;
@@ -36,7 +34,6 @@
 				chkParam2 = $(chkElements2[i]).val();
 				chkParam3 = $(chkElements3[i]).val();
 				chkParam4 = $(chkElements4[i]).val();
-				chkParam5 = $(chkElements5[i]).val();
 			}
 		}
 		
@@ -54,7 +51,7 @@
 		form.PRCDOC_NM.value = chkParam2;
 		form.CHCK_TITL.value = chkParam3;
 		form.PWPL_ID.value = chkParam4;
-		form.PRSTS_CFY.value = chkParam5;
+		form.PRSTS_CFY.value = $('#form input[id=PRSTS_CFY]').val();
 		form.action = "<%=request.getContextPath()%>/Exam_KhnpReplayViewer.do";
 		form.target = "_self";
 		form.submit()
