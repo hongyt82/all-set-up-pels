@@ -314,7 +314,39 @@ public class PELSExamMobileController {
 			}
 			os.flush();
 		}
-	}	
+	}
+
+    @RequestMapping(value = "/proxy/file", method = RequestMethod.GET)
+    public void proxyFile(@RequestParam("path") String path, HttpServletResponse response) throws Exception {
+
+        URL url = new URL(path);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(15000);
+
+        String contentType = conn.getContentType();
+        int contentLength = conn.getContentLength();
+
+        if (contentType != null && !"".equals(contentType)) {
+            response.setContentType(contentType);
+        } else {
+            response.setContentType("application/octet-stream");
+        }
+
+        if (contentLength > 0) {
+            response.setContentLength(contentLength);
+        }
+
+        try (InputStream is = conn.getInputStream(); OutputStream os = response.getOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int len;
+            while ((len = is.read(buffer)) != -1) {
+                os.write(buffer, 0, len);
+            }
+            os.flush();
+        }
+    }
 	
 	/**
 	 * 시험(점검)관리 > 시험(점검)준비 > 시험(점검)준비 등록
