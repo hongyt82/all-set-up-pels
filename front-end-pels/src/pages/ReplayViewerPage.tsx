@@ -48,7 +48,7 @@ type ReplayEventItem = {
   STRK_SEQ: number | null;
   IMAGE_SEQ: number | null;
   USER_ID: string;
-  USER_NM?: string | null;
+  USER_FNM?: string | null;
   EVENT_CRTE_DT: string;
 
   EVENT_NM?: string | null;
@@ -204,11 +204,34 @@ function getBaseUrl(url?: string | null) {
   }
 }
 
+function shouldUseFileProxy(filePath: string) {
+  try {
+    const fileOrigin = new URL(filePath).origin;
+    return fileOrigin !== window.location.origin;
+  } catch {
+    return true;
+  }
+}
+
+function toProxyFileUrl(filePath: string) {
+  return `/pels/proxy/file?path=${encodeURIComponent(filePath)}`;
+}
+
 function toImageUrl(url?: string | null, fileBaseUrl?: string) {
   if (!url) return null;
-  if (/^https?:\/\//i.test(url)) return url;
-  if (!fileBaseUrl) return url;
-  return `${fileBaseUrl}/${String(url).replace(/^\/+/, '')}`;
+
+  let resolvedUrl = url;
+
+  if (!/^https?:\/\//i.test(resolvedUrl)) {
+    if (!fileBaseUrl) return resolvedUrl;
+    resolvedUrl = `${fileBaseUrl}/${String(resolvedUrl).replace(/^\/+/, '')}`;
+  }
+
+  if (shouldUseFileProxy(resolvedUrl)) {
+    return toProxyFileUrl(resolvedUrl);
+  }
+
+  return resolvedUrl;
 }
 
 function normalizeImageSrc(
@@ -396,6 +419,11 @@ export function ReplayViewerPage() {
   const centerRef = useRef<HTMLDivElement | null>(null);
   const playTimerRef = useRef<number | null>(null);
 
+  const [replayPanelWidth, setReplayPanelWidth] = useState(0);
+  const replayPanelRef = useRef<HTMLDivElement | null>(null);
+  const replayListBodyRef = useRef<HTMLDivElement | null>(null);
+  const replayItemRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+
   const handleLoadedFile = async (file: File, frmOverJson?: string | null) => {
     setPdfFile(file);
     setCurrentFile(file.name);
@@ -422,9 +450,10 @@ export function ReplayViewerPage() {
 
     const verticalPadding = 24;
     const horizontalPadding = 32;
+    const panelOffset = showReplayInfoPanel ? (replayPanelWidth + 16) / 2 : 0;
 
     const availableH = window.innerHeight - headerH - footerH - verticalPadding;
-    const availableW = centerW - horizontalPadding;
+    const availableW = centerW - horizontalPadding - panelOffset * 2;
 
     const sH = availableH / BASE_H;
     const sW = availableW / BASE_W;
@@ -433,7 +462,7 @@ export function ReplayViewerPage() {
     const zoomFactor = zoomLevel / 100;
 
     setPageScale(base * zoomFactor);
-  }, [zoomLevel]);
+  }, [zoomLevel, showReplayInfoPanel, replayPanelWidth]);
 
   const buildReplayState = useCallback(
     (sourceEvents: ReplayEventItem[], appliedIndex: number): ReplayState => {
@@ -721,6 +750,32 @@ export function ReplayViewerPage() {
   );
 
   useEffect(() => {
+    if (!showReplayInfoPanel) {
+      setReplayPanelWidth(0);
+      return;
+    }
+
+    const updateWidth = () => {
+      const width = replayPanelRef.current?.offsetWidth ?? 0;
+      setReplayPanelWidth(width);
+    };
+
+    updateWidth();
+
+    const observer = new ResizeObserver(() => {
+      updateWidth();
+    });
+
+    if (replayPanelRef.current) {
+      observer.observe(replayPanelRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [showReplayInfoPanel]);
+
+  useEffect(() => {
     if (!chckSno) return;
     // if (!chckSno || !pwplId) return;
 
@@ -741,8 +796,8 @@ export function ReplayViewerPage() {
         const viewerFileName = getFilenameFromPath(PDF_PATH);
 
         // PDF origin이 다르면 프록시 사용
-        if (shouldUsePdfProxy(PDF_PATH)) {
-          const pdfRes = await axios.get('/pels/proxy/pdf', {
+        if (shouldUseFileProxy(PDF_PATH)) {
+          const pdfRes = await axios.get('/pels/proxy/file', {
             params: { path: PDF_PATH },
             responseType: 'blob',
             withCredentials: true,
@@ -768,15 +823,6 @@ export function ReplayViewerPage() {
           });
 
           await handleLoadedFile(file, FRM_OVER_JSON);
-        }
-
-        function shouldUsePdfProxy(pdfPath: string) {
-          try {
-            const pdfOrigin = new URL(pdfPath).origin;
-            return pdfOrigin !== window.location.origin;
-          } catch {
-            return true;
-          }
         }
 
         if (FRM_OVER_JSON) {
@@ -1075,6 +1121,21 @@ export function ReplayViewerPage() {
     };
   }, []);
 
+
+  useEffect(() => {
+    if (!showReplayInfoPanel) return;
+    if (playheadIndex < 0) return;
+
+    const activeEl = replayItemRefs.current[playheadIndex];
+    if (!activeEl) return;
+
+    activeEl.scrollIntoView({
+      block: 'nearest',
+      behavior: isPlaying ? 'smooth' : 'auto',
+    });
+  }, [playheadIndex, showReplayInfoPanel, isPlaying]);
+
+
   useLayoutEffect(() => {
     recalcScale();
 
@@ -1115,59 +1176,29 @@ export function ReplayViewerPage() {
           .slice(0, 19)
       : '-';
 
-  const currentReplayEvent =
-    playheadIndex >= 0 && events[playheadIndex] ? events[playheadIndex] : null;
+  const replayEventList = events.map((event, index) => {
+    const prevEvent = index > 0 ? events[index - 1] : null;
 
-  const prevReplayEvent =
-    playheadIndex > 0 && events[playheadIndex - 1]
-      ? events[playheadIndex - 1]
-      : null;
+    const eventLabel = getReplayEventLabel(event.EVENT_TYP_SQNO);
+    const userName = event.USER_FNM?.trim() || event.USER_ID || '';
+    const pageNo = Number(event.PAGE_CNT);
+    const pageText =
+      prevEvent && Number(prevEvent.PAGE_CNT) !== Number(event.PAGE_CNT)
+        ? `페이지 이동 ${Number(prevEvent.PAGE_CNT)} → ${Number(event.PAGE_CNT)}`
+        : `페이지 ${pageNo}`;
 
-  const currentReplayEventLabel = currentReplayEvent
-    ? getReplayEventLabel(currentReplayEvent.EVENT_TYP_SQNO)
-    : '처음 상태1';
+    const timeText = String(event.EVENT_CRTE_DT).replace('T', ' ').slice(0, 19);
 
-  const currentReplayUserName =
-    currentReplayEvent?.USER_NM?.trim() || currentReplayEvent?.USER_ID || '';
-
-  const currentReplayPageText = currentReplayEvent
-    ? `페이지 ${Number(currentReplayEvent.PAGE_CNT)}`
-    : '';
-
-  const pageMoveText =
-    currentReplayEvent &&
-    prevReplayEvent &&
-    Number(currentReplayEvent.PAGE_CNT) !== Number(prevReplayEvent.PAGE_CNT)
-      ? `페이지 이동 ${Number(prevReplayEvent.PAGE_CNT)} → ${Number(
-          currentReplayEvent.PAGE_CNT
-        )}`
-      : '';
-
-  const replayInfoItems = [
-    {
-      key: 'event',
-      title: '이벤트',
-      value: currentReplayEventLabel,
-    },
-    currentReplayUserName
-      ? {
-          key: 'user',
-          title: '사용자',
-          value: currentReplayUserName,
-        }
-      : null,
-    currentReplayPageText || pageMoveText
-      ? {
-          key: 'page',
-          title: '페이지',
-          value: pageMoveText || currentReplayPageText,
-        }
-      : null,
-  ].filter(Boolean) as Array<{
-    key: string;
-    title: string;
-    value: string;
-  }>;
+    return {
+      key: `${event.EVENT_SNO}-${index}`,
+      index,
+      eventLabel,
+      userName,
+      pageText,
+      timeText,
+      isActive: playheadIndex === index,
+    };
+  });
 
   const totalEvents = events.length;
 
@@ -1303,12 +1334,16 @@ export function ReplayViewerPage() {
           zoomLevel >= 110 ? 'overflow-auto' : 'overflow-hidden'
         }`}
       >
-        <div className="flex flex-1 justify-center items-start py-3">
+        <div className="flex flex-1 items-start justify-center py-3 overflow-visible">
           <div
             style={{
               position: 'relative',
               width: BASE_W * pageScale,
               height: BASE_H * pageScale,
+              transform: `translateX(${
+                showReplayInfoPanel ? (replayPanelWidth + 16) / 2 : 0
+              }px)`,
+              transition: 'transform 0.2s ease',
             }}
           >
             <div
@@ -1316,7 +1351,7 @@ export function ReplayViewerPage() {
                 width: BASE_W,
                 height: BASE_H,
                 transform: `scale(${pageScale})`,
-                transformOrigin: 'top center',
+                transformOrigin: 'top left',
               }}
             >
               <ReplayViewerWorkspace
@@ -1348,44 +1383,45 @@ export function ReplayViewerPage() {
       <button
         type="button"
         className=" fixed
-                    right-4
-                    top-29
-                    z-40
-                    px-3
-                    py-1
-                    rounded-full
-                    text-[11px]
-                    bg-slate-800
-                    text-slate-100
-                    border border-slate-600
-                    hover:bg-slate-700
-                  "
+              left-4
+              top-29
+              z-40
+              px-3
+              py-1
+              rounded-full
+              text-[11px]
+              bg-slate-800
+              text-slate-100
+              border border-slate-600
+              hover:bg-slate-700
+            "
         onClick={() => setShowReplayInfoPanel(prev => !prev)}
       >
-        Replay 정보
+        Replay 목록
       </button>
 
       {showReplayInfoPanel && (
         <div
+          ref={replayPanelRef}
           className=" fixed
-                      right-4
-                      top-29
-                      w-[200px]
-                      max-h-[60vh]
-                      bg-slate-900
-                      text-slate-50
-                      border border-slate-700
-                      rounded-xl
-                      shadow-xl
-                      p-3
-                      flex
-                      flex-col
-                      gap-2
-                      z-40
-                    "
+          left-4
+          top-29
+          w-[320px]
+          max-h-[82vh]
+          bg-slate-900
+          text-slate-50
+          border border-slate-700
+          rounded-xl
+          shadow-xl
+          p-3
+          flex
+          flex-col
+          gap-2
+          z-40
+        "
         >
           <div className="flex items-center justify-between mb-1">
-            <div className="text-xs font-semibold">Replay 정보</div>
+            <div className="text-xs font-semibold">Replay 목록</div>
             <button
               type="button"
               className="text-[10px] px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600"
@@ -1395,30 +1431,64 @@ export function ReplayViewerPage() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto mt-1 space-y-1">
-            {replayInfoItems.map(item => (
-              <div
+          <div
+            ref={replayListBodyRef}
+            className="flex-1 overflow-y-auto mt-1 space-y-1.5 pr-1"
+          >
+            {replayEventList.map(item => (
+              <button
                 key={item.key}
-                className=" w-full
-                            text-left
-                            text-[11px]
-                            px-2 py-1.5
-                            rounded
-                          bg-slate-800
-                            border border-slate-700/60
-                            flex flex-col
-                            gap-0.5
-                          "
+                ref={el => {
+                  replayItemRefs.current[item.index] = el;
+                }}
+                type="button"
+                onClick={() => {
+                  setIsPlaying(false);
+                  setPlayheadIndex(item.index);
+
+                  requestAnimationFrame(() => {
+                    moveToEventPage(item.index);
+                  });
+                }}
+                className={`w-full
+                  text-left
+                  text-[11px]
+                  px-3
+                  py-1.5
+                  rounded
+                  border
+                  flex
+                  flex-col
+                  gap-0.5
+                  ${
+                  item.isActive
+                    ? 'bg-sky-900/60 border-sky-400 text-white'
+                    : 'bg-slate-800 border-slate-700/60 text-slate-100 hover:bg-slate-700'
+                }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400">
-                    {item.title}
-                  </span>
+                <div className="flex items-center justify-between gap-2">
+        <span className="font-semibold truncate">
+          {item.index + 1}. {item.eventLabel}
+        </span>
+                  <span
+                    className={`text-[10px] shrink-0 ${
+                      item.isActive ? 'text-sky-200' : 'text-slate-400'
+                    }`}
+                  >
+          {item.timeText}
+        </span>
                 </div>
-                <div className="text-[11px] text-slate-100 font-medium break-all">
-                  {item.value}
+
+                <div
+                  className={`text-[10px] flex items-center gap-2 ${
+                    item.isActive ? 'text-sky-100' : 'text-slate-300'
+                  }`}
+                >
+                  <span className="truncate">사용자: {item.userName || '-'}</span>
+                  <span className="text-slate-500">|</span>
+                  <span className="shrink-0">{item.pageText}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

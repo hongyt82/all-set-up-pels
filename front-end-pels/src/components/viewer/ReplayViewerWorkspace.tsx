@@ -106,6 +106,7 @@ export const ReplayViewerWorkspace = forwardRef<
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const renderTaskRef = useRef<RenderTaskType | null>(null);
+  const renderRequestIdRef = useRef(0);
 
   const [pageBox, setPageBox] = useState<PageBox>({
     w: FIXED_W,
@@ -246,6 +247,8 @@ export const ReplayViewerWorkspace = forwardRef<
   useEffect(() => {
     if (!pdfDoc) return;
 
+    const requestId = ++renderRequestIdRef.current;
+
     const render = async () => {
       if (renderTaskRef.current) {
         try {
@@ -278,7 +281,17 @@ export const ReplayViewerWorkspace = forwardRef<
         mappedNo ?? Math.min(Math.max(currentPage, 1), pdfDoc.numPages);
 
       if (!isVirtual) {
-        const page: PDFPageProxy = await pdfDoc.getPage(realPageNo);
+        let page: PDFPageProxy;
+
+        try {
+          page = await pdfDoc.getPage(realPageNo);
+        } catch (e) {
+          devWarn('[ReplayViewerWorkspace] getPage failed', e);
+          return;
+        }
+
+        if (requestId !== renderRequestIdRef.current) return;
+
         const viewport = page.getViewport({ scale: 1 });
         const isLandscape = viewport.width > viewport.height;
         const BW = isLandscape ? FIXED_H : FIXED_W;
@@ -291,7 +304,9 @@ export const ReplayViewerWorkspace = forwardRef<
           BH
         );
 
-        setPageBox({ w: drawW, h: drawH });
+        setPageBox(prev =>
+          prev.w === drawW && prev.h === drawH ? prev : { w: drawW, h: drawH }
+        );
 
         const dpr = window.devicePixelRatio || 1;
         canvas.style.width = `${drawW}px`;
@@ -299,41 +314,53 @@ export const ReplayViewerWorkspace = forwardRef<
         canvas.width = Math.floor(drawW * dpr);
         canvas.height = Math.floor(drawH * dpr);
 
-        const task = (page as any).render({
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const task = page.render({
           canvasContext: ctx as any,
           viewport,
           transform: [s * dpr, 0, 0, s * dpr, 0, 0],
         }) as any;
 
         renderTaskRef.current = task as RenderTaskType;
+
         try {
           await task.promise;
-        } catch (e) {
-          devWarn('[ReplayViewerWorkspace] render task error (ignored)', e);
+        } catch (e: any) {
+          if (e?.name !== 'RenderingCancelledException') {
+            devWarn('[ReplayViewerWorkspace] render task error', e);
+          }
         } finally {
-          renderTaskRef.current = null;
+          if (renderTaskRef.current === task) {
+            renderTaskRef.current = null;
+          }
         }
-      } else {
-        const W = Number(lp?.width) || FIXED_W;
-        const H = Number(lp?.height) || FIXED_H;
-        const isLandscape = W > H;
-        const BW = isLandscape ? FIXED_H : FIXED_W;
-        const BH = isLandscape ? FIXED_W : FIXED_H;
 
-        setPageBox({ w: BW, h: BH });
-
-        const dpr = window.devicePixelRatio || 1;
-        canvas.style.width = `${BW}px`;
-        canvas.style.height = `${BH}px`;
-        canvas.width = Math.floor(BW * dpr);
-        canvas.height = Math.floor(BH * dpr);
-
-        ctx.save();
-        ctx.scale(dpr, dpr);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, BW, BH);
-        ctx.restore();
+        return;
       }
+
+      const W = Number(lp?.width) || FIXED_W;
+      const H = Number(lp?.height) || FIXED_H;
+      const isLandscape = W > H;
+      const BW = isLandscape ? FIXED_H : FIXED_W;
+      const BH = isLandscape ? FIXED_W : FIXED_H;
+
+      setPageBox(prev =>
+        prev.w === BW && prev.h === BH ? prev : { w: BW, h: BH }
+      );
+
+      const dpr = window.devicePixelRatio || 1;
+      canvas.style.width = `${BW}px`;
+      canvas.style.height = `${BH}px`;
+      canvas.width = Math.floor(BW * dpr);
+      canvas.height = Math.floor(BH * dpr);
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(dpr, dpr);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, BW, BH);
     };
 
     void render();
@@ -452,7 +479,7 @@ export const ReplayViewerWorkspace = forwardRef<
   // 렌더
   // ---------------------------------------------------------------------------
   return (
-    <div className="w-full flex items-center justify-center">
+    <div className="flex items-start justify-start">
       {pdfDoc ? (
         <div
           style={{
