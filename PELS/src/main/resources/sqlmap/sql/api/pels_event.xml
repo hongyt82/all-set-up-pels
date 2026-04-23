@@ -16,7 +16,8 @@
         <result property="strkSeq" column="STRK_SEQ"/>
         <result property="imgId" column="IMG_ID"/>
         <result property="userId" column="USER_ID"/>
-        <result property="userNm" column="USER_NM"/>
+        <result property="userFnm" column="USER_FNM"/>
+        <result property="chkprInfo" column="CHKPR_INFO"/>
         <result property="eventCrteDt" column="EVENT_CRTE_DT"/>
 
         <association property="stroke" javaType="com.khnp.pels.api.dto.TstEventStrokeMeta">
@@ -48,7 +49,8 @@
                CASE WHEN T1.EVENT_SQNO IN (3,4) THEN T1.EVENT_TRGT_ID ELSE NULL END AS STRK_SEQ,
                CASE WHEN T1.EVENT_SQNO IN (5,6,7,8) THEN T1.EVENT_TRGT_ID ELSE NULL END AS IMG_ID,
                T1.USER_ID,
-               (SELECT USER_NAME FROM GE_PL_USER_M WHERE USER_ID = T1.USER_ID) AS USER_NM,
+               T1.USER_FNM,
+               CASE WHEN T1.CHKPR_INFO IS NOT NULL THEN T1.CHKPR_INFO ELSE T1.USER_FNM END AS CHKPR_INFO,
                TO_CHAR(T1.EVENT_CRTE_DT, 'YYYY-MM-DD"T"HH24:MI:SS.FF3') AS EVENT_CRTE_DT,
                T2.X_CRDNT AS STRK_X_CRDNT,
                T2.Y_CRDNT AS STRK_Y_CRDNT,
@@ -114,6 +116,8 @@
              , PDF_PAGE_CNT
              , EVENT_TRGT_ID
              , USER_ID
+             , USER_FNM
+             , CHKPR_INFO
              , EVENT_CRTE_DT
              )
         VALUES
@@ -126,6 +130,8 @@
              , #{pdfPageCnt, jdbcType=INTEGER}
              , #{eventTrgtId, jdbcType=VARCHAR}
              , #{userId, jdbcType=VARCHAR}
+             , #{userFnm, jdbcType=VARCHAR}
+             , #{chkprInfo, jdbcType=VARCHAR}
              , TO_TIMESTAMP(#{eventCrteDt, jdbcType=VARCHAR},'YYYY-MM-DD"T"HH24:MI:SS.FF3')
              )
     </insert>
@@ -147,6 +153,8 @@
              , PDF_PAGE_CNT
              , EVENT_TRGT_ID
              , USER_ID
+             , USER_FNM
+             , CHKPR_INFO
              , EVENT_CRTE_DT
              )
         VALUES
@@ -159,6 +167,8 @@
              , #{pdfPageCnt, jdbcType=INTEGER}
              , #{eventTrgtId, jdbcType=VARCHAR}
              , #{userId, jdbcType=VARCHAR}
+             , #{userFnm, jdbcType=VARCHAR}
+             , #{chkprInfo, jdbcType=VARCHAR}
              , TO_TIMESTAMP(#{eventCrteDt, jdbcType=VARCHAR},'YYYY-MM-DD"T"HH24:MI:SS.FF3')
              )
     </insert>

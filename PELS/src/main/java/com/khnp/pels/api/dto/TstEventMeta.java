@@ -70,6 +70,15 @@ public class TstEventMeta {
     @Size(max=20)
     private String userId;
 
+    @JsonProperty("USER_FNM")
+    @NotBlank
+    @Size(max=20)
+    private String userFnm;
+
+    @JsonProperty("CHKPR_INFO")
+    @Size(max=100)
+    private String chkprInfo;
+
     @JsonProperty("EVENT_CRTE_DT")
     @NotNull
     @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}$", message = "yyyy-MM-dd'T'HH:mm:ss.SSS와 일치해야 합니다")

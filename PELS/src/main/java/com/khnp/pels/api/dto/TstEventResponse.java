@@ -19,25 +19,11 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonPropertyOrder({
-    "EVENT_SNO",
-    "EVENT_TYP_SQNO",
-    "PWPL_ID",
-    "CHCK_SNO",
-    "PAGE_CNT",
-    "INSRTN_PAGE_CNT",
-    "PDF_PAGE_CNT",
-    "STRK_SEQ",
-    "IMG_ID",
-    "USER_ID",
-    "USER_NM",
-    "EVENT_CRTE_DT"
+    "EVENT_SNO"
 })
 public class TstEventResponse extends TstEventMeta {
 
     @JsonProperty("EVENT_SNO")
     private Long eventSno;
-
-    @JsonProperty("USER_NM")
-    private String userNm;
 
 }

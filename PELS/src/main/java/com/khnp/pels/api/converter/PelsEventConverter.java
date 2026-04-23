@@ -57,6 +57,8 @@ public class PelsEventConverter {
                 .pdfPageCnt(dto.getPdfPageCnt())
                 .eventTrgtId(eventTrgtId)
                 .userId(dto.getUserId())
+                .userFnm(dto.getUserFnm())
+                .chkprInfo(dto.getChkprInfo())
                 .eventCrteDt(dto.getEventCrteDt())
                 .stroke(this.toEventStrokeEntity(dto))
                 .image(this.toEventImageEntity(dto))

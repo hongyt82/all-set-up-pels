@@ -24,6 +24,8 @@ public class TstEventEntity {
     private Integer pdfPageCnt;           //PDF페이지번호
     private String eventTrgtId;           //이벤트대상ID(스트로크SEQ or 이미지ID)
     private String userId;                //사용자ID
+    private String userFnm;               //사용자명
+    private String chkprInfo;             //점검자정보
     private String eventCrteDt;           //이벤트일시
     private TstEventStrokeEntity stroke;  //스트로크
     private TstEventImageEntity image;    //사진
