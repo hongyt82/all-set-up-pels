@@ -91,9 +91,9 @@ export default defineConfig(({ mode }) => {
             moment: ['moment']
           },
           // Hash로 이름 변경 안됨
-          entryFileNames: 'assets/[name].js',
-          chunkFileNames: 'assets/[name].js',
-          assetFileNames: 'assets/[name].[ext]'
+          // entryFileNames: 'assets/[name].js',
+          // chunkFileNames: 'assets/[name].js',
+          // assetFileNames: 'assets/[name].[ext]'
         }
       }
     },
