@@ -412,7 +412,7 @@ export function ReplayViewerPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [showReplayInfoPanel, setShowReplayInfoPanel] = useState(false);
+  const [showReplayInfoPanel, setShowReplayInfoPanel] = useState(true);
   const [listFilterMode, setListFilterMode] = useState<'all' | 'currentPage'>(
     'all'
   );
