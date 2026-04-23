@@ -389,13 +389,23 @@ export function EditorPage() {
         setDocKey(buildDocKeyFromApi(PRCDOC_CFY, PRCDOC_NO));
       }
 
+      function shouldUseFileProxy(filePath: string) {
+        try {
+          const fileOrigin = new URL(filePath).origin;
+          return fileOrigin !== window.location.origin;
+        } catch {
+          return true;
+        }
+      }
+
       if (!PDF_PATH) return;
 
       // PDF origin이 다르면 프록시 사용
-      if (shouldUsePdfProxy(PDF_PATH)) {
-        const pdfRes = await axios.get('/pels/proxy/pdf', {
+      if (shouldUseFileProxy(PDF_PATH)) {
+        const pdfRes = await axios.get('/pels/proxy/file', {
           params: { path: PDF_PATH },
           responseType: 'blob',
+          withCredentials: true,
         });
 
         const file = new File([pdfRes.data], 'form.pdf', {
@@ -405,15 +415,6 @@ export function EditorPage() {
         wsRef.current?.loadPdfFile(file);
       } else {
         await wsRef.current?.loadPdfFromUrl?.(PDF_PATH);
-      }
-
-      function shouldUsePdfProxy(pdfPath: string) {
-        try {
-          const pdfOrigin = new URL(pdfPath).origin;
-          return pdfOrigin !== window.location.origin;
-        } catch {
-          return true;
-        }
       }
 
       // Constraint
