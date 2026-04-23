@@ -58,7 +58,7 @@ public class PelsEventConverter {
                 .eventTrgtId(eventTrgtId)
                 .userId(dto.getUserId())
                 .userFnm(dto.getUserFnm())
-                .chkprInfo(dto.getChkprInfo())
+                .chkprBlngJbpsNm(dto.getChkprBlngJbpsNm())
                 .eventCrteDt(dto.getEventCrteDt())
                 .stroke(this.toEventStrokeEntity(dto))
                 .image(this.toEventImageEntity(dto))

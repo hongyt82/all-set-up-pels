@@ -75,9 +75,9 @@ public class TstEventMeta {
     @Size(max=20)
     private String userFnm;
 
-    @JsonProperty("CHKPR_INFO")
+    @JsonProperty("CHKPR_BLNG_JBPS_NM")
     @Size(max=100)
-    private String chkprInfo;
+    private String chkprBlngJbpsNm;
 
     @JsonProperty("EVENT_CRTE_DT")
     @NotNull
