@@ -49,6 +49,7 @@ type ReplayEventItem = {
   IMAGE_SEQ: number | null;
   USER_ID: string;
   USER_FNM?: string | null;
+  CHKPR_BLNG_JBPS_NM?: string | null;
   EVENT_CRTE_DT: string;
 
   EVENT_NM?: string | null;
@@ -412,6 +413,9 @@ export function ReplayViewerPage() {
   const [playSpeed, setPlaySpeed] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showReplayInfoPanel, setShowReplayInfoPanel] = useState(false);
+  const [listFilterMode, setListFilterMode] = useState<'all' | 'currentPage'>(
+    'all'
+  );
 
   const wsRef = useRef<ReplayViewerWorkspaceHandle | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -1121,7 +1125,6 @@ export function ReplayViewerPage() {
     };
   }, []);
 
-
   useEffect(() => {
     if (!showReplayInfoPanel) return;
     if (playheadIndex < 0) return;
@@ -1134,7 +1137,6 @@ export function ReplayViewerPage() {
       behavior: isPlaying ? 'smooth' : 'auto',
     });
   }, [playheadIndex, showReplayInfoPanel, isPlaying]);
-
 
   useLayoutEffect(() => {
     recalcScale();
@@ -1176,29 +1178,47 @@ export function ReplayViewerPage() {
           .slice(0, 19)
       : '-';
 
-  const replayEventList = events.map((event, index) => {
-    const prevEvent = index > 0 ? events[index - 1] : null;
+  const replayEventList = events
+    .map((event, index) => ({
+      event,
+      originalIndex: index,
+    }))
+    .filter(({ event }) =>
+      listFilterMode === 'currentPage'
+        ? Number(event.PAGE_CNT) === Number(pageInfo.currentPage)
+        : true
+    )
+    .map(({ event, originalIndex }) => {
+      const prevEvent = originalIndex > 0 ? events[originalIndex - 1] : null;
 
-    const eventLabel = getReplayEventLabel(event.EVENT_TYP_SQNO);
-    const userName = event.USER_FNM?.trim() || event.USER_ID || '';
-    const pageNo = Number(event.PAGE_CNT);
-    const pageText =
-      prevEvent && Number(prevEvent.PAGE_CNT) !== Number(event.PAGE_CNT)
-        ? `페이지 이동 ${Number(prevEvent.PAGE_CNT)} → ${Number(event.PAGE_CNT)}`
-        : `페이지 ${pageNo}`;
+      const eventLabel = getReplayEventLabel(event.EVENT_TYP_SQNO);
+      const userName = event.USER_FNM?.trim() || event.USER_ID || '';
+      const chkprBlngJbpsNm = event.CHKPR_BLNG_JBPS_NM?.trim() || '';
+      const pageNo = Number(event.PAGE_CNT);
 
-    const timeText = String(event.EVENT_CRTE_DT).replace('T', ' ').slice(0, 19);
+      const pageText =
+        listFilterMode === 'currentPage'
+          ? `페이지 ${pageNo}`
+          : prevEvent && Number(prevEvent.PAGE_CNT) !== Number(event.PAGE_CNT)
+            ? `페이지 이동 ${Number(prevEvent.PAGE_CNT)} → ${Number(event.PAGE_CNT)}`
+            : `페이지 ${pageNo}`;
 
-    return {
-      key: `${event.EVENT_SNO}-${index}`,
-      index,
-      eventLabel,
-      userName,
-      pageText,
-      timeText,
-      isActive: playheadIndex === index,
-    };
-  });
+      const timeText = String(event.EVENT_CRTE_DT)
+        .replace('T', ' ')
+        .slice(0, 19);
+
+      return {
+        key: `${event.EVENT_SNO}-${originalIndex}`,
+        index: originalIndex,
+        displayIndex: originalIndex + 1,
+        eventLabel,
+        userName,
+        chkprBlngJbpsNm,
+        pageText,
+        timeText,
+        isActive: playheadIndex === originalIndex,
+      };
+    });
 
   const totalEvents = events.length;
 
@@ -1384,7 +1404,7 @@ export function ReplayViewerPage() {
         type="button"
         className=" fixed
               left-4
-              top-29
+              top-25
               z-40
               px-3
               py-1
@@ -1405,9 +1425,9 @@ export function ReplayViewerPage() {
           ref={replayPanelRef}
           className=" fixed
           left-4
-          top-29
-          w-[320px]
-          max-h-[82vh]
+          top-25
+          w-[360px]
+          max-h-[80vh]
           bg-slate-900
           text-slate-50
           border border-slate-700
@@ -1420,15 +1440,42 @@ export function ReplayViewerPage() {
           z-40
         "
         >
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-1 gap-2">
             <div className="text-xs font-semibold">Replay 목록</div>
-            <button
-              type="button"
-              className="text-[10px] px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600"
-              onClick={() => setShowReplayInfoPanel(false)}
-            >
-              닫기
-            </button>
+
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className={`text-[10px] px-2 py-0.5 rounded ${
+                  listFilterMode === 'all'
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                }`}
+                onClick={() => setListFilterMode('all')}
+              >
+                전체
+              </button>
+
+              <button
+                type="button"
+                className={`text-[10px] px-2 py-0.5 rounded ${
+                  listFilterMode === 'currentPage'
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                }`}
+                onClick={() => setListFilterMode('currentPage')}
+              >
+                현재 페이지
+              </button>
+
+              <button
+                type="button"
+                className="text-[10px] px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600"
+                onClick={() => setShowReplayInfoPanel(false)}
+              >
+                닫기
+              </button>
+            </div>
           </div>
 
           <div
@@ -1461,22 +1508,23 @@ export function ReplayViewerPage() {
                   flex-col
                   gap-0.5
                   ${
-                  item.isActive
-                    ? 'bg-sky-900/60 border-sky-400 text-white'
-                    : 'bg-slate-800 border-slate-700/60 text-slate-100 hover:bg-slate-700'
-                }`}
+                    item.isActive
+                      ? 'bg-sky-900/60 border-sky-400 text-white'
+                      : 'bg-slate-800 border-slate-700/60 text-slate-100 hover:bg-slate-700'
+                  }`}
               >
                 <div className="flex items-center justify-between gap-2">
-        <span className="font-semibold truncate">
-          {item.index + 1}. {item.eventLabel}
-        </span>
+                  <span className="font-semibold truncate">
+                    {item.displayIndex}. {item.eventLabel}
+                  </span>
+
                   <span
                     className={`text-[10px] shrink-0 ${
                       item.isActive ? 'text-sky-200' : 'text-slate-400'
                     }`}
                   >
-          {item.timeText}
-        </span>
+                    {item.pageText} / {item.timeText}
+                  </span>
                 </div>
 
                 <div
@@ -1484,9 +1532,13 @@ export function ReplayViewerPage() {
                     item.isActive ? 'text-sky-100' : 'text-slate-300'
                   }`}
                 >
-                  <span className="truncate">사용자: {item.userName || '-'}</span>
+                  <span className="truncate">
+                    사용자: {item.userName || '-'}
+                  </span>
                   <span className="text-slate-500">|</span>
-                  <span className="shrink-0">{item.pageText}</span>
+                  <span className="truncate">
+                    점검자: {item.chkprBlngJbpsNm || '-'}
+                  </span>
                 </div>
               </button>
             ))}
