@@ -160,7 +160,8 @@ export function ViewerHeader({
       {/* RIGHT (Dialog/QR + controls) */}
       <div className="flex items-center gap-3">
         {/* ✅ Dialog/QR: 더 눈에 띄는 스타일 + 오른쪽에 붙임 */}
-        {!hideDialogControls && (onShowDialog || onShowQrDialog) && (
+        {/*버튼 주석처리 - Dialog,QR*/}
+        {/*{!hideDialogControls && (onShowDialog || onShowQrDialog) && (
           <div className="flex items-center gap-2">
             {onShowDialog && (
               <Button
@@ -200,7 +201,7 @@ export function ViewerHeader({
               </Button>
             )}
           </div>
-        )}
+        )}*/}
 
         {/* 기존 오른쪽 컨트롤 */}
         <div className="viewer-controls flex items-center space-x-2 bg-white/10 px-4 py-0.5 rounded-lg">
@@ -234,8 +235,8 @@ export function ViewerHeader({
               값 JSON
             </Button>
           )}
-
-          {!hidePdfSave && (
+          {/*버튼 주석처리 - PDF 저장*/}
+          {/*{!hidePdfSave && (
             <Button
               onClick={onSavePdf}
               variant="ghost"
@@ -250,7 +251,7 @@ export function ViewerHeader({
             >
               PDF 저장
             </Button>
-          )}
+          )}*/}
         </div>
       </div>
     </div>
