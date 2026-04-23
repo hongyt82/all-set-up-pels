@@ -312,11 +312,34 @@ export function ViewerPage() {
     }
   }
 
+  function shouldUseFileProxy(filePath: string) {
+    try {
+      const fileOrigin = new URL(filePath).origin;
+      return fileOrigin !== window.location.origin;
+    } catch {
+      return true;
+    }
+  }
+
+  function toProxyFileUrl(filePath: string) {
+    return `/pels/proxy/file?path=${encodeURIComponent(filePath)}`;
+  }
+
   function toImageUrl(url?: string | null, fileBaseUrl?: string) {
     if (!url) return null;
-    if (/^https?:\/\//i.test(url)) return url;
-    if (!fileBaseUrl) return url;
-    return `${fileBaseUrl}/${String(url).replace(/^\/+/, '')}`;
+
+    let resolvedUrl = url;
+
+    if (!/^https?:\/\//i.test(resolvedUrl)) {
+      if (!fileBaseUrl) return resolvedUrl;
+      resolvedUrl = `${fileBaseUrl}/${String(resolvedUrl).replace(/^\/+/, '')}`;
+    }
+
+    if (shouldUseFileProxy(resolvedUrl)) {
+      return toProxyFileUrl(resolvedUrl);
+    }
+
+    return resolvedUrl;
   }
 
   function normalizeAttachment(att: any, fileBaseUrl?: string) {
@@ -1009,8 +1032,8 @@ export function ViewerPage() {
       const fileBaseUrl = getBaseUrl(PDF_PATH);
 
       // PDF origin이 다르면 프록시 사용
-      if (shouldUsePdfProxy(PDF_PATH)) {
-        const pdfRes = await axios.get('/pels/proxy/pdf', {
+      if (shouldUseFileProxy(PDF_PATH)) {
+        const pdfRes = await axios.get('/pels/proxy/file', {
           params: { path: PDF_PATH },
           responseType: 'blob',
           withCredentials: true,
@@ -1114,14 +1137,6 @@ export function ViewerPage() {
       }
     };
 
-    function shouldUsePdfProxy(pdfPath: string) {
-      try {
-        const pdfOrigin = new URL(pdfPath).origin;
-        return pdfOrigin !== window.location.origin;
-      } catch {
-        return true;
-      }
-    }
 
     load().catch(err => {
       console.error('[Viewer][DB] load failed', err);
@@ -1799,14 +1814,15 @@ export function ViewerPage() {
         />
       </div>
 
-      <div className="px-3 py-1 text-xs text-slate-600 bg-slate-50 border-b">
+      {/*창여자 주석처리*/}
+      {/*<div className="px-3 py-1 text-xs text-slate-600 bg-slate-50 border-b">
         참여자: {participants.length}
         {participants.length > 0 && (
           <span className="ml-2 text-slate-400">
             ({participants.map(u => u.USER_NAME).join(', ')})
           </span>
         )}
-      </div>
+      </div>*/}
 
       {/* ⚠️ 여기: centerRef에 min-h-0, 내부에 zoom>100일 때만 overflow-auto */}
       <div
@@ -1828,7 +1844,7 @@ export function ViewerPage() {
                 width: BASE_W,
                 height: BASE_H,
                 transform: `scale(${pageScale})`,
-                transformOrigin: 'top center',
+                transformOrigin: 'top left',
               }}
             >
               <ViewerWorkspace
@@ -2006,7 +2022,8 @@ export function ViewerPage() {
       </div>
 
       {/*  Chat FAB + Panel */}
-      <div className="fixed bottom-9 right-4 z-[99999]">
+      {/*실시간 채팅 주석처리 시작*/}
+      {/*<div className="fixed bottom-9 right-4 z-[99999]">
         {!chatOpen ? (
           <button
             className="relative px-3 py-1 rounded bg-black text-white text-sm shadow"
@@ -2095,7 +2112,8 @@ export function ViewerPage() {
             </div>
           </div>
         )}
-      </div>
+      </div>*/}
+      {/*실시간 채팅 주석처리 끝*/}
     </BaseLayout>
   );
 }
