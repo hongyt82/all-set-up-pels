@@ -874,7 +874,7 @@ export function EditorPage() {
                 width: BASE_W,
                 height: BASE_H,
                 transform: `scale(${pageScale})`,
-                transformOrigin: 'top center',
+                transformOrigin: 'top left',
               }}
             >
               <EditorWorkspace

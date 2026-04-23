@@ -2334,7 +2334,7 @@ export const EditorWorkspace = forwardRef<
 
   // 실제 JSX 렌더링
   return (
-    <div className="w-full flex items-center justify-center">
+    <div className="flex items-start justify-start">
       {pdfDoc ? (
         <div
           style={{
