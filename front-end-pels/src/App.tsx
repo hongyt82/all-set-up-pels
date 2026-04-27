@@ -24,6 +24,8 @@ import ApiDataTestPage from './pages/ApiDataTestPage';
 import { ApiTestPage } from './pages/ApiTestPage';
 import { EditorPage } from './pages/EditorPage';
 import { HomePage } from './pages/HomePage';
+import JsonEditorCustomTestPage from './pages/JsonEditorCustomTestPage';
+import JsonEditorTestPage from './pages/JsonEditorTestPage';
 import LodashTestPage from './pages/LodashTestPage';
 import MomentTestPage from './pages/MomentTestPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -148,6 +150,18 @@ export default function App() {
           )}
           {IS_DEV && (
             <Route path={ROUTES.NETWORK_TEST} element={<NetworkTestPage />} />
+          )}
+          {IS_DEV && (
+            <Route
+              path={ROUTES.JSON_EDITOR_TEST}
+              element={<JsonEditorTestPage />}
+            />
+          )}
+          {IS_DEV && (
+            <Route
+              path={ROUTES.JSON_EDITOR_CUSTOM_TEST}
+              element={<JsonEditorCustomTestPage />}
+            />
           )}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

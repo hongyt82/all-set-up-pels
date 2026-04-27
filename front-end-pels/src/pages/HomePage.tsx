@@ -1,4 +1,13 @@
-import { Bug, Clock, Code, Eye, FileEdit, Wifi } from 'lucide-react';
+import {
+  Braces,
+  Bug,
+  Clock,
+  Code,
+  Eye,
+  FileEdit,
+  PanelsTopLeft,
+  Wifi,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BrowserDisplay } from '../components/common/BrowserDisplay';
 import { VersionDisplay } from '../components/common/VersionDisplay';
@@ -14,7 +23,6 @@ import {
 import { ROUTES } from '../constants/routes.ts';
 import { useErrorStore } from '../stores/errorStore';
 import { triggerError } from '../utils/errorHandler';
-import { devLog } from '../utils/devConsole';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -49,7 +57,7 @@ export function HomePage() {
 
   // 전역 에러 핸들러 테스트 함수들
   const testGlobalErrorHandler = () => {
-    devLog('🔴 [테스트] HTTP 에러 테스트 시작');
+    console.log('🔴 [테스트] HTTP 에러 테스트 시작');
     // HTTP 에러 테스트
     triggerError(
       'http-error',
@@ -57,63 +65,67 @@ export function HomePage() {
       '존재하지 않는 리소스에 접근했습니다.',
       404
     );
-    devLog('✅ [테스트] HTTP 에러 테스트 완료 - ErrorDialog가 표시되어야 함');
+    console.log(
+      '✅ [테스트] HTTP 에러 테스트 완료 - ErrorDialog가 표시되어야 함'
+    );
   };
 
   const testNetworkError = () => {
-    devLog('🔴 [테스트] 네트워크 에러 테스트 시작');
+    console.log('🔴 [테스트] 네트워크 에러 테스트 시작');
     // 네트워크 에러 테스트
     triggerError(
       'network-error',
       '네트워크 연결 실패',
       '인터넷 연결을 확인해주세요.'
     );
-    devLog(
+    console.log(
       '✅ [테스트] 네트워크 에러 테스트 완료 - ErrorDialog가 표시되어야 함'
     );
   };
 
   const testApiError = () => {
-    devLog('🔴 [테스트] API 에러 테스트 시작');
+    console.log('🔴 [테스트] API 에러 테스트 시작');
     // API 에러 테스트
     triggerError(
       'api-error',
       'API 요청 실패',
       '서버와의 통신 중 오류가 발생했습니다.'
     );
-    devLog('✅ [테스트] API 에러 테스트 완료 - ErrorDialog가 표시되어야 함');
+    console.log(
+      '✅ [테스트] API 에러 테스트 완료 - ErrorDialog가 표시되어야 함'
+    );
   };
 
   const testTimeoutError = () => {
-    devLog('🔴 [테스트] 타임아웃 에러 테스트 시작');
+    console.log('🔴 [테스트] 타임아웃 에러 테스트 시작');
     // 타임아웃 에러 테스트
     triggerError(
       'timeout-error',
       '요청 시간 초과',
       '서버 응답이 지연되고 있습니다.'
     );
-    devLog(
+    console.log(
       '✅ [테스트] 타임아웃 에러 테스트 완료 - ErrorDialog가 표시되어야 함'
     );
   };
 
   const testFetchError = async () => {
-    devLog('🔴 [테스트] Fetch 에러 테스트 시작');
+    console.log('🔴 [테스트] Fetch 에러 테스트 시작');
     // 실제 Fetch 에러 테스트 (존재하지 않는 URL)
     try {
       await fetch('/api/nonexistent-endpoint');
     } catch {
-      devLog(
+      console.log(
         '✅ [테스트] Fetch 에러 테스트 완료 - 네트워크 에러가 감지되어야 함'
       );
     }
   };
 
   const testPromiseRejection = () => {
-    devLog('🔴 [테스트] Promise Rejection 테스트 시작');
+    console.log('🔴 [테스트] Promise Rejection 테스트 시작');
     // Promise rejection 테스트
     Promise.reject(new Error('테스트 Promise Rejection 에러'));
-    devLog(
+    console.log(
       '✅ [테스트] Promise Rejection 테스트 완료 - unhandledrejection 이벤트가 감지되어야 함'
     );
   };
@@ -376,6 +388,20 @@ export function HomePage() {
             >
               <Wifi className="w-4 h-4 mr-2" />
               Network Test Page
+            </Button>
+            <Button
+              onClick={() => navigate(ROUTES.JSON_EDITOR_TEST)}
+              className="bg-slate-300 hover:bg-slate-400 text-slate-900"
+            >
+              <Braces className="w-4 h-4 mr-2" />
+              JSON Editor Test Page
+            </Button>
+            <Button
+              onClick={() => navigate(ROUTES.JSON_EDITOR_CUSTOM_TEST)}
+              className="bg-indigo-300 hover:bg-indigo-400 text-indigo-950"
+            >
+              <PanelsTopLeft className="w-4 h-4 mr-2" />
+              JSON Editor Custom Test Page
             </Button>
           </div>
         </div>

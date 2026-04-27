@@ -36,6 +36,12 @@ export const PAGE_TITLES = {
   /** 네트워크 상태 모니터링 테스트 페이지 */
   NETWORK_TEST: 'Network Test',
 
+  /** vanilla-jsoneditor 테스트 페이지 */
+  JSON_EDITOR_TEST: 'JSON Editor Test',
+
+  /** vanilla-jsoneditor 커스텀 UI 테스트 페이지 */
+  JSON_EDITOR_CUSTOM_TEST: 'JSON Editor Custom Test',
+
   /** 기본값 (알 수 없는 경로) */
   DEFAULT: 'PDF System',
 } as const;
@@ -63,6 +69,10 @@ export function getPageTitle(pathname: string): string {
       return PAGE_TITLES.API_DATA_TEST;
     case ROUTES.NETWORK_TEST:
       return PAGE_TITLES.NETWORK_TEST;
+    case ROUTES.JSON_EDITOR_TEST:
+      return PAGE_TITLES.JSON_EDITOR_TEST;
+    case ROUTES.JSON_EDITOR_CUSTOM_TEST:
+      return PAGE_TITLES.JSON_EDITOR_CUSTOM_TEST;
     case ROUTES.ROOT:
       return PAGE_TITLES.ROOT;
     default:

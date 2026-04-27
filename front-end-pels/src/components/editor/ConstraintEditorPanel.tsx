@@ -36,7 +36,6 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
 }) => {
   const { page, primaryId, ids, mode = 'rule' } = selection;
 
-  // 🔹 초기 크기 / 위치
   const [size, setSize] = useState({ width: 440, height: 440 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
@@ -45,14 +44,33 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
 
     const margin = 24;
     const x = window.innerWidth - size.width - margin;
-    const y = window.innerHeight - size.height - 140; // 푸터 피해서 살짝 위
+    const y = window.innerHeight - size.height - 140;
 
     setPosition({
       x: Math.max(margin, x),
       y: Math.max(80, y),
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const formatConstraintJson = (obj: any): string => {
+    let s = JSON.stringify(obj, null, 2);
+
+    s = s.replace(
+      /\{\s*[\r\n]+\s*"id"\s*:\s*"([^"]+)"\s*[\r\n]+\s*\}/g,
+      '{ "id": "$1" }'
+    );
+
+    return s;
+  };
+
+  const handleBeautify = () => {
+    try {
+      const parsed = JSON.parse(text || '{}');
+      onChangeText(formatConstraintJson(parsed));
+    } catch (err) {
+      alert('JSON 형식이 올바르지 않아 자동 정렬할 수 없습니다.');
+    }
+  };
 
   const title =
     mode === 'page'
@@ -73,7 +91,6 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
       minWidth={360}
       minHeight={260}
       bounds="window"
-      // 🔹 헤더(className="cep-drag-handle") 부분에서만 드래그 가능
       dragHandleClassName="cep-drag-handle"
       style={{
         position: 'fixed',
@@ -81,7 +98,6 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
       }}
     >
       <div className="w-full h-full bg-slate-900 text-slate-50 border border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden">
-        {/* 헤더 : 여기만 드래그 핸들 */}
         <div className="cep-drag-handle px-3 py-2 flex items-center justify-between border-b border-slate-700 cursor-move select-none">
           <div className="flex flex-col">
             <span className="text-xs font-semibold">{title}</span>
@@ -90,7 +106,6 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
             </span>
           </div>
           <div className="flex items-center gap-1">
-            {/* 🔹 삭제 버튼 (rule 모드일 때만 노출 / onDelete 있을 때만) */}
             {mode === 'rule' && onDelete && (
               <button
                 type="button"
@@ -100,6 +115,13 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
                 삭제
               </button>
             )}
+            <button
+              type="button"
+              className="text-[10px] px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500"
+              onClick={handleBeautify}
+            >
+              Format
+            </button>
             <button
               type="button"
               className="text-[10px] px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600"
@@ -124,9 +146,7 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
           </div>
         </div>
 
-        {/* 본문 */}
         <div className="flex-1 flex flex-col p-2 gap-2 overflow-hidden">
-          {/* 대표 ID / 선택된 ID 표시 영역 */}
           <div className="flex flex-col gap-1 text-[11px]">
             {mode === 'rule' && (
               <div className="flex items-center gap-1">
@@ -136,21 +156,6 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
                 </span>
               </div>
             )}
-
-            {/*{mode === 'rule' && selection.primaryId && (
-              <div className="flex items-start gap-1 mt-1 text-[10px]">
-                <span className="text-slate-400 min-w-[62px]">groupType</span>
-                <span className="px-2 py-[2px] rounded bg-slate-800 text-[10px] font-mono">
-                  {(() => {
-                    try {
-                      return JSON.parse(text)?.groupType ?? '없음';
-                    } catch (e) {
-                      return '없음';
-                    }
-                  })()}
-                </span>
-              </div>
-            )}*/}
 
             <div className="flex items-start gap-1">
               <span className="text-slate-300 min-w-[62px] mt-[2px]">
@@ -186,7 +191,6 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
             </div>
           </div>
 
-          {/* JSON 편집 textarea */}
           <div className="flex-1 flex flex-col gap-1 overflow-hidden">
             <span className="text-[11px] text-slate-300">JSON 편집</span>
             <textarea
@@ -195,12 +199,22 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
               onChange={e => onChangeText(e.target.value)}
               onKeyDown={e => {
                 e.stopPropagation();
+
+                if (
+                  (e.ctrlKey || e.metaKey) &&
+                  e.shiftKey &&
+                  e.key.toLowerCase() === 'f'
+                ) {
+                  e.preventDefault();
+                  handleBeautify();
+                }
               }}
               onClick={e => {
                 e.stopPropagation();
               }}
             />
           </div>
+
           {mode === 'page' && (
             <div className="flex flex-col gap-1 mb-2">
               <span className="text-[11px] text-slate-300">

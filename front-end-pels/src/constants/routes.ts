@@ -13,6 +13,8 @@ export const ROUTES = {
   MOMENT_TEST: '/moment-test',
   API_DATA_TEST: '/api-data-test',
   NETWORK_TEST: '/network-test',
+  JSON_EDITOR_TEST: '/json-editor-test',
+  JSON_EDITOR_CUSTOM_TEST: '/json-editor-custom-test',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

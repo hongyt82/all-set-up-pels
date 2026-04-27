@@ -365,7 +365,7 @@ export function EditorPage() {
     if (pageInfo.total > 0) return;
 
     const load = async () => {
-      const metaRes = await axios.get('/pels/api/Form_Json_M.do', {
+      const metaRes = await axios.get('/pels/api/Form_Json_M', {
         params: { FRM_UNQ_KY_VAL },
         withCredentials: true,
       });

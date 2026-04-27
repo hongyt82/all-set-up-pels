@@ -528,4 +528,19 @@ export interface TemplateDoc {
     canvasHeight: number;
   };
   pages: TemplatePage[];
+  removePages?: RemovedTemplatePage[];
+}
+
+export interface TemplatePathData {
+  id?: number;
+  points: number[];
+  color?: number;
+  strokWidth?: number;
+  strokeWidth?: number;
+}
+
+export interface RemovedTemplatePage extends TemplatePage {
+  pageDataSeq?: number;
+  pathData?: TemplatePathData[];
+  removeDate?: string;
 }
