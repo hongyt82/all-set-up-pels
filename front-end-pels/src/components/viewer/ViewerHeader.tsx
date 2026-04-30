@@ -236,7 +236,7 @@ export function ViewerHeader({
             </Button>
           )}
           {/*버튼 주석처리 - PDF 저장*/}
-          {/*{!hidePdfSave && (
+          {!hidePdfSave && (
             <Button
               onClick={onSavePdf}
               variant="ghost"
@@ -251,7 +251,7 @@ export function ViewerHeader({
             >
               PDF 저장
             </Button>
-          )}*/}
+          )}
         </div>
       </div>
     </div>

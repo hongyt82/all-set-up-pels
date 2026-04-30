@@ -44,10 +44,10 @@ import { devLog, devWarn } from '../utils/devConsole';
 function getFontUrl() {
   if (import.meta.env.PROD) {
     // 서버 실경로 (운영 서버 구조에 맞춤)
-    return '/static/e-link-v2/fonts/NotoSansKR-Regular.ttf';
+    return '/pels/static/e-link-v2/fonts/NotoSansKR-Regular.ttf';
   }
   // 로컬 dev
-  return '/fonts/NotoSansKR-Regular.ttf';
+  return '/pels/fonts/NotoSansKR-Regular.ttf';
 }
 
 const BASE_W = BASE_PAGE_WIDTH;
@@ -1325,8 +1325,17 @@ export function ViewerPage() {
     if (!fileName.trim()) return;
 
     try {
-      const arrayBuffer = await sourcePdf.arrayBuffer();
+      /*const arrayBuffer = await sourcePdf.arrayBuffer();
       const pdfDocLib = await PDFDocument.load(arrayBuffer);
+      pdfDocLib.registerFontkit(fontkit);*/
+
+      const arrayBuffer = await sourcePdf.arrayBuffer();
+
+// 원본 PDF는 복사용으로만 사용
+      const sourcePdfDoc = await PDFDocument.load(arrayBuffer);
+
+// 저장용 새 PDF 생성
+      const pdfDocLib = await PDFDocument.create();
       pdfDocLib.registerFontkit(fontkit);
 
       // 한글 포함 폰트 임베드
@@ -1345,10 +1354,10 @@ export function ViewerPage() {
 
       // 각 페이지별 컴포넌트 그리기
       for (const pg of data.pages as any[]) {
-        const realNo =
+        /*const realNo =
           typeof pg.constraintPageNo === 'number' && pg.constraintPageNo > 0
-            ? // ? pg.constraintPageNo
-              pg.pdfPageNo
+             ? pg.constraintPageNo
+            // ?  pg.pdfPageNo
             : null;
         if (!realNo) continue; // 가상 페이지는 스킵
 
@@ -1358,8 +1367,35 @@ export function ViewerPage() {
         const page = pdfDocLib.getPage(pageIndex);
 
         const pageW = page.getWidth();
-        const pageH = page.getHeight();
+        const pageH = page.getHeight();*/
 
+        const realNo = Number(pg.pdfPageNo);
+
+        let page: any;
+
+        if (Number.isFinite(realNo) && realNo > 0) {
+          // 실제 PDF 페이지는 원본에서 복사해서 새 PDF에 추가
+          const sourcePageCount = sourcePdfDoc.getPageCount();
+          const sourcePageIndex = Math.min(
+            Math.max(realNo - 1, 0),
+            sourcePageCount - 1
+          );
+
+          const [copiedPage] = await pdfDocLib.copyPages(sourcePdfDoc, [
+            sourcePageIndex,
+          ]);
+
+          page = pdfDocLib.addPage(copiedPage);
+        } else {
+          // 가상페이지는 빈 페이지를 새로 만들어 추가
+          const virtualW = Number(pg.width) || BASE_W;
+          const virtualH = Number(pg.height) || BASE_H;
+
+          page = pdfDocLib.addPage([virtualW, virtualH]);
+        }
+
+        const pageW = page.getWidth();
+        const pageH = page.getHeight();
         for (const c of pg.components as any[]) {
           const w = c.wPct * pageW;
           const h = c.hPct * pageH;
@@ -1639,12 +1675,17 @@ export function ViewerPage() {
         // =========================
         // 드로잉(pathData) PDF 반영
         // =========================
-        if (Array.isArray(pg.pathData)) {
+        const drawingPaths = pathDataByPage[Number(pg.page)] ?? pg.pathData ?? [];
+
+        if (Array.isArray(drawingPaths) && drawingPaths.length > 0) {
           const gsCache: Record<string, PDFName> = {};
-          const scaleX = pageW / pg.width;
-          const scaleY = pageH / pg.height;
+          const srcW = Number(pg.width) || BASE_W;
+          const srcH = Number(pg.height) || BASE_H;
+          const scaleX = pageW / srcW;
+          const scaleY = pageH / srcH;
           const scaleAvg = (scaleX + scaleY) / 2;
-          for (const path of pg.pathData) {
+
+          for (const path of drawingPaths) {
             const pts = path.points as number[];
             if (!Array.isArray(pts) || pts.length < 4) continue;
             const { r, g, b, a } = argbIntToRgbaParts(path.color ?? 0xff000000);
@@ -1703,7 +1744,8 @@ export function ViewerPage() {
         }
       }
 
-      const bytes = await pdfDocLib.save();
+      /*PDF와 JSON 같이저장 주석처리*/
+      /*const bytes = await pdfDocLib.save();
       const safeBytes = new Uint8Array(bytes); // ArrayBuffer 기반으로 복사
       saveAs(
         new Blob([safeBytes], { type: 'application/pdf' }),
@@ -1717,7 +1759,15 @@ export function ViewerPage() {
 
       alert(
         `서식화된 PDF와 JSON이 저장되었습니다:\n- ${fileName}.pdf\n- ${fileName}_overlays.json`
+      );*/
+      const bytes = await pdfDocLib.save();
+      const safeBytes = new Uint8Array(bytes); // ArrayBuffer 기반으로 복사
+      saveAs(
+        new Blob([safeBytes], { type: 'application/pdf' }),
+        `${fileName}.pdf`
       );
+
+      alert(`서식화된 PDF가 저장되었습니다:\n- ${fileName}.pdf`);
     } catch (e) {
       console.error(e);
       alert('PDF 서식화 중 오류가 발생했습니다.');
