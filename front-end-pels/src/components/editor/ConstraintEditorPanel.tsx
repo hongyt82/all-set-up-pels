@@ -1,6 +1,8 @@
 // src/components/editor/ConstraintEditorPanel.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Rnd } from 'react-rnd';
+import CodeMirror from '@uiw/react-codemirror';
+import { json } from '@codemirror/lang-json';
 
 interface ConstraintSelection {
   page: number;
@@ -38,6 +40,74 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
 
   const [size, setSize] = useState({ width: 440, height: 440 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const editorRef = useRef<any>(null);
+
+  const [jsonError, setJsonError] = useState('');
+
+  {
+    /* 필드 참조는 수식 문법 확정 후 다시 활성화 */
+  }
+  // const [formulaError, setFormulaError] = useState('');
+
+  const [cursorInfo, setCursorInfo] = useState({ from: 0, to: 0 });
+  const [canSave, setCanSave] = useState(true);
+
+  const formulaTokens = [
+    '<=',
+    '>=',
+    '==',
+    '!=',
+    'AND',
+    'OR',
+    '+',
+    '-',
+    '*',
+    '/',
+  ];
+
+  useEffect(() => {
+    let nextJsonError = '';
+
+    try {
+      JSON.parse(text || '{}');
+    } catch (err: any) {
+      nextJsonError = err?.message || 'JSON 문법 오류';
+    }
+
+    setJsonError(nextJsonError);
+    setCanSave(!nextJsonError);
+  }, [text]);
+
+  const insertAtCursor = (insertText: string) => {
+    const view = editorRef.current?.view;
+    if (!view) {
+      onChangeText(`${text}${insertText}`);
+      return;
+    }
+
+    const { from, to } = view.state.selection.main;
+
+    view.dispatch({
+      changes: { from, to, insert: insertText },
+      selection: { anchor: from + insertText.length },
+    });
+
+    const nextValue = view.state.doc.toString();
+    onChangeText(nextValue);
+  };
+
+  {
+    /* Formula Validator는 추후 수식 필드 기준으로 별도 적용 */
+  }
+  // const handleInsertFieldRef = () => {
+  //   const fieldName = window
+  //     .prompt('삽입할 필드명을 입력하세요', 'FIELD_ID')
+  //     ?.trim();
+  //   if (!fieldName) return;
+  //
+  //   insertAtCursor(`\${${fieldName}}`);
+  // };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -131,8 +201,13 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
             </button>
             <button
               type="button"
-              className="text-[10px] px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500"
+              className={`text-[10px] px-2 py-0.5 rounded ${
+                canSave
+                  ? 'bg-emerald-600 hover:bg-emerald-500'
+                  : 'bg-slate-600 text-slate-300 cursor-not-allowed'
+              }`}
               onClick={onSave}
+              disabled={!canSave}
             >
               저장
             </button>
@@ -191,28 +266,82 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
             </div>
           </div>
 
+          <div className="flex flex-wrap gap-1">
+            {formulaTokens.map(token => (
+              <button
+                key={token}
+                type="button"
+                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px]"
+                onClick={() => insertAtCursor(` ${token} `)}
+              >
+                {token}
+              </button>
+            ))}
+
+            {/* 필드 참조는 수식 문법 확정 후 다시 활성화 */}
+            {/*<button
+              type="button"
+              className="px-2 py-0.5 rounded bg-indigo-700 hover:bg-indigo-600 text-[11px]"
+              onClick={handleInsertFieldRef}
+            >
+              필드 참조
+            </button>*/}
+          </div>
+
+          <div className="flex flex-wrap gap-3 text-[10px] text-slate-400">
+            <span>Cursor: {cursorInfo.from}</span>
+            <span>JSON: {jsonError ? '오류' : '정상'}</span>
+            <span>Formula: 미검사</span>
+            <span>저장 가능: {canSave ? '가능' : '불가'}</span>
+          </div>
+
+          {jsonError && (
+            <div className="text-[10px] text-rose-400 bg-rose-950/40 border border-rose-800 rounded px-2 py-1">
+              JSON 오류: {jsonError}
+            </div>
+          )}
+
+          {/* Formula Validator는 추후 수식 필드 기준으로 별도 적용 */}
+          {/*{!jsonError && formulaError && (
+            <div className="text-[10px] text-amber-300 bg-amber-950/30 border border-amber-800 rounded px-2 py-1">
+              Formula 오류: {formulaError}
+            </div>
+          )}*/}
+
           <div className="flex-1 flex flex-col gap-1 overflow-hidden">
             <span className="text-[11px] text-slate-300">JSON 편집</span>
-            <textarea
-              className="flex-1 w-full text-xs font-mono bg-slate-950/60 text-slate-50 border border-slate-700 rounded-md p-2 resize-none leading-[1.4] overflow-auto"
-              value={text}
-              onChange={e => onChangeText(e.target.value)}
-              onKeyDown={e => {
-                e.stopPropagation();
+            <div className="flex-1 overflow-hidden border border-slate-700 rounded-md bg-slate-950/60">
+              <CodeMirror
+                value={text}
+                height="100%"
+                extensions={[json()]}
+                theme="dark"
+                basicSetup={{
+                  lineNumbers: true,
+                  foldGutter: true,
+                  autocompletion: true,
+                  bracketMatching: true,
+                }}
+                style={{
+                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                  lineHeight: '1.4',
+                }}
+                onCreateEditor={view => {
+                  editorRef.current = { view };
+                }}
+                onUpdate={update => {
+                  if (update.selectionSet) {
+                    const { from, to } = update.state.selection.main;
+                    setCursorInfo({ from, to });
+                  }
 
-                if (
-                  (e.ctrlKey || e.metaKey) &&
-                  e.shiftKey &&
-                  e.key.toLowerCase() === 'f'
-                ) {
-                  e.preventDefault();
-                  handleBeautify();
-                }
-              }}
-              onClick={e => {
-                e.stopPropagation();
-              }}
-            />
+                  if (update.docChanged) {
+                    onChangeText(update.state.doc.toString());
+                  }
+                }}
+              />
+            </div>
           </div>
 
           {mode === 'page' && (

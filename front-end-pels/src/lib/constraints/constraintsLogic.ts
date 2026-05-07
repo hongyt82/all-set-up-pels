@@ -1,54 +1,225 @@
 // src/lib/constraints/constraintsLogic.ts
 import type { ConstraintDoc } from '../../types/constraints';
 
-// 개별 expression 평가
-export function evaluateConstraintExpression(
-  expression: string,
-  value: any
-): boolean {
-  if (expression === 'default') return true;
+export function toNumber(value: any): number {
+  if (value === null || value === undefined || value === '') return 0;
+
+  const normalized = String(value).replaceAll(',', '').trim();
+
+  const n = Number(normalized);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+export function evaluateRuleExpression(
+  expression: string | undefined,
+  context: Record<string, any>
+): any {
+  if (!expression) return undefined;
+  if (expression === 'default') return '__DEFAULT__';
 
   try {
-    // eslint-disable-next-line no-new-func
-    const fn = new Function('value', `return (${expression});`);
-    return fn(value);
+    const fullContext = {
+      ...context,
+      toNumber,
+      Number,
+      Math,
+      String,
+      parseInt,
+      parseFloat,
+    };
+
+    const argNames = Object.keys(fullContext);
+    const argValues = Object.values(fullContext);
+
+    const fn = new Function(...argNames, `return (${expression});`);
+    return fn(...argValues);
   } catch (e) {
     console.error('[Constraint] expression 에러:', expression, e);
-    return false;
+    return undefined;
   }
 }
 
-// constraints 배열에서 status 하나 결정
-export function getStatusFromConstraints(
-  constraints: any[] | undefined,
-  value: any
-): string {
-  if (!Array.isArray(constraints) || constraints.length === 0) {
-    return 'error';
+// 기존 이름 유지용
+export function evaluateConstraintExpression(
+  expression: string,
+  context: Record<string, any>
+): any {
+  return evaluateRuleExpression(expression, context);
+}
+
+function isRuleIdMatched(ruleId: string, targetId: string): boolean {
+  if (String(ruleId) === String(targetId)) return true;
+
+  if (!String(ruleId).includes('*')) return false;
+
+  const escaped = String(ruleId)
+    .split('*')
+    .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('.*');
+
+  return new RegExp(`^${escaped}$`).test(String(targetId));
+}
+
+function getTrailingNumber(id: string): number | null {
+  const match = String(id).match(/_(\d+)$/);
+  if (!match) return null;
+
+  const n = Number(match[1]);
+  return Number.isFinite(n) ? n : null;
+}
+
+function isRangeMatched(range: any, id: string): boolean {
+  if (!range) return true;
+
+  const no = getTrailingNumber(id);
+  if (no == null) return false;
+
+  const first = Number(range.firstInputNo);
+  const last = Number(range.lastInputNo);
+
+  if (!Number.isFinite(first) || !Number.isFinite(last)) return false;
+
+  if (no < first || no > last) return false;
+
+  if (range.sourcePrefix) {
+    return String(id).startsWith(String(range.sourcePrefix));
   }
+
+  return true;
+}
+
+export function evaluateConstraintRule(
+  constraints: any[] | undefined,
+  context: Record<string, any>,
+  currentId?: string
+): { status: string; result: any } {
+  if (!Array.isArray(constraints) || constraints.length === 0) {
+    return { status: 'none', result: undefined };
+  }
+
+  let defaultConstraint: any | null = null;
+  let hasApplicableConstraint = false;
+
   for (const c of constraints) {
-    if (evaluateConstraintExpression(c.expression, value)) {
-      return c.status;
+    if (c.expression === 'default') {
+      defaultConstraint = c;
+      continue;
+    }
+
+    if (c.range && currentId && !isRangeMatched(c.range, currentId)) {
+      continue;
+    }
+
+    hasApplicableConstraint = true;
+
+    const evaluated = evaluateRuleExpression(c.expression, context);
+
+    if (typeof evaluated === 'boolean') {
+      if (evaluated) {
+        return {
+          status: c.status ?? 'allow',
+          result: evaluated,
+        };
+      }
+      continue;
+    }
+
+    if (evaluated !== undefined && evaluated !== null) {
+      if (typeof evaluated === 'number' && Number.isNaN(evaluated)) {
+        continue;
+      }
+
+      return {
+        status: c.status ?? 'calculated',
+        result: evaluated,
+      };
     }
   }
-  return 'error';
+
+  if (defaultConstraint && hasApplicableConstraint) {
+    return {
+      status: defaultConstraint.status ?? 'error',
+      result: undefined,
+    };
+  }
+
+  return { status: 'none', result: undefined };
 }
 
 // 특정 page/id 의 rule 찾기
-export function findComponentRule(
+export function findComponentRules(
   constraintDoc: ConstraintDoc | null | undefined,
   constraintPageNo: number,
   id: string
-): any | null {
-  if (!constraintDoc) return null;
+): any[] {
+  if (!constraintDoc) return [];
 
   const pageRule = constraintDoc.pages?.find(
     p => Number(p.constraintPageNo) === Number(constraintPageNo)
   );
 
-  if (!pageRule) return null;
+  if (!pageRule?.components) return [];
 
-  return pageRule.components?.find(c => String(c.id) === String(id)) || null;
+  const exactRules = pageRule.components.filter(
+    c => String(c.id) === String(id)
+  );
+
+  const wildcardRules = pageRule.components.filter(
+    c =>
+      String(c.id) !== String(id) && isRuleIdMatched(String(c.id), String(id))
+  );
+
+  return [...exactRules, ...wildcardRules];
+}
+
+function cssColor(value?: string): string | undefined {
+  if (!value) return undefined;
+
+  const parts = String(value)
+    .split(',')
+    .map(v => Number(v.trim()));
+
+  if (parts.length >= 3 && parts.every(n => Number.isFinite(n))) {
+    return `rgb(${parts[0]}, ${parts[1]}, ${parts[2]})`;
+  }
+
+  return value;
+}
+
+export function applyOverlayRuleStyle(id: string, style: any): void {
+  const root = document.getElementById(`overlay-${id}`);
+  if (!root) return;
+
+  const el = root.querySelector('input, textarea, select, button, div') ?? root;
+
+  const target = el as HTMLElement;
+
+  const borderColor = cssColor(style.borderColor);
+  const borderWidth =
+    style.borderWidth !== undefined ? `${style.borderWidth}px` : undefined;
+
+  if (borderColor) target.style.borderColor = borderColor;
+  if (borderWidth) target.style.borderWidth = borderWidth;
+
+  if (style.rightBorderWidth !== undefined) {
+    target.style.borderRightWidth = `${style.rightBorderWidth}px`;
+  }
+
+  if (style.leftBorderWidth !== undefined) {
+    target.style.borderLeftWidth = `${style.leftBorderWidth}px`;
+  }
+
+  if (style.topBorderWidth !== undefined) {
+    target.style.borderTopWidth = `${style.topBorderWidth}px`;
+  }
+
+  if (style.bottomBorderWidth !== undefined) {
+    target.style.borderBottomWidth = `${style.bottomBorderWidth}px`;
+  }
+
+  if (borderColor || borderWidth) {
+    target.style.borderStyle = 'solid';
+  }
 }
 
 // status 에 따른 하이라이트
@@ -60,11 +231,14 @@ export function highlightOverlayStatus(id: string, status: string): void {
     {
       allow: 'transparent',
       warning: 'rgba(255, 215, 0, 0.45)',
-      error: 'rgba(255, 0, 0, 0.45)',
+      error: 'rgba(255, 0, 0, 0.18)',
+      empty: 'transparent',
+      none: 'transparent',
     }[status] || 'transparent';
 
   el.style.backgroundColor = color;
 }
+
 // ---------------------------------------------------------------------------
 // groupby가 대표쪽에만 있는 비대칭 구조까지 커버하는 "완전 그룹 id" 추출
 // ---------------------------------------------------------------------------
@@ -78,8 +252,9 @@ export function getCheckboxGroupIdsFull(
 
   ids.add(base);
 
-  // 1) 내가 대표 rule인 경우
-  const directRule = findComponentRule(doc, constraintPageNo, base) as any;
+  const directRule = findComponentRules(doc, constraintPageNo, base).find(
+    rule => String(rule.id) === base
+  ) as any;
 
   if (directRule?.groupby?.length) {
     ids.add(String(directRule.id));
@@ -89,7 +264,6 @@ export function getCheckboxGroupIdsFull(
     return Array.from(ids);
   }
 
-  // 2) 내가 groupby에 포함된 경우
   const pageRule = doc.pages?.find(
     p => Number(p.constraintPageNo) === Number(constraintPageNo)
   );

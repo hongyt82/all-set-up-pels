@@ -15,10 +15,13 @@ import type { TemplatePage, OverlayItem } from '../../types';
 import type { ConstraintDoc } from '../../types/constraints';
 
 import {
-  getStatusFromConstraints,
-  findComponentRule,
+  evaluateConstraintRule,
+  evaluateRuleExpression,
+  findComponentRules,
   highlightOverlayStatus,
+  applyOverlayRuleStyle,
   getCheckboxGroupIdsFull,
+  toNumber,
 } from '../../lib/constraints/constraintsLogic';
 
 import { BASE_PAGE_WIDTH, BASE_PAGE_HEIGHT } from '../../constants/pageSize';
@@ -601,6 +604,7 @@ export const ViewerWorkspace = forwardRef<
     );
 
     const selectedIndex = Number(radioValue);
+    const changed: Array<{ uid: string; value: string }> = [];
 
     updateOverlaysReadonly(prev =>
       prev.map(o => {
@@ -608,13 +612,22 @@ export const ViewerWorkspace = forwardRef<
         if (!groupIds.includes(String(o.id))) return o;
 
         const idx = groupIds.indexOf(String(o.id));
+        const nextValue = idx === selectedIndex ? 'y' : 'n';
+
+        if (String(o.value ?? '') !== nextValue) {
+          changed.push({ uid: o.uid, value: nextValue });
+        }
 
         return {
           ...o,
-          value: idx === selectedIndex ? 'y' : 'n',
+          value: nextValue,
         };
       })
     );
+
+    changed.forEach(item => {
+      applyConstraintsCascade(item.uid, item.value);
+    });
   };
 
   const getSelectedRadioIndex = (
@@ -646,10 +659,66 @@ export const ViewerWorkspace = forwardRef<
     return null;
   };
 
+  const buildConstraintContextFromList = (
+    items: OverlayItem[],
+    page: number,
+    currentId: string,
+    rawValue: any
+  ) => {
+    const pageItems = items.filter(o => o.page === page);
+    const context: Record<string, any> = {};
+
+    pageItems.forEach(item => {
+      const raw =
+        String(item.id) === String(currentId) ? rawValue : (item.value ?? '');
+
+      let v: any = raw;
+
+      if (item.type === 'checkbox') {
+        if (String(v).toLowerCase() === 'y') v = 1;
+        else if (String(v).toLowerCase() === 'n') v = 0;
+      }
+
+      context[String(item.id)] = v;
+      context[`_${String(item.id)}_value`] = raw;
+    });
+
+    let currentValue: any = rawValue;
+
+    if (typeof rawValue === 'string' && rawValue.trim() !== '') {
+      const normalized = rawValue.replaceAll(',', '').trim();
+      const num = Number(normalized);
+
+      if (!Number.isNaN(num)) {
+        currentValue = num;
+      }
+    }
+
+    context.value = currentValue;
+    context.toNumber = toNumber;
+    context.Number = Number;
+    context.Math = Math;
+    context.String = String;
+
+    return context;
+  };
+
   const setOverlayValue = (page: number, id: string, value: string) => {
+    let targetUid: string | null = null;
+
     updateOverlaysReadonly(prev =>
-      prev.map(o => (o.page === page && o.id === id ? { ...o, value } : o))
+      prev.map(o => {
+        if (o.page === page && o.id === id) {
+          targetUid = o.uid;
+          return { ...o, value };
+        }
+        return o;
+      })
     );
+
+    if (targetUid) {
+      applyConstraintsCascade(targetUid, value);
+    }
   };
 
   // ---------------------------------------------------------------------------
@@ -729,59 +798,587 @@ export const ViewerWorkspace = forwardRef<
   // ---------------------------------------------------------------------------
   // Rule 엔진 연동
   // ---------------------------------------------------------------------------
-  const applyConstraintsForOverlay = (uid: string, rawValue: string) => {
-    if (!constraintDoc) return;
+  const getTrailingNo = (id: string): number | null => {
+    const match = String(id).match(/_(\d+)$/);
+    if (!match) return null;
 
-    const ov = overlays.find(o => o.uid === uid);
-    if (!ov) return;
+    const n = Number(match[1]);
+    return Number.isFinite(n) ? n : null;
+  };
 
-    const constraintPageNo = getConstraintPageNoByOverlay(ov);
-    if (!constraintPageNo) return;
+  const buildIdByNo = (prefix: string, no: number) => `${prefix}${no}`;
 
-    const rule = findComponentRule(constraintDoc, constraintPageNo, ov.id);
-    if (!rule || !Array.isArray((rule as any).constraints)) return;
+  const findWorkingOverlay = (
+    working: OverlayItem[],
+    page: number,
+    id: string
+  ) => {
+    return (
+      working.find(o => o.page === page && String(o.id) === String(id)) ?? null
+    );
+  };
 
-    const status = getStatusFromConstraints(
-      (rule as any).constraints,
+  const setWorkingOverlayValue = (
+    working: OverlayItem[],
+    page: number,
+    id: string,
+    value: string
+  ): OverlayItem | null => {
+    const target = findWorkingOverlay(working, page, id);
+    if (!target) return null;
+
+    let nextValue = value;
+
+    if (target.type === 'checkbox') {
+      if (nextValue === '1') nextValue = 'y';
+      if (nextValue === '0') nextValue = 'n';
+    }
+
+    if (String(target.value ?? '') !== nextValue) {
+      target.value = nextValue;
+    }
+
+    return target;
+  };
+
+  const applyStylesForStatus = (
+    styles: any[] | undefined,
+    status: string,
+    sourceId: string,
+    targetId?: string
+  ) => {
+    if (!Array.isArray(styles)) return;
+
+    styles.forEach(style => {
+      if (style.onStatus !== status) return;
+
+      if (style.targetSelf) {
+        requestAnimationFrame(() => {
+          applyOverlayRuleStyle(sourceId, style);
+        });
+        return;
+      }
+
+      if (style.targetId) {
+        requestAnimationFrame(() => {
+          applyOverlayRuleStyle(String(style.targetId), style);
+        });
+        return;
+      }
+
+      if (Array.isArray(style.targetIds)) {
+        requestAnimationFrame(() => {
+          style.targetIds.forEach((id: string) => {
+            applyOverlayRuleStyle(String(id), style);
+          });
+        });
+        return;
+      }
+
+      if (targetId) {
+        requestAnimationFrame(() => {
+          applyOverlayRuleStyle(targetId, style);
+        });
+      }
+    });
+  };
+
+  const runAverageModuloGroup = (
+    working: OverlayItem[],
+    page: number,
+    sourceId: string,
+    calc: any
+  ): { targetId: string; value: string } | null => {
+    const no = getTrailingNo(sourceId);
+    if (no == null) return null;
+
+    const first = Number(calc.firstInputNo);
+    const last = Number(calc.lastInputNo);
+    const columnCount = Number(calc.columnCount);
+    const rowCount = Number(calc.rowCount);
+    const targetStartNo = Number(calc.targetStartNo);
+    const decimal = Number(calc.decimal ?? 3);
+    const prefix = String(calc.sourcePrefix ?? '');
+
+    if (
+      !Number.isFinite(first) ||
+      !Number.isFinite(last) ||
+      !Number.isFinite(columnCount) ||
+      !Number.isFinite(rowCount) ||
+      !Number.isFinite(targetStartNo) ||
+      no < first ||
+      no > last
+    ) {
+      return null;
+    }
+
+    const columnIndex = ((no - first) % columnCount) + 1;
+    let sum = 0;
+
+    for (let r = 0; r < rowCount; r++) {
+      const sourceNo = first + r * columnCount + (columnIndex - 1);
+      const id = buildIdByNo(prefix, sourceNo);
+      const item = findWorkingOverlay(working, page, id);
+      sum += toNumber(item?.value ?? '');
+    }
+
+    const avg = (sum / rowCount).toFixed(decimal);
+    const targetNo = targetStartNo + (columnIndex - 1);
+    const targetId = buildIdByNo(prefix, targetNo);
+
+    return { targetId, value: avg };
+  };
+
+  const runAverageGroup = (
+    working: OverlayItem[],
+    page: number,
+    sourceId: string,
+    calc: any
+  ): { targetId: string; value: string } | null => {
+    const no = getTrailingNo(sourceId);
+    if (no == null) return null;
+
+    const first = Number(calc.firstInputNo);
+    const last = Number(calc.lastInputNo);
+    const groupSize = Number(calc.groupSize);
+    const groupStep = Number(calc.groupStep);
+    const targetOffset = Number(calc.targetOffsetFromGroupEnd ?? 1);
+    const decimal = Number(calc.decimal ?? 3);
+    const prefix = String(calc.sourcePrefix ?? '');
+
+    if (
+      !Number.isFinite(first) ||
+      !Number.isFinite(last) ||
+      !Number.isFinite(groupSize) ||
+      !Number.isFinite(groupStep) ||
+      no < first ||
+      no > last
+    ) {
+      return null;
+    }
+
+    const groupIndex = Math.floor((no - first) / groupStep);
+    const groupStart = first + groupIndex * groupStep;
+    const groupEnd = groupStart + groupSize - 1;
+
+    let sum = 0;
+    for (let sourceNo = groupStart; sourceNo <= groupEnd; sourceNo++) {
+      const id = buildIdByNo(prefix, sourceNo);
+      const item = findWorkingOverlay(working, page, id);
+      sum += toNumber(item?.value ?? '');
+    }
+
+    const avg = (sum / groupSize).toFixed(decimal);
+    const targetId = buildIdByNo(prefix, groupEnd + targetOffset);
+
+    return { targetId, value: avg };
+  };
+
+  const runOffsetByModulo = (
+    working: OverlayItem[],
+    page: number,
+    sourceId: string,
+    rawValue: string,
+    calc: any
+  ): { targetId: string; value: string } | null => {
+    const no = getTrailingNo(sourceId);
+    if (no == null) return null;
+
+    const first = Number(calc.firstInputNo);
+    const last = Number(calc.lastInputNo);
+    const columnCount = Number(calc.columnCount);
+    const targetStartNo = Number(calc.targetStartNo);
+    const prefix = String(calc.sourcePrefix ?? '');
+
+    if (
+      !Number.isFinite(first) ||
+      !Number.isFinite(last) ||
+      !Number.isFinite(columnCount) ||
+      !Number.isFinite(targetStartNo) ||
+      no < first ||
+      no > last
+    ) {
+      return null;
+    }
+
+    const columnIndex = ((no - first) % columnCount) + 1;
+    const targetNo = targetStartNo + (columnIndex - 1);
+    const targetId = buildIdByNo(prefix, targetNo);
+
+    const context = buildConstraintContextFromList(
+      working,
+      page,
+      sourceId,
       rawValue
     );
 
-    highlightOverlayStatus(ov.id, status);
+    const value = evaluateRuleExpression(calc.expression, context);
 
-    const events = (rule as any).events;
-    if (!Array.isArray(events)) return;
+    return {
+      targetId,
+      value: value == null ? '' : String(value),
+    };
+  };
 
-    events.forEach((ev: any) => {
-      if (ev.onStatus !== status) return;
-      const targetValue = String(ev.targetValue ?? '');
+  const runRelativeIndexFormula = (
+    working: OverlayItem[],
+    page: number,
+    sourceId: string,
+    calc: any
+  ): { targetId: string; value: string } | null => {
+    const no = getTrailingNo(sourceId);
+    if (no == null) return null;
 
-      updateOverlaysReadonly(prev =>
-        prev.map(o => {
-          if (o.page === ov.page && o.id === ev.targetId) {
-            let val = String(ev.targetValue ?? '');
-            if (o.type === 'checkbox') {
-              if (val === '1') val = 'y';
-              if (val === '0') val = 'n';
-            }
-            return { ...o, value: val };
-          }
-          return o;
-        })
-      );
+    const sourcePrefix = String(calc.sourcePrefix ?? '');
+    const referencePrefix = String(calc.referencePrefix ?? sourcePrefix);
+    const targetOffset = Number(calc.targetOffset ?? 0);
 
-      const targetRule = findComponentRule(
-        constraintDoc,
-        constraintPageNo,
-        ev.targetId
-      );
+    const variables: Record<string, any> = {};
+    Object.entries(calc.variables ?? {}).forEach(([name, config]: any) => {
+      const offset = Number(config.offset ?? 0);
+      const prefix =
+        config.source === 'reference' ? referencePrefix : sourcePrefix;
 
-      if (targetRule && Array.isArray((targetRule as any).constraints)) {
-        const targetStatus = getStatusFromConstraints(
-          (targetRule as any).constraints,
-          targetValue
+      const id = buildIdByNo(prefix, no + offset);
+      const item = findWorkingOverlay(working, page, id);
+      variables[name] = item?.value ?? '';
+    });
+
+    const context = {
+      ...variables,
+      toNumber,
+      Number,
+      Math,
+      String,
+    };
+
+    const result = evaluateRuleExpression(calc.expression, context);
+    const targetId = buildIdByNo(referencePrefix, no + targetOffset);
+
+    return {
+      targetId,
+      value: result == null ? '' : String(result),
+    };
+  };
+
+  const runTimeCalculationMinutes = (
+    working: OverlayItem[],
+    page: number,
+    calc: any
+  ): {
+    targetId: string;
+    value: string;
+    resultTargetId?: string;
+    resultValue?: string;
+  } | null => {
+    const ids: string[] = calc.sourceIds ?? [];
+    if (ids.length < 4) return null;
+
+    const getVal = (id: string) =>
+      findWorkingOverlay(working, page, id)?.value ?? '';
+
+    const h1 = toNumber(getVal(ids[0]));
+    const m1 = toNumber(getVal(ids[1]));
+    const h2 = toNumber(getVal(ids[2]));
+    const m2 = toNumber(getVal(ids[3]));
+
+    let diff = h2 * 60 + m2 - (h1 * 60 + m1);
+    if (diff < 0) diff += 24 * 60;
+
+    const standard = toNumber(calc.standardMinutes ?? calc.standardMinute ?? 0);
+    const resultValue = diff >= standard ? '만족' : '불만족';
+
+    return {
+      targetId: String(calc.targetMinuteId ?? calc.targetId),
+      value: String(diff),
+      resultTargetId: calc.targetResultId,
+      resultValue,
+    };
+  };
+
+  const runTimeCalculation = (
+    working: OverlayItem[],
+    page: number,
+    calc: any
+  ): Array<{ targetId: string; value: string }> => {
+    const ids: string[] = calc.sourceIds ?? [
+      calc.hourStartId,
+      calc.minuteStartId,
+      calc.hourEndId,
+      calc.minuteEndId,
+    ];
+
+    if (ids.length < 4 || ids.some(id => !id)) return [];
+
+    const getVal = (id: string) =>
+      findWorkingOverlay(working, page, id)?.value ?? '';
+
+    const h1 = toNumber(getVal(ids[0]));
+    const m1 = toNumber(getVal(ids[1]));
+    const h2 = toNumber(getVal(ids[2]));
+    const m2 = toNumber(getVal(ids[3]));
+
+    let diff = h2 * 60 + m2 - (h1 * 60 + m1);
+    if (diff < 0) diff += 24 * 60;
+
+    const standard = toNumber(calc.standardMinutes ?? calc.standardMinute ?? 0);
+    const resultValue = diff >= standard ? '만족' : '불만족';
+
+    const hour = Math.floor(diff / 60);
+    const minute = diff % 60;
+
+    const result: Array<{ targetId: string; value: string }> = [];
+
+    if (calc.targetHourId) {
+      result.push({ targetId: String(calc.targetHourId), value: String(hour) });
+    }
+
+    if (calc.targetMinuteId) {
+      result.push({
+        targetId: String(calc.targetMinuteId),
+        value: String(minute),
+      });
+    }
+
+    if (calc.targetId) {
+      result.push({ targetId: String(calc.targetId), value: String(diff) });
+    }
+
+    if (calc.targetResultId) {
+      result.push({
+        targetId: String(calc.targetResultId),
+        value: resultValue,
+      });
+    }
+
+    return result;
+  };
+
+  const applyConstraintsCascade = (startUid: string, startRawValue: string) => {
+    if (!constraintDoc) return;
+
+    setOverlays(prev => {
+      const working = prev.map(o => ({ ...o }));
+      const queue: Array<{ uid: string; rawValue: string }> = [
+        { uid: startUid, rawValue: startRawValue },
+      ];
+      const visited = new Set<string>();
+
+      const findOverlayByUid = (uid: string) =>
+        working.find(o => o.uid === uid) ?? null;
+
+      const enqueueTarget = (target: OverlayItem | null, value: string) => {
+        if (!target) return;
+        queue.push({ uid: target.uid, rawValue: value });
+      };
+
+      while (queue.length > 0) {
+        const { uid, rawValue } = queue.shift()!;
+        const visitKey = `${uid}::${rawValue}`;
+
+        if (visited.has(visitKey)) continue;
+        visited.add(visitKey);
+
+        const ov = findOverlayByUid(uid);
+        if (!ov) continue;
+
+        const constraintPageNo = getConstraintPageNoByOverlay(ov);
+        if (!constraintPageNo) continue;
+
+        const rules = findComponentRules(
+          constraintDoc,
+          constraintPageNo,
+          ov.id
         );
-        highlightOverlayStatus(ev.targetId, targetStatus);
+        if (rules.length === 0) continue;
+
+        for (const rule of rules) {
+          const context = buildConstraintContextFromList(
+            working,
+            ov.page,
+            ov.id,
+            rawValue
+          );
+
+          const calculations = (rule as any).calculations;
+
+          if (Array.isArray(calculations)) {
+            calculations.forEach((calc: any) => {
+              const results: Array<{ targetId: string; value: string }> = [];
+
+              if (calc.emptyWhen) {
+                const isEmpty = evaluateRuleExpression(calc.emptyWhen, context);
+                if (isEmpty && calc.targetId) {
+                  results.push({
+                    targetId: String(calc.targetId),
+                    value: String(calc.emptyValue ?? ''),
+                  });
+
+                  results.forEach(r => {
+                    const target = setWorkingOverlayValue(
+                      working,
+                      ov.page,
+                      r.targetId,
+                      r.value
+                    );
+
+                    if (calc.chain) {
+                      enqueueTarget(target, r.value);
+                    }
+                  });
+
+                  return;
+                }
+              }
+
+              if (calc.when) {
+                const canRun = evaluateRuleExpression(calc.when, context);
+                if (!canRun) return;
+              }
+
+              if (calc.type === 'averageModuloGroup') {
+                const r = runAverageModuloGroup(working, ov.page, ov.id, calc);
+                if (r) results.push(r);
+              } else if (calc.type === 'averageGroup') {
+                const r = runAverageGroup(working, ov.page, ov.id, calc);
+                if (r) results.push(r);
+              } else if (calc.type === 'offsetByModulo') {
+                const r = runOffsetByModulo(
+                  working,
+                  ov.page,
+                  ov.id,
+                  rawValue,
+                  calc
+                );
+                if (r) results.push(r);
+              } else if (calc.type === 'relativeIndexFormula') {
+                const r = runRelativeIndexFormula(
+                  working,
+                  ov.page,
+                  ov.id,
+                  calc
+                );
+                if (r) results.push(r);
+              } else if (calc.type === 'timeCalculationMinutes') {
+                const r = runTimeCalculationMinutes(working, ov.page, calc);
+                if (r) {
+                  results.push({ targetId: r.targetId, value: r.value });
+                  if (r.resultTargetId) {
+                    results.push({
+                      targetId: String(r.resultTargetId),
+                      value: String(r.resultValue ?? ''),
+                    });
+                  }
+                }
+              } else if (calc.type === 'timeCalculation') {
+                results.push(...runTimeCalculation(working, ov.page, calc));
+              } else if (calc.targetId && calc.expression) {
+                const value = evaluateRuleExpression(calc.expression, context);
+                results.push({
+                  targetId: String(calc.targetId),
+                  value: value == null ? '' : String(value),
+                });
+              }
+
+              results.forEach(r => {
+                const target = setWorkingOverlayValue(
+                  working,
+                  ov.page,
+                  r.targetId,
+                  r.value
+                );
+
+                if (calc.chain) {
+                  enqueueTarget(target, r.value);
+                }
+              });
+            });
+          }
+
+          let status = 'none';
+          let result: any = undefined;
+
+          if (Array.isArray((rule as any).constraints)) {
+            const evaluated = evaluateConstraintRule(
+              (rule as any).constraints,
+              context,
+              String(ov.id)
+            );
+
+            status = evaluated.status;
+            result = evaluated.result;
+
+            highlightOverlayStatus(ov.id, status);
+            applyStylesForStatus((rule as any).styles, status, String(ov.id));
+          }
+
+          const events = (rule as any).events;
+
+          if (Array.isArray(events)) {
+            events.forEach((ev: any) => {
+              let shouldRun = false;
+              let nextRawValue = '';
+
+              if (ev.condition) {
+                if (ev.when) {
+                  const canRun = evaluateRuleExpression(ev.when, context);
+                  if (!canRun) return;
+                }
+
+                const ok = evaluateRuleExpression(ev.condition, context);
+                shouldRun = true;
+                nextRawValue = ok
+                  ? String(ev.targetValue ?? '')
+                  : String(ev.elseValue ?? '');
+              } else {
+                if (ev.onStatus !== status) return;
+                shouldRun = true;
+                nextRawValue =
+                  String(ev.targetValue ?? '') === 'result'
+                    ? String(result ?? '')
+                    : String(ev.targetValue ?? '');
+              }
+
+              if (!shouldRun) return;
+
+              let targetId = ev.targetId;
+
+              if (ev.targetByModulo && ev.targetPrefix && ev.targetStartNo) {
+                const no = getTrailingNo(String(ov.id));
+                if (no == null) return;
+
+                const sourceFirstNo = Number(ev.sourceFirstNo);
+                const targetStartNo = Number(ev.targetStartNo);
+                const columnCount = Number(ev.columnCount ?? 8);
+
+                if (!Number.isFinite(sourceFirstNo)) return;
+
+                const columnIndex =
+                  (((no - sourceFirstNo) % columnCount) + columnCount) %
+                  columnCount;
+
+                targetId = `${ev.targetPrefix}${targetStartNo + columnIndex}`;
+              }
+
+              if (!targetId) return;
+
+              const target = setWorkingOverlayValue(
+                working,
+                ov.page,
+                String(targetId),
+                nextRawValue
+              );
+
+              if (target) {
+                queue.push({ uid: target.uid, rawValue: nextRawValue });
+              }
+            });
+          }
+        }
       }
+
+      pendingSyncRef.current = working;
+      return working;
     });
   };
 
@@ -825,7 +1422,7 @@ export const ViewerWorkspace = forwardRef<
       return next;
     });
 
-    applyConstraintsForOverlay(uid, value);
+    applyConstraintsCascade(uid, value);
   };*/
 
   const setCheckbox = (uid: string, checked: boolean) => {
@@ -865,7 +1462,7 @@ export const ViewerWorkspace = forwardRef<
       return next;
     });
 
-    applyConstraintsForOverlay(uid, value);
+    applyConstraintsCascade(uid, value);
   };
 
   const cycleCircle = (uid: string) => {
@@ -906,21 +1503,21 @@ export const ViewerWorkspace = forwardRef<
       );
     });
 
-    applyConstraintsForOverlay(uid, nextValue);
+    applyConstraintsCascade(uid, nextValue);
   };
 
   const setText = (uid: string, value: string) => {
     updateOverlaysReadonly(prev =>
       prev.map(o => (o.uid === uid ? { ...o, value } : o))
     );
-    applyConstraintsForOverlay(uid, value);
+    applyConstraintsCascade(uid, value);
   };
 
   const setDate = (uid: string, value: string) => {
     updateOverlaysReadonly(prev =>
       prev.map(o => (o.uid === uid ? { ...o, value } : o))
     );
-    applyConstraintsForOverlay(uid, value);
+    applyConstraintsCascade(uid, value);
   };
 
   const setSignature = (uid: string) => {
@@ -933,11 +1530,13 @@ export const ViewerWorkspace = forwardRef<
 
       const reader = new FileReader();
       reader.onload = () => {
+        const nextValue = String(reader.result || '');
+
         updateOverlaysReadonly(prev =>
-          prev.map(o =>
-            o.uid === uid ? { ...o, value: String(reader.result || '') } : o
-          )
+          prev.map(o => (o.uid === uid ? { ...o, value: nextValue } : o))
         );
+
+        applyConstraintsCascade(uid, nextValue);
       };
       reader.readAsDataURL(f);
     };
