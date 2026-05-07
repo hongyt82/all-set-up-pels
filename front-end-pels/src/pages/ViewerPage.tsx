@@ -1331,10 +1331,10 @@ export function ViewerPage() {
 
       const arrayBuffer = await sourcePdf.arrayBuffer();
 
-// 원본 PDF는 복사용으로만 사용
+      // 원본 PDF는 복사용으로만 사용
       const sourcePdfDoc = await PDFDocument.load(arrayBuffer);
 
-// 저장용 새 PDF 생성
+      // 저장용 새 PDF 생성
       const pdfDocLib = await PDFDocument.create();
       pdfDocLib.registerFontkit(fontkit);
 
@@ -1675,7 +1675,8 @@ export function ViewerPage() {
         // =========================
         // 드로잉(pathData) PDF 반영
         // =========================
-        const drawingPaths = pathDataByPage[Number(pg.page)] ?? pg.pathData ?? [];
+        const drawingPaths =
+          pathDataByPage[Number(pg.page)] ?? pg.pathData ?? [];
 
         if (Array.isArray(drawingPaths) && drawingPaths.length > 0) {
           const gsCache: Record<string, PDFName> = {};
