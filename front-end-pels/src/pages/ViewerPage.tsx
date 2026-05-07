@@ -1244,9 +1244,15 @@ export function ViewerPage() {
         ...pg,
         width: W,
         height: H,
-        isChange: components.length > 0 ? 'Y' : 'N',
+        isChange:
+          components.length > 0 ||
+          (pathDataByPage[pg.page] || []).length > 0 ||
+          (attachmentsByPage[pg.page] || pg.attachments || []).length > 0
+            ? 'Y'
+            : 'N',
         components,
         pathData: pathDataByPage[pg.page] || [],
+        attachments: attachmentsByPage[pg.page] || pg.attachments || [],
       };
     });
 
@@ -1354,21 +1360,6 @@ export function ViewerPage() {
 
       // 각 페이지별 컴포넌트 그리기
       for (const pg of data.pages as any[]) {
-        /*const realNo =
-          typeof pg.constraintPageNo === 'number' && pg.constraintPageNo > 0
-             ? pg.constraintPageNo
-            // ?  pg.pdfPageNo
-            : null;
-        if (!realNo) continue; // 가상 페이지는 스킵
-
-        const pageCount = pdfDocLib.getPageCount();
-        const pageIndex = Math.min(Math.max(realNo - 1, 0), pageCount - 1);
-
-        const page = pdfDocLib.getPage(pageIndex);
-
-        const pageW = page.getWidth();
-        const pageH = page.getHeight();*/
-
         const realNo = Number(pg.pdfPageNo);
 
         let page: any;
@@ -1669,6 +1660,84 @@ export function ViewerPage() {
                 });
               }
               break;
+            }
+          }
+        }
+
+        // =========================
+        // 첨부 이미지(attachments) PDF 반영
+        // =========================
+        const attachments =
+          attachmentsByPage[Number(pg.page)] ?? pg.attachments ?? [];
+
+        if (Array.isArray(attachments) && attachments.length > 0) {
+          const srcW = Number(pg.width) || BASE_W;
+          const srcH = Number(pg.height) || BASE_H;
+          const scaleX = pageW / srcW;
+          const scaleY = pageH / srcH;
+
+          for (const att of attachments) {
+            const type = String(att?.type ?? '').toLowerCase();
+
+            // PDF에는 정지 이미지 위주로 반영
+            if (type !== 'image' && type !== 'camera') continue;
+
+            const imageSrc = att.fileUrl || att.url || att.src || null;
+            if (!imageSrc) continue;
+
+            try {
+              const res = await fetch(imageSrc, {
+                credentials: 'include',
+              });
+
+              if (!res.ok) {
+                devWarn('[PDF SAVE] attachment image fetch failed', {
+                  imageSrc,
+                  status: res.status,
+                });
+                continue;
+              }
+
+              const contentType = res.headers.get('content-type') || '';
+              const imgBytes = new Uint8Array(await res.arrayBuffer());
+
+              const lowerSrc = String(imageSrc).toLowerCase();
+
+              const img =
+                contentType.includes('png') || lowerSrc.includes('.png')
+                  ? await pdfDocLib.embedPng(imgBytes)
+                  : await pdfDocLib.embedJpg(imgBytes);
+
+              const ax = Number(att.x ?? 0);
+              const ay = Number(att.y ?? 0);
+              const aw = Number(att.width ?? 0);
+              const ah = Number(att.height ?? 0);
+
+              if (!aw || !ah) continue;
+
+              const boxX = ax * scaleX;
+              const boxY = pageH - (ay + ah) * scaleY;
+              const boxW = aw * scaleX;
+              const boxH = ah * scaleY;
+
+              const { width: iw, height: ih } = img.size();
+              const imgScale = Math.min(boxW / iw, boxH / ih);
+              const drawW = iw * imgScale;
+              const drawH = ih * imgScale;
+              const drawX = boxX + (boxW - drawW) / 2;
+              const drawY = boxY + (boxH - drawH) / 2;
+
+              page.drawImage(img, {
+                x: drawX,
+                y: drawY,
+                width: drawW,
+                height: drawH,
+              });
+            } catch (e) {
+              devWarn('[PDF SAVE] attachment image embed failed', {
+                imageSrc,
+                error: e,
+              });
             }
           }
         }
