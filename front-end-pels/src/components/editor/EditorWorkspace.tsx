@@ -140,8 +140,8 @@ const OVERLAY_PREVIEW: Partial<
   textbox_name: { label: '점검자 이름' },
   textbox_verifier: { label: '확인자 이름' },
 
-  calendar_date: { icon: '�', label: '날짜' },
-  calendar_datetime: { icon: '�⏱', label: '날짜 + 시간' },
+  calendar_date: { icon: '📅', label: '날짜' },
+  calendar_datetime: { icon: '📅🕐', label: '날짜 + 시간' },
 
   signature_worker: { label: '점검자 서명' },
   signature_verifier: { label: '확인자 서명' },
