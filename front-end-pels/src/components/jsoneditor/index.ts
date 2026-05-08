@@ -1,1 +1,3 @@
-export { JsonEditorPanel } from './JsonEditorPanel';
+export * from './JsonEditorPanel';
+export * from './useJsonEditorEngine';
+export * from './types';
