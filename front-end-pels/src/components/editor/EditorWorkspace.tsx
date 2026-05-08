@@ -7,8 +7,7 @@ import React, {
   forwardRef,
 } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-// import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist/types/src/pdf';
-import type { PDFDocumentProxy } from 'pdfjs-dist/types/src/pdf';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist/types/src/pdf';
 import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { Rnd } from 'react-rnd';
 import { saveAs } from 'file-saver';
@@ -164,6 +163,28 @@ function getPageFit(
   const drawW = viewportW * s;
   const drawH = viewportH * s;
   return { s, drawW, drawH };
+}
+
+function normalizePdfRotation(rotation?: number | null) {
+  const r = (((Number(rotation) || 0) % 360) + 360) % 360;
+
+  // 특정 PDF가 /Rotate 180으로 들어와 위아래가 뒤집혀 보이는 경우 보정
+  if (r === 180) return 0;
+
+  return r;
+}
+
+function resetCanvas(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+) {
+  canvas.width = Math.max(1, Math.floor(width));
+  canvas.height = Math.max(1, Math.floor(height));
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function getNextConstraintPageNo(items: PageItem[]) {
@@ -322,6 +343,7 @@ export const EditorWorkspace = forwardRef<
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const renderTaskRef = useRef<RenderTaskType | null>(null);
+  const renderRequestIdRef = useRef(0);
 
   const [pageBox, setPageBox] = useState<{ w: number; h: number }>({
     w: FIXED_W,
@@ -776,6 +798,8 @@ export const EditorWorkspace = forwardRef<
   useEffect(() => {
     if (!pdfDoc) return;
 
+    const requestId = ++renderRequestIdRef.current;
+
     const render = async () => {
       if (renderTaskRef.current) {
         try {
@@ -794,8 +818,21 @@ export const EditorWorkspace = forwardRef<
       const pg = pages.find(p => p.pageId === currentPageId);
       const pdfPageNo = pg?.pdfPageNo ?? 1;
 
-      const page = await pdfDoc.getPage(pdfPageNo);
-      const viewport = page.getViewport({ scale: 1 });
+      let page: PDFPageProxy;
+
+      try {
+        page = await pdfDoc.getPage(pdfPageNo);
+      } catch (e) {
+        devWarn('[EditorWorkspace] getPage failed', e);
+        return;
+      }
+
+      if (requestId !== renderRequestIdRef.current) return;
+
+      const viewport = page.getViewport({
+        scale: 1,
+        rotation: normalizePdfRotation((page as any).rotate),
+      });
 
       const isLandscape = viewport.width > viewport.height;
       const BW = isLandscape ? FIXED_H : FIXED_W;
@@ -819,8 +856,10 @@ export const EditorWorkspace = forwardRef<
       const dpr = window.devicePixelRatio || 1;
       canvas.style.width = `${drawW}px`;
       canvas.style.height = `${drawH}px`;
-      canvas.width = Math.floor(drawW * dpr);
-      canvas.height = Math.floor(drawH * dpr);
+
+      resetCanvas(canvas, ctx, drawW * dpr, drawH * dpr);
+
+      if (requestId !== renderRequestIdRef.current) return;
 
       const task = (page as any).render({
         canvasContext: ctx as any,
@@ -829,12 +868,17 @@ export const EditorWorkspace = forwardRef<
       }) as any;
 
       renderTaskRef.current = task as RenderTaskType;
+
       try {
         await task.promise;
-      } catch (e) {
-        devWarn('[EditorWorkspace] render task error (ignored)', e);
+      } catch (e: any) {
+        if (e?.name !== 'RenderingCancelledException') {
+          devWarn('[EditorWorkspace] render task error', e);
+        }
       } finally {
-        renderTaskRef.current = null;
+        if (renderTaskRef.current === task) {
+          renderTaskRef.current = null;
+        }
       }
     };
 

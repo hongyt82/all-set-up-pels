@@ -79,6 +79,15 @@ function getPageFit(
   return { s, drawW, drawH };
 }
 
+function normalizePdfRotation(rotation?: number | null) {
+  const r = (((Number(rotation) || 0) % 360) + 360) % 360;
+
+  // 특정 PDF가 /Rotate 180으로 들어와 위아래가 뒤집혀 보이는 경우 보정
+  if (r === 180) return 0;
+
+  return r;
+}
+
 // ============================================================================
 // ReplayViewerWorkspace
 // ============================================================================
@@ -292,7 +301,10 @@ export const ReplayViewerWorkspace = forwardRef<
 
         if (requestId !== renderRequestIdRef.current) return;
 
-        const viewport = page.getViewport({ scale: 1 });
+        const viewport = page.getViewport({
+          scale: 1,
+          rotation: normalizePdfRotation((page as any).rotate),
+        });
         const isLandscape = viewport.width > viewport.height;
         const BW = isLandscape ? FIXED_H : FIXED_W;
         const BH = isLandscape ? FIXED_W : FIXED_H;

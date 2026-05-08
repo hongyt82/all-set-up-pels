@@ -114,6 +114,28 @@ function getPageFit(
   return { s, drawW, drawH };
 }
 
+function normalizePdfRotation(rotation?: number | null) {
+  const r = (((Number(rotation) || 0) % 360) + 360) % 360;
+
+  // 특정 PDF가 /Rotate 180으로 들어와 위아래가 뒤집혀 보이는 경우 보정
+  if (r === 180) return 0;
+
+  return r;
+}
+
+function resetCanvas(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+) {
+  canvas.width = Math.max(1, Math.floor(width));
+  canvas.height = Math.max(1, Math.floor(height));
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 // ============================================================================
 // ViewerWorkspace
 // ============================================================================
@@ -144,6 +166,7 @@ export const ViewerWorkspace = forwardRef<
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const renderTaskRef = useRef<RenderTaskType | null>(null);
+  const renderRequestIdRef = useRef(0);
 
   const [pageBox, setPageBox] = useState<PageBox>({
     w: FIXED_W,
@@ -366,6 +389,8 @@ export const ViewerWorkspace = forwardRef<
   useEffect(() => {
     if (!pdfDoc) return;
 
+    const requestId = ++renderRequestIdRef.current;
+
     const render = async () => {
       if (renderTaskRef.current) {
         try {
@@ -401,8 +426,20 @@ export const ViewerWorkspace = forwardRef<
         mappedNo ?? Math.min(Math.max(currentPage, 1), pdfDoc.numPages);
 
       if (!isVirtual) {
-        const page: PDFPageProxy = await pdfDoc.getPage(realPageNo);
-        const viewport = page.getViewport({ scale: 1 });
+        let page: PDFPageProxy;
+
+        try {
+          page = await pdfDoc.getPage(realPageNo);
+        } catch (e) {
+          devWarn('[ViewerWorkspace] getPage failed', e);
+          return;
+        }
+
+        if (requestId !== renderRequestIdRef.current) return;
+        const viewport = page.getViewport({
+          scale: 1,
+          rotation: normalizePdfRotation((page as any).rotate),
+        });
         const isLandscape = viewport.width > viewport.height;
         const BW = isLandscape ? FIXED_H : FIXED_W;
         const BH = isLandscape ? FIXED_W : FIXED_H;
@@ -423,8 +460,10 @@ export const ViewerWorkspace = forwardRef<
         const dpr = window.devicePixelRatio || 1;
         canvas.style.width = `${drawW}px`;
         canvas.style.height = `${drawH}px`;
-        canvas.width = Math.floor(drawW * dpr);
-        canvas.height = Math.floor(drawH * dpr);
+
+        resetCanvas(canvas, ctx, drawW * dpr, drawH * dpr);
+
+        if (requestId !== renderRequestIdRef.current) return;
 
         const task = (page as any).render({
           canvasContext: ctx as any,
@@ -435,10 +474,14 @@ export const ViewerWorkspace = forwardRef<
         renderTaskRef.current = task as RenderTaskType;
         try {
           await task.promise;
-        } catch (e) {
-          devWarn('[ViewerWorkspace] render task error (ignored)', e);
+        } catch (e: any) {
+          if (e?.name !== 'RenderingCancelledException') {
+            devWarn('[ViewerWorkspace] render task error', e);
+          }
         } finally {
-          renderTaskRef.current = null;
+          if (renderTaskRef.current === task) {
+            renderTaskRef.current = null;
+          }
         }
       } else {
         // 가상 페이지 (논리 페이지만 있고 실제 PDF 페이지 없음)
@@ -457,8 +500,8 @@ export const ViewerWorkspace = forwardRef<
         const dpr = window.devicePixelRatio || 1;
         canvas.style.width = `${BW}px`;
         canvas.style.height = `${BH}px`;
-        canvas.width = Math.floor(BW * dpr);
-        canvas.height = Math.floor(BH * dpr);
+
+        resetCanvas(canvas, ctx, BW * dpr, BH * dpr);
 
         ctx.save();
         ctx.scale(dpr, dpr);
