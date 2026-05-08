@@ -7,7 +7,9 @@ target/
 # OS
 .DS_Store
 Thumbs.db
-
+# front-end-pels 쪽에서 build:prod 타겟으로 생성된 static 자원은 .gitignore 에서 등록하여 배제 시킨다. Git 에 add, commit, push 안되게
+PELS/src/main/webapp/static
+PELS/PELS_MANUAL
 # Logs
 *.log
 
