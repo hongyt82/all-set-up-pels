@@ -876,7 +876,6 @@ export function ReplayViewerPage() {
           withCredentials: true,
         });
 
-        const fileBaseUrl = getBaseUrl(PDF_PATH);
         // data 배열에 null/비객체가 섞여도 { ...row } 에서 죽지 않도록(방어가드)
         const rawEventRows = Array.isArray(eventRes.data?.data)
           ? [...eventRes.data.data]
@@ -933,23 +932,19 @@ export function ReplayViewerPage() {
                       row.HDTH_NUMV ??
                       0,
 
-                    fileUrl: toImageUrl(
+                    fileUrl:
                       row.IMAGE?.fileUrl ??
-                        row.IMAGE?.url ??
-                        row.IMAGE?.URL_INFO ??
-                        row.URL_INFO ??
-                        null,
-                      fileBaseUrl
-                    ),
-
-                    url: toImageUrl(
                       row.IMAGE?.url ??
-                        row.IMAGE?.fileUrl ??
-                        row.IMAGE?.URL_INFO ??
-                        row.URL_INFO ??
-                        null,
-                      fileBaseUrl
-                    ),
+                      row.IMAGE?.URL_INFO ??
+                      row.URL_INFO ??
+                      null,
+
+                    url:
+                      row.IMAGE?.url ??
+                      row.IMAGE?.fileUrl ??
+                      row.IMAGE?.URL_INFO ??
+                      row.URL_INFO ??
+                      null,
                   }
                 : null;
 
