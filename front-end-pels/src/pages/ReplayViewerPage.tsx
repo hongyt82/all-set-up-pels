@@ -91,6 +91,31 @@ function extractBoundary(contentType: string) {
   return match?.[1]?.replace(/^"|"$/g, '') ?? null;
 }
 
+type HeaderValue = string | number | boolean | string[] | null | undefined;
+
+function getHeaderValue(headers: unknown, name: string): HeaderValue {
+  if (!headers || typeof headers !== 'object') return undefined;
+
+  // Axios 1.x: AxiosHeaders 취득
+  if ('get' in headers) {
+    const get = (headers as { get?: unknown }).get;
+    if (typeof get === 'function') {
+      // AxiosHeaders 가 다른 형태로 들어오는 경우 `this` binding 이 깨지는 경우 발생 (이에 대응 적용, 확인완료)
+      return (headers as { get: (key: string) => unknown }).get(
+        name
+      ) as HeaderValue;
+    }
+  }
+
+  // Plain object headers (lowercased keys are common)
+  const record = headers as Record<string, unknown>;
+  return (record[name] ?? record[name.toLowerCase()]) as HeaderValue;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
 function parseFilename(headers: string) {
   const match = headers.match(/filename="([^"]+)"/i);
   return match?.[1] ?? '';
@@ -117,7 +142,7 @@ function indexOfSubarray(
 }
 
 function parseMultipartMixedBinary(
-  raw: ArrayBuffer,
+  raw: ArrayBufferLike,
   boundary: string
 ): Array<{ filename: string; body: Uint8Array }> {
   const bytes = new Uint8Array(raw);
@@ -470,7 +495,8 @@ export function ReplayViewerPage() {
 
   const buildReplayState = useCallback(
     (sourceEvents: ReplayEventItem[], appliedIndex: number): ReplayState => {
-      const nextLogicalPages: ReplayLogicalPage[] = [...basePages]
+      const safeBasePages = basePages.filter(Boolean);
+      const nextLogicalPages: ReplayLogicalPage[] = [...safeBasePages]
         .map(pg => {
           const pageNo = Number((pg as any).page);
           const pdfPageNo =
@@ -851,100 +877,101 @@ export function ReplayViewerPage() {
         });
 
         const fileBaseUrl = getBaseUrl(PDF_PATH);
-
-        const nextEvents: ReplayEventItem[] = Array.isArray(eventRes.data?.data)
+        // data 배열에 null/비객체가 섞여도 { ...row } 에서 죽지 않도록(방어가드)
+        const rawEventRows = Array.isArray(eventRes.data?.data)
           ? [...eventRes.data.data]
-              .map((row: any) => {
-                const nestedStroke = row.STROKE ?? null;
-                // const nestedImage = row.IMAGE ?? null;
-
-                const mappedStroke =
-                  nestedStroke ??
-                  (Number(row.EVENT_TYP_SQNO) === 3 ||
-                  Number(row.EVENT_TYP_SQNO) === 4
-                    ? {
-                        X_CRDNT: row.STRK_X_CRDNT ?? null,
-                        Y_CRDNT: row.STRK_Y_CRDNT ?? null,
-                        LINE_SNO: row.LINE_SNO ?? null,
-                        LINE_ETT: row.LINE_ETT ?? null,
-                      }
-                    : null);
-
-                const mappedImage =
-                  Number(row.EVENT_TYP_SQNO) >= 5 &&
-                  Number(row.EVENT_TYP_SQNO) <= 8
-                    ? {
-                        id: String(
-                          row.IMG_ID ?? row.IMAGE_SEQ ?? row.IMAGE?.id ?? ''
-                        ),
-                        type: row.IMAGE?.type ?? 'camera',
-
-                        x:
-                          row.IMAGE?.x ??
-                          row.IMAGE?.posX ??
-                          row.IMAGE?.X_CRDNT ??
-                          row.IMG_X_CRDNT ??
-                          0,
-
-                        y:
-                          row.IMAGE?.y ??
-                          row.IMAGE?.posY ??
-                          row.IMAGE?.Y_CRDNT ??
-                          row.IMG_Y_CRDNT ??
-                          0,
-
-                        width:
-                          row.IMAGE?.width ??
-                          row.IMAGE?.WDTH_NUMV ??
-                          row.WDTH_NUMV ??
-                          0,
-
-                        height:
-                          row.IMAGE?.height ??
-                          row.IMAGE?.HDTH_NUMV ??
-                          row.HDTH_NUMV ??
-                          0,
-
-                        fileUrl: toImageUrl(
-                          row.IMAGE?.fileUrl ??
-                            row.IMAGE?.url ??
-                            row.IMAGE?.URL_INFO ??
-                            row.URL_INFO ??
-                            null,
-                          fileBaseUrl
-                        ),
-
-                        url: toImageUrl(
-                          row.IMAGE?.url ??
-                            row.IMAGE?.fileUrl ??
-                            row.IMAGE?.URL_INFO ??
-                            row.URL_INFO ??
-                            null,
-                          fileBaseUrl
-                        ),
-                      }
-                    : null;
-
-                return {
-                  ...row,
-                  IMAGE_SEQ: row.IMAGE_SEQ ?? row.IMG_ID ?? null,
-                  ATTACHMENT_EVENT_TYPE:
-                    row.ATTACHMENT_EVENT_TYPE ??
-                    row.EVENT_NM ??
-                    row.EVENT_NAME ??
-                    mapAttachmentEventName(Number(row.EVENT_TYP_SQNO)),
-                  STROKE: mappedStroke,
-                  IMAGE: mappedImage,
-                };
-              })
-              .sort((a, b) => {
-                const ta = new Date(a.EVENT_CRTE_DT).getTime();
-                const tb = new Date(b.EVENT_CRTE_DT).getTime();
-
-                if (ta !== tb) return ta - tb;
-                return Number(a.EVENT_SNO) - Number(b.EVENT_SNO);
-              })
           : [];
+        const nextEvents: ReplayEventItem[] = rawEventRows
+          .filter(isRecord)
+          .map((row: any) => {
+            const nestedStroke = row.STROKE ?? null;
+            // const nestedImage = row.IMAGE ?? null;
+
+            const mappedStroke =
+              nestedStroke ??
+              (Number(row.EVENT_TYP_SQNO) === 3 ||
+              Number(row.EVENT_TYP_SQNO) === 4
+                ? {
+                    X_CRDNT: row.STRK_X_CRDNT ?? null,
+                    Y_CRDNT: row.STRK_Y_CRDNT ?? null,
+                    LINE_SNO: row.LINE_SNO ?? null,
+                    LINE_ETT: row.LINE_ETT ?? null,
+                  }
+                : null);
+
+            const mappedImage =
+              Number(row.EVENT_TYP_SQNO) >= 5 && Number(row.EVENT_TYP_SQNO) <= 8
+                ? {
+                    id: String(
+                      row.IMG_ID ?? row.IMAGE_SEQ ?? row.IMAGE?.id ?? ''
+                    ),
+                    type: row.IMAGE?.type ?? 'camera',
+
+                    x:
+                      row.IMAGE?.x ??
+                      row.IMAGE?.posX ??
+                      row.IMAGE?.X_CRDNT ??
+                      row.IMG_X_CRDNT ??
+                      0,
+
+                    y:
+                      row.IMAGE?.y ??
+                      row.IMAGE?.posY ??
+                      row.IMAGE?.Y_CRDNT ??
+                      row.IMG_Y_CRDNT ??
+                      0,
+
+                    width:
+                      row.IMAGE?.width ??
+                      row.IMAGE?.WDTH_NUMV ??
+                      row.WDTH_NUMV ??
+                      0,
+
+                    height:
+                      row.IMAGE?.height ??
+                      row.IMAGE?.HDTH_NUMV ??
+                      row.HDTH_NUMV ??
+                      0,
+
+                    fileUrl: toImageUrl(
+                      row.IMAGE?.fileUrl ??
+                        row.IMAGE?.url ??
+                        row.IMAGE?.URL_INFO ??
+                        row.URL_INFO ??
+                        null,
+                      fileBaseUrl
+                    ),
+
+                    url: toImageUrl(
+                      row.IMAGE?.url ??
+                        row.IMAGE?.fileUrl ??
+                        row.IMAGE?.URL_INFO ??
+                        row.URL_INFO ??
+                        null,
+                      fileBaseUrl
+                    ),
+                  }
+                : null;
+
+            return {
+              ...row,
+              IMAGE_SEQ: row.IMAGE_SEQ ?? row.IMG_ID ?? null,
+              ATTACHMENT_EVENT_TYPE:
+                row.ATTACHMENT_EVENT_TYPE ??
+                row.EVENT_NM ??
+                row.EVENT_NAME ??
+                mapAttachmentEventName(Number(row.EVENT_TYP_SQNO)),
+              STROKE: mappedStroke,
+              IMAGE: mappedImage,
+            };
+          })
+          .sort((a, b) => {
+            const ta = new Date(a.EVENT_CRTE_DT).getTime();
+            const tb = new Date(b.EVENT_CRTE_DT).getTime();
+
+            if (ta !== tb) return ta - tb;
+            return Number(a.EVENT_SNO) - Number(b.EVENT_SNO);
+          });
 
         setEvents(nextEvents);
         setPlayheadIndex(-1);
@@ -977,12 +1004,38 @@ export function ReplayViewerPage() {
             responseType: 'arraybuffer',
             withCredentials: true,
           });
-
-          const contentType = strokeRes.headers['content-type'] || '';
+          // Header 응답 헤더 타입은 광범위함. 이에 String 보장이 안되기에 AxiosHeader 와 plain object 모두 대응후 결과를 string
+          // 변환후 extractBoundary 에 전달
+          const rawContentType = getHeaderValue(
+            strokeRes.headers,
+            'content-type'
+          );
+          const contentType = Array.isArray(rawContentType)
+            ? rawContentType.join('; ')
+            : typeof rawContentType === 'string'
+              ? rawContentType
+              : rawContentType == null
+                ? ''
+                : String(rawContentType);
           const boundary = extractBoundary(contentType);
           if (!boundary) continue;
 
-          const rawBuffer = strokeRes.data as ArrayBuffer;
+          const data = strokeRes.data as unknown;
+
+          let rawBuffer: ArrayBufferLike | null = null;
+          // strokeRes.data unknown 으로 받고
+          //   ArrayBuffer면 그대로 사용
+          //   TypedArray(ArrayBuffer view)buffer.slice(byteOffset..)`로 안전하게 추출
+          //   그 외 타입이거나 byteLength===0 이면 해당 페이지 stroke 파싱만 스킵 (방어 가드 처리)
+          if (data instanceof ArrayBuffer) {
+            rawBuffer = data;
+          } else if (ArrayBuffer.isView(data)) {
+            rawBuffer = data.buffer.slice(
+              data.byteOffset,
+              data.byteOffset + data.byteLength
+            );
+          }
+          if (!rawBuffer || rawBuffer.byteLength === 0) continue;
           const parts = parseMultipartMixedBinary(rawBuffer, boundary);
 
           const pageEvents = nextEvents.filter(
