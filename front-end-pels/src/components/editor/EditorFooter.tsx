@@ -35,7 +35,7 @@ export function EditorFooter({
         <button
           onClick={onPrevPage}
           disabled={isDisabled || currentPage <= 1}
-          className="px-2 py-0.5 text-xs text-gray-200 hover:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed rounded transition-colors flex-shrink-0"
+          className="px-2 py-0.5 text-xs bg-gray-600 text-gray-200 hover:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed rounded transition-colors flex-shrink-0"
         >
           이전
         </button>
