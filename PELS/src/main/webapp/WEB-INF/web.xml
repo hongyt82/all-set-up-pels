@@ -7,13 +7,17 @@
   
   <error-page>
   	<error-code>404</error-code>
-  	<location>/error404.do</location>
+  	<location>/error-handling</location>
+  </error-page>
+  <error-page>
+  	<error-code>405</error-code>
+  	<location>/error-handling</location>
   </error-page>
   <error-page>
   	<error-code>500</error-code>
-  	<location>/error500.do</location>
+  	<location>/error-handling</location>
   </error-page>
-  
+
   <filter>
     <filter-name>encodingFilter</filter-name>
     <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>

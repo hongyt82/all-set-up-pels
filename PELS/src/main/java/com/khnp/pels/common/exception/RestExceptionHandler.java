@@ -6,10 +6,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,16 +23,46 @@ import java.util.stream.Collectors;
  * @author KwangYong
  * @since 2006-02-26
  */
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(1)
 @RestControllerAdvice(basePackages = "com.khnp.pels.api")
-class RestExceptionHandler {
+public class RestExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(RestExceptionHandler.class);
 
     /**
-     * Request Param 오류 핸들러
+     * 405 - 지원하지 않는 HTTP Method
+     * - 여기에서 처리되지 않아서 GlobalErrorController에서 처리
+     * @param e HttpRequestMethodNotSupportedException
+     * @return ResponseEntity<ApiResponse<Void>>
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttpRequestMethod(HttpRequestMethodNotSupportedException e) {
+        logger.error("Unsupported HTTP Method: {}", e.getMethod());
+
+        return ResponseEntity
+                .status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse
+                        .fail("Unsupported HTTP Method: " + e.getMethod()));
+    }
+
+    /**
+     * 404 - Not Found
+     * @param e NoHandlerFoundException
+     * @return ResponseEntity<ApiResponse<Void>>
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotFound(NoHandlerFoundException e) {
+        logger.error("Request API not found: {}", e.getRequestURL());
+
+        return ResponseEntity.status(405).body(
+                ApiResponse.fail("Request API not found: " + e.getRequestURL())
+        );
+    }
+
+    /**
+     * 400 - Request Param 누락
      * @param e BindException
-     * @return
+     * @return ResponseEntity<ApiResponse<List<FieldErrorDto>>>
      */
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ApiResponse<List<FieldErrorDto>>> handleBind(BindException e) {
@@ -49,12 +82,12 @@ class RestExceptionHandler {
     }
 
     /**
-     * Bad Request 오류 핸들러
+     * 400 - Bad Request
      * @param e RestBadRequestException
-     * @return
+     * @return ResponseEntity<ApiResponse<Object>>
      */
     @ExceptionHandler(RestBadRequestException.class)
-    public ResponseEntity<ApiResponse<Object>> handleBad(RestBadRequestException e) {
+    public ResponseEntity<ApiResponse<Object>> handleBadRequest(RestBadRequestException e) {
         if (e.getData() != null) {
             logger.error("Bad request: {} | data={}", e.getMessage(), e.getData());
         } else {
@@ -66,7 +99,7 @@ class RestExceptionHandler {
     /**
      * 기타 오류 핸들러
      * @param e Exception
-     * @return
+     * @return ResponseEntity<ApiResponse<Void>>
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleAny(Exception e) {
@@ -81,3 +114,4 @@ class RestExceptionHandler {
                 .body(ApiResponse.fail(truncated));
     }
 }
+
