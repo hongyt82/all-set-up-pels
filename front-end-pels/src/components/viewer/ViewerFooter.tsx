@@ -35,7 +35,7 @@ export function ViewerFooter({
         <button
           onClick={onPrevPage}
           disabled={isDisabled || currentPage <= 1}
-          className="px-2 py-0.5 text-xs text-emerald-50 hover:bg-emerald-900 disabled:text-emerald-500 disabled:cursor-not-allowed rounded transition-colors flex-shrink-0"
+          className="px-2 py-0.5 text-xs bg-emerald-700 text-emerald-50 hover:bg-emerald-900 disabled:text-emerald-500 disabled:cursor-not-allowed rounded transition-colors flex-shrink-0"
         >
           이전
         </button>
