@@ -1585,7 +1585,7 @@ export function ReplayViewerPage() {
                   </span>
                   <span className="text-slate-500">|</span>
                   <span className="truncate">
-                    점검자: {item.chkprBlngJbpsNm || '-'}
+                    수행자: {item.chkprBlngJbpsNm || '-'}
                   </span>
                 </div>
               </button>

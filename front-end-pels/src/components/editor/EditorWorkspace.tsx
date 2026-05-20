@@ -136,13 +136,13 @@ const OVERLAY_PREVIEW: Partial<
   textbox: { label: '텍스트' },
   textbox_ml: { label: '텍스트\n(멀티라인)', multiline: true },
   textbox_num: { label: '숫자' },
-  textbox_name: { label: '점검자 이름' },
+  textbox_name: { label: '수행자 이름' },
   textbox_verifier: { label: '확인자 이름' },
 
   calendar_date: { icon: '📅', label: '날짜' },
   calendar_datetime: { icon: '📅🕐', label: '날짜 + 시간' },
 
-  signature_worker: { label: '점검자 서명' },
+  signature_worker: { label: '수행자 서명' },
   signature_verifier: { label: '확인자 서명' },
 
   satisfactionbox: { label: '만족/불만족' },
