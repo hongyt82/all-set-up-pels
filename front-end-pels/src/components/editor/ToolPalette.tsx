@@ -33,7 +33,7 @@ const QUICK_TOOL_BY_CATEGORY: Partial<
     { id: 'textbox', type: 'textbox', label: '단일 텍스트' },
     { id: 'textbox_ml', type: 'textbox_ml', label: '멀티라인' },
     { id: 'textbox_num', type: 'textbox_num', label: '숫자' },
-    { id: 'textbox_name', type: 'textbox_name', label: '점검자 이름' },
+    { id: 'textbox_name', type: 'textbox_name', label: '수행자 이름' },
     { id: 'textbox_verifier', type: 'textbox_verifier', label: '확인자 이름' },
   ],
 
@@ -49,7 +49,7 @@ const QUICK_TOOL_BY_CATEGORY: Partial<
   ],
 
   signature: [
-    { id: 'signature_worker', type: 'signature_worker', label: '점검자 서명' },
+    { id: 'signature_worker', type: 'signature_worker', label: '수행자 서명' },
     {
       id: 'signature_verifier',
       type: 'signature_verifier',
