@@ -1,30 +1,13 @@
 package com.khnp.pels.exam.controller;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.sql.Clob;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.annotation.Resource;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.apache.pdfbox.Loader;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.khnp.pels.common.enums.AtflGrupNm;
+import com.khnp.pels.exam.dto.PdfInfo;
+import com.khnp.pels.exam.dto.PdfJson;
+import com.khnp.pels.exam.dto.PdfPage;
+import com.khnp.pels.exam.service.PELSExamService;
+import common.util.StringUtil;
+import common.xss.JsonXssFilter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
@@ -38,16 +21,23 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-//import com.khnp.pels.common.util.ElinkV2RootUtil;
-import com.khnp.pels.common.enums.AtflGrupNm;
-import com.khnp.pels.exam.dto.PdfInfo;
-import com.khnp.pels.exam.dto.PdfJson;
-import com.khnp.pels.exam.dto.PdfPage;
-import com.khnp.pels.exam.service.PELSExamService;
-
-import common.util.StringUtil;
-import common.xss.JsonXssFilter;
+import javax.annotation.Resource;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.sql.Clob;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Controller
 public class PELSExamController {
@@ -429,7 +419,7 @@ public class PELSExamController {
 			int canvasWidth = 720;
 			int canvasHeight = 1020;
 			 
-			try (PDDocument document = Loader.loadPDF(file)) {
+			try (PDDocument document = PDDocument.load(file)) {
 	
 			    int pageCount = document.getNumberOfPages();
 			    System.out.println("pageCount = " + pageCount);

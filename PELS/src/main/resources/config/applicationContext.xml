@@ -85,6 +85,20 @@
 		<constructor-arg index="0" ref="sqlSessionFactory" />
 		<constructor-arg index="1" value="BATCH" />
 	</bean>
-	
+
+	<!-- Thymeleaf Resolver -->
+	<bean id="templateResolver"
+			class="org.thymeleaf.spring5.templateresolver.SpringResourceTemplateResolver">
+		<property name="prefix" value="/WEB-INF/templates/" />
+		<property name="suffix" value=".html" />
+		<property name="templateMode" value="HTML" />
+		<property name="characterEncoding" value="UTF-8" />
+	</bean>
+
+	<!-- Template Engine -->
+	<bean id="templateEngine"
+			class="org.thymeleaf.spring5.SpringTemplateEngine">
+		<property name="templateResolver" ref="templateResolver" />
+	</bean>
 	
 </beans>
