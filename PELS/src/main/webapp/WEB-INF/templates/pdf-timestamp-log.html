@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"></meta>
+    <style>
+        body {
+            font-family: NanumGothic;
+            font-size: 12px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #eeeeee;
+        }
+
+        th, td {
+            border: 1px solid #000000;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+<h1>수행기록 보고서</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>발전소</th>
+            <th>점검번호</th>
+            <th>행위</th>
+            <th>사용자</th>
+            <th>수행자</th>
+            <th>페이지</th>
+            <th>수행일시</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <tr th:each="event : ${eventBulkList}">
+            <td th:text="${event.pwplId}"></td>
+            <td th:text="${event.chckSno}"></td>
+            <td th:switch="${event.eventTypSqno.name()}">
+                <span th:case="'PAGE_ADD'">페이지추가</span>
+                <span th:case="'PAGE_DELETE'">페이지삭제</span>
+                <span th:case="'STROKE_ADD'">스트로크추가</span>
+                <span th:case="'STROKE_DELETE'">스트로크삭제</span>
+                <span th:case="'IMAGE_CONTAINER_ADD'">사진컨테이너추가</span>
+                <span th:case="'IMAGE_UPSERT'">사진추가/변경</span>
+                <span th:case="'IMAGE_RESIZE'">사진사이즈변경</span>
+                <span th:case="'IMAGE_DELETE'">사진삭제</span>
+                <span th:case="*">분류없음</span>
+            </td>
+            <td th:text="${event.userFnm}"></td>
+            <td th:text="${event.chkprBlngJbpsNm}"></td>
+            <td th:text="${event.pageCnt}"></td>
+            <td th:text="${event.eventCrteDt}"></td>
+        </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

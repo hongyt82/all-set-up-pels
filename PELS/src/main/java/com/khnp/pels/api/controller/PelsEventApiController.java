@@ -2,6 +2,7 @@ package com.khnp.pels.api.controller;
 
 import com.khnp.pels.api.dto.*;
 import com.khnp.pels.api.dto.group.ValidationGroups;
+import com.khnp.pels.api.service.PdfService;
 import com.khnp.pels.api.service.PelsEventService;
 import com.khnp.pels.api.validation.StrokeFilename;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,8 @@ public class PelsEventApiController {
     private static final Logger logger = LoggerFactory.getLogger(PelsEventApiController.class);
 
     private final PelsEventService pelsEventService;
+
+    private final PdfService pdfService;
 
 
     /**
@@ -96,6 +99,45 @@ public class PelsEventApiController {
         }
         logger.info("### getTstEventStrokeByPageList() PWPL_ID={} CHCK_SNO={} PAGE_CNT={} End",
                 reqDto.getPwplId(), reqDto.getChckSno(), reqDto.getPageCnt());
+    }
+
+    /**
+     * 이벤트 목록 PDF 다운로드
+     * @param reqDto 이벤트 목록 PDF 다운로드에 대한 요청 DTO
+     */
+    @GetMapping( value = "/pdf")
+    public void downloadPdfTstEventList (
+            @Validated(ValidationGroups.GroupEventBulk.class) TstEventSearchRequest reqDto,
+            HttpServletResponse response
+    ) throws Exception {
+        logger.info("### downloadPdfTstEventList() PWPL_ID={} CHCK_SNO={} Start", reqDto.getPwplId(), reqDto.getChckSno());
+
+        // 이벤트 목록 조회
+        TstEventEntity paramEntity = new TstEventEntity();
+        paramEntity.setPwplId(reqDto.getPwplId());
+        paramEntity.setChckSno(reqDto.getChckSno());
+        List<TstEventResponse> eventBulkList = pelsEventService.getTstEventBulkList(paramEntity);
+
+        logger.info("### downloadPdfTstEventList() PWPL_ID={} CHCK_SNO={} Search End, events={}",
+                reqDto.getPwplId(), reqDto.getChckSno(), eventBulkList.size());
+
+        // PDF로 변환
+        byte[] pdfBytes = pdfService.generatePdf(eventBulkList);
+
+        logger.info("### downloadPdfTstEventList() PWPL_ID={} CHCK_SNO={} Converted to PDF",
+                reqDto.getPwplId(), reqDto.getChckSno());
+
+        // 응답 설정
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=tst_event_list_"+reqDto.getChckSno()+".pdf");
+        response.setContentLength(pdfBytes.length);
+
+        // 실제 응답
+        OutputStream out = response.getOutputStream();
+        out.write(pdfBytes);
+
+        out.flush();
+        out.close();
     }
 
 }
