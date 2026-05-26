@@ -9,6 +9,7 @@ import java.net.URL;
 import java.sql.Clob;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +40,14 @@ import common.xss.JsonXssFilter;
 public class PELSExamMobileController {
 
 	private static final Logger log = LoggerFactory.getLogger(PELSExamMobileController.class);
-	
+
+	/** 외부 클라이언트 디버깅용: 파라미터 로그 최대 길이 */
+	private static final int LOG_PARAM_MAX_LEN = 2000;
+
+	/** 로그에서 null/empty 즉시 식별용 마커 (비즈니스 로직과 무관, 출력 전용) */
+	private static final String LOG_NULL_MARKER = "NULL";
+	private static final String LOG_EMPTY_MARKER = "EMPTY";
+
 	@Autowired
 	private PELSExamService pelsExamService;
 	
@@ -48,7 +56,7 @@ public class PELSExamMobileController {
 	private JsonXssFilter jsonXssFilter = new JsonXssFilter();
 	
 	@Resource(name = "utilProperties")
-	private Properties utilProperties;	
+	private Properties utilProperties;
 
 	/*
 	 * Exam_Search_M.do
@@ -58,6 +66,7 @@ public class PELSExamMobileController {
 	@RequestMapping(value= {"/Exam_Search_M.do"}, method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
 	@ResponseBody
 	public List<Map<String, Object>> Exam_Search_M (HttpServletRequest request) {
+		logIncomingRequest(request, "Exam_Search_M");
 		ModelAndView mav = new ModelAndView();
 		HashMap<String, Object> paramMap = new HashMap<String, Object>();
 		
@@ -81,13 +90,18 @@ public class PELSExamMobileController {
 		paramMap.put("CHKPR_ID", USER_ID);
 		
 		List<Map<String, Object>> examList = (ArrayList) pelsExamService.getList("ExamList", paramMap);
-		
+		if (examList == null) {
+			log.warn("[PELSExamMobile] <<< Exam_Search_M | examList={}", LOG_NULL_MARKER);
+		} else {
+			log.info("[PELSExamMobile] <<< Exam_Search_M | resultSize={}", examList.size());
+		}
 		return examList;
 	}
 	
 	@RequestMapping(value= {"/Exam_Detail_M.do"}, method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
 	@ResponseBody
 	public Map<String, Object> Exam_Detail_M (HttpServletRequest request) {
+		logIncomingRequest(request, "Exam_Detail_M");
 		ModelAndView mav = new ModelAndView();
 		HashMap<String, Object> paramMapReturn = new HashMap<String, Object>();
 
@@ -129,7 +143,9 @@ public class PELSExamMobileController {
 		}
 		catch(Exception e) {}
 		paramMapReturn.put("FRM_CONS_JSON", json);
-		
+		logField("Exam_Detail_M [RESPONSE]", "CHCK_SNO", CHCK_SNO);
+		logField("Exam_Detail_M [RESPONSE]", "examDetail", examDetail);
+		logMapFields("Exam_Detail_M", "RESPONSE", paramMapReturn);
 		return paramMapReturn;
 	}
 	
@@ -160,6 +176,7 @@ public class PELSExamMobileController {
 	@RequestMapping(value={"/Exam_CFY_Update_M.do"} , method={RequestMethod.GET, RequestMethod.POST})
 	@ResponseBody
 	public Map<String, String> Exam_CFY_Update (HttpServletRequest request) throws Exception {
+		logIncomingRequest(request, "Exam_CFY_Update_M");
 		Map<String, String> resultMap = new HashMap<String, String>();
 		
 		String CHCK_SNO = jsonXssFilter.cleanXSS(StringUtil.nvl(request.getParameter("CHCK_SNO"), ""));
@@ -185,7 +202,7 @@ public class PELSExamMobileController {
 		resultMap.put("callMethod", "Exam_CFY_Update");
 		resultMap.put("resultMsg", resultMsg);
 		resultMap.put("resultCd", resultCd);
-		
+		logMapFields("Exam_CFY_Update_M", "RESPONSE", resultMap);
 		return resultMap;
 	}
 	
@@ -193,6 +210,7 @@ public class PELSExamMobileController {
 	@RequestMapping(value={"/Exam_JsonSave_M.do"} , method={RequestMethod.GET, RequestMethod.POST})
 	@ResponseBody
 	public Map<String, String> formJsonSave (HttpServletRequest request) throws Exception {
+		logIncomingRequest(request, "Exam_JsonSave_M");
 		Map<String, String> resultMap = new HashMap<String, String>();
 		String resultMsg = "저장 되었습니다.";
 		String resultCd = "false";
@@ -227,13 +245,15 @@ public class PELSExamMobileController {
 		resultMap.put("callMethod", "Exam_JsonSave");
 		resultMap.put("resultMsg", resultMsg);
 		resultMap.put("resultCd", resultCd);
-		
+		logMapFields("Exam_JsonSave_M", "RESPONSE", resultMap);
 		return resultMap;
 	}
 	
 	@RequestMapping(value = "/api/Exam_Json_M", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
 	@ResponseBody
 	public Map<String, Object> Exam_Json_M_API(HttpServletRequest request) throws Exception {
+		logIncomingRequest(request, "Exam_Json_M_API");
+		logSessionAttributes(request, "Exam_Json_M_API");
 
 		String PELS_IP_URL = utilProperties.getProperty("PELS_IP_URL");
 		
@@ -246,8 +266,12 @@ public class PELSExamMobileController {
 		Map<String, Object> result = new HashMap<>();
 		result.put("USER_ID", USER_ID);
 		result.put("USER_NM", USER_NM);
+		logField("Exam_Json_M_API [resolved]", "USER_ID(session)", USER_ID);
+		logField("Exam_Json_M_API [resolved]", "USER_NM(session)", USER_NM);
+		logParamValue("Exam_Json_M_API [resolved]", "CHCK_SNO", CHCK_SNO);
 
 		if ("".equals(CHCK_SNO)) {
+			log.warn("[PELSExamMobile] <<< Exam_Json_M_API | CHCK_SNO is empty, early return");
 			return result;
 		}
 
@@ -260,20 +284,22 @@ public class PELSExamMobileController {
 		Map<String, String> mapTemp = pelsExamService.getDetail("ExamJsonDetail", paramMap);
 		
 		if (mapTemp == null) {
+			log.warn("[PELSExamMobile] <<< Exam_Json_M_API | ExamJsonDetail not found for CHCK_SNO={}", CHCK_SNO);
 			return result;
 		}
 
 		/*
 		 * ========================= 2. PDF 경로 =========================
 		 */
+		logField("Exam_Json_M_API [DB]", "ATFL_PHCL_NM", mapTemp.get("ATFL_PHCL_NM"));
 		result.put("PDF_PATH", PELS_IP_URL + "/upload/" + mapTemp.get("ATFL_PHCL_NM"));
-		
-		System.out.println("PDF_PATH = " + PELS_IP_URL + "/upload/" + mapTemp.get("ATFL_PHCL_NM"));
+		logField("Exam_Json_M_API [RESPONSE]", "PDF_PATH", result.get("PDF_PATH"));
 
 		/*
 		 * ========================= 3. Overlay JSON =========================
 		 */
 		Object overClob = mapTemp.get("WRTE_JSON_DCR");
+		logField("Exam_Json_M_API [DB]", "WRTE_JSON_DCR", overClob);
 		if (overClob instanceof Clob) {
 			result.put("FRM_OVER_JSON", clobToString((Clob) overClob));
 		} else {
@@ -284,18 +310,22 @@ public class PELSExamMobileController {
 		 * ========================= 4. Rule JSON =========================
 		 */
 		Object consClob = mapTemp.get("CMP_JSON_DCR");
+		logField("Exam_Json_M_API [DB]", "CMP_JSON_DCR", consClob);
 		if (consClob instanceof Clob) {
 			result.put("FRM_CONS_JSON", clobToString((Clob) consClob));
 		} else {
 			result.put("FRM_CONS_JSON", null);
 		}
 
+		logMapFields("Exam_Json_M_API", "RESPONSE", result);
 		return result;
 	}	
 	
 	
 	@RequestMapping(value = "/proxy/pdf", method = RequestMethod.GET)
-	public void proxyPdf(@RequestParam("path") String path, HttpServletResponse response) throws Exception {
+	public void proxyPdf(@RequestParam("path") String path, HttpServletRequest request, HttpServletResponse response) throws Exception {
+		logIncomingRequest(request, "proxy/pdf");
+		logParamValue("proxy/pdf", "path", path);
 
 		URL url = new URL(path);
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -317,7 +347,9 @@ public class PELSExamMobileController {
 	}
 
     @RequestMapping(value = "/proxy/file", method = RequestMethod.GET)
-    public void proxyFile(@RequestParam("path") String path, HttpServletResponse response) throws Exception {
+    public void proxyFile(@RequestParam("path") String path, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        logIncomingRequest(request, "proxy/file");
+        logParamValue("proxy/file", "path", path);
 
         URL url = new URL(path);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -355,6 +387,7 @@ public class PELSExamMobileController {
 	 */
 	@RequestMapping(value="/Exam_Input_M.do", method = {RequestMethod.GET, RequestMethod.POST})
 	public ModelAndView Exam_Input_M (HttpServletRequest request) {
+		logIncomingRequest(request, "Exam_Input_M");
 		
 		HashMap<String, Object> paramMap = new HashMap<String, Object>();
 		
@@ -365,10 +398,11 @@ public class PELSExamMobileController {
 		String SH_PRT_NO = StringUtil.nvl(request.getParameter("SH_PRT_NO"), "");
 		String USER_ID = StringUtil.nvl(request.getParameter("USER_ID"), ""); 
 		
-		System.out.println("USER_ID = " + USER_ID);
+		logParamValue("Exam_Input_M [resolved]", "USER_ID", USER_ID);
 	    
 		paramMap.put("USER_ID", USER_ID);
 		Map<String, Object> userInfo = pelsExamService.getDetail("GetUserInfo", paramMap);
+		logField("Exam_Input_M [DB]", "userInfo", userInfo);
 		if (userInfo != null) {
 			HttpSession session = request.getSession();
 			session.setAttribute("LOGIN_USER_ID", userInfo.get("USER_ID"));
@@ -403,7 +437,7 @@ public class PELSExamMobileController {
 			session.setMaxInactiveInterval(60*60*100);
 		}
 		else {
-			System.out.println("사번이 없습니다..........");
+			log.warn("[PELSExamMobile] Exam_Input_M | user not found for USER_ID={}", USER_ID);
 		}
 		
 		// 초기세팅 등록자는 세션에서 가져와서 이름 세팅해야할 것...
@@ -428,7 +462,139 @@ public class PELSExamMobileController {
 		mav.addObject("USER_ID", USER_ID);
 		
 		mav.setViewName("/pels/exam/Exam_Input_M");
-		
+		logSessionAttributes(request, "Exam_Input_M");
+		log.info("[PELSExamMobile] <<< Exam_Input_M | view={} | SH_DOC_TYP_CD={}", mav.getViewName(), SH_DOC_TYP_CD);
 		return mav;
+	}
+
+	// -------------------------------------------------------------------------
+	// 로깅 헬퍼 (외부 클라이언트 디버깅용)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * 외부 클라이언트 호출 시 요청 메타·파라미터·(선택) 세션을 전면 로깅
+	 */
+	private void logIncomingRequest(HttpServletRequest request, String endpointName) {
+		log.info(
+				"[PELSExamMobile] >>> {} | {} {} | remote={} | query={}",
+				endpointName,
+				request.getMethod(),
+				request.getRequestURI(),
+				request.getRemoteAddr(),
+				formatLogValue(request.getQueryString()));
+
+		Enumeration<String> headerNames = request.getHeaderNames();
+		if (headerNames == null) {
+			log.warn("[PELSExamMobile] {} | headers={}", endpointName, LOG_NULL_MARKER);
+		} else {
+			while (headerNames.hasMoreElements()) {
+				String name = headerNames.nextElement();
+				logField(endpointName, "header[" + name + "]", request.getHeader(name));
+			}
+		}
+
+		Map<String, String[]> paramMap = request.getParameterMap();
+		if (paramMap == null) {
+			log.warn("[PELSExamMobile] {} | parameterMap={}", endpointName, LOG_NULL_MARKER);
+		} else if (paramMap.isEmpty()) {
+			log.info("[PELSExamMobile] {} | parameters: (none)", endpointName);
+		} else {
+			for (Map.Entry<String, String[]> entry : paramMap.entrySet()) {
+				String key = entry.getKey();
+				String[] values = entry.getValue();
+				if (values == null) {
+					logParamValue(endpointName, key, null);
+				} else if (values.length == 1) {
+					logParamValue(endpointName, key, values[0]);
+				} else {
+					for (int i = 0; i < values.length; i++) {
+						logParamValue(endpointName, key + "[" + i + "]", values[i]);
+					}
+				}
+			}
+		}
+	}
+
+	private void logSessionAttributes(HttpServletRequest request, String endpointName) {
+		HttpSession session = request.getSession(false);
+		if (session == null) {
+			log.warn("[PELSExamMobile] {} | session={}", endpointName, LOG_NULL_MARKER);
+			return;
+		}
+		log.info(
+				"[PELSExamMobile] {} | sessionId={} | maxInactiveInterval={}",
+				endpointName,
+				session.getId(),
+				session.getMaxInactiveInterval());
+		Enumeration<String> names = session.getAttributeNames();
+		while (names.hasMoreElements()) {
+			String name = names.nextElement();
+			logField(endpointName, "session[" + name + "]", session.getAttribute(name));
+		}
+	}
+
+	/** 요청/응답 필드 1건 — null·empty는 WARN + 마커로 즉시 구분 */
+	private void logField(String endpointName, String fieldName, Object value) {
+		if (value == null) {
+			log.warn("[PELSExamMobile] {} | {}={}", endpointName, fieldName, LOG_NULL_MARKER);
+			return;
+		}
+		if (value instanceof String) {
+			logParamValue(endpointName, fieldName, (String) value);
+			return;
+		}
+		log.info(
+				"[PELSExamMobile] {} | {}={}",
+				endpointName,
+				fieldName,
+				truncateForLog(String.valueOf(value)));
+	}
+
+	private void logMapFields(String endpointName, String phase, Map<String, ?> map) {
+		if (map == null) {
+			log.warn("[PELSExamMobile] {} | {} map={}", endpointName, phase, LOG_NULL_MARKER);
+			return;
+		}
+		for (Map.Entry<String, ?> entry : map.entrySet()) {
+			logField(endpointName + " | " + phase, entry.getKey(), entry.getValue());
+		}
+	}
+
+	private void logParamValue(String endpointName, String paramName, String value) {
+		if (value == null) {
+			log.warn("[PELSExamMobile] {} | {}={}", endpointName, paramName, LOG_NULL_MARKER);
+		} else if (value.isEmpty()) {
+			log.warn("[PELSExamMobile] {} | {}={}", endpointName, paramName, LOG_EMPTY_MARKER);
+		} else {
+			log.info(
+					"[PELSExamMobile] {} | {}={}",
+					endpointName,
+					paramName,
+					truncateForLog(value));
+		}
+	}
+
+	private static String formatLogValue(String value) {
+		if (value == null) {
+			return LOG_NULL_MARKER;
+		}
+		if (value.isEmpty()) {
+			return LOG_EMPTY_MARKER;
+		}
+		return truncateBody(value);
+	}
+
+	private static String truncateForLog(String value) {
+		return formatLogValue(value);
+	}
+
+	private static String truncateBody(String value) {
+		if (value.length() <= LOG_PARAM_MAX_LEN) {
+			return value;
+		}
+		return value.substring(0, LOG_PARAM_MAX_LEN)
+				+ "...[truncated, totalLen="
+				+ value.length()
+				+ "]";
 	}
 }

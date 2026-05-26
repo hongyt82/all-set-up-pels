@@ -1,6 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ include file="/WEB-INF/jsp/pels/include/common.jspf"%>
-<script type="text/javascript" src="/resources/assets/js/pels_android_js_bridge_all.js" ></script>
 <script>
 	$(document).ready(function () {
 	})	
@@ -40,8 +39,17 @@
 			success: function (resultData) {
 				// 성공시 메세지 출력 및 화면 재조회
 				if('true' == resultData.resultCd) {
-					alert(resultData.resultMsg);
-					//sendAlertWithAck(resultData.CHCK_SNO);
+					//alert(resultData.resultMsg);
+                    console.log("Check Result Data : " + resultData);
+                    console.log("Check Result resultCd : " + resultData.resultCd);
+                    console.log("Check Result MSG : " + resultData.resultMsg);
+                    console.log("CHCK_SNO : " + resultData.CHCK_SNO);
+                    console.log("callMethod : " + resultData.callMethod);
+                    //resultData.resultCd
+                    //resultData.value
+                    //검증 체크
+                    console.log("==============called==============");
+                    sendAlertWithAck(JSON.stringify("[{CHCK_SNO : 43, PWPL_ID : 2320}]"));
 					//fnInputBack();
 				} else {
 					alert('등록에 실패하였습니다.');
@@ -121,39 +129,62 @@
 	
 	// ACK / Promise 踰꾩쟾 ?몄텧
 	function sendAlertWithAck(message) {
-	  PelsAndroidBridge.ui
-	    .showAlertWithAck(message)
-	    .then(function (res) {
-	      console.log('[Web] showAlertWithAck OK', res);
-	    })
-	    .catch(function (err) {
-	      console.log('[Web] showAlertWithAck FAIL', err);
-	    });
+        if (window.PelsAndroidBridge && PelsAndroidBridge.ui && PelsAndroidBridge.ui.showAlertWithAck) {
+            console.log("=======PelsAndroidBridge 객체 있음 (안드로이드 웹뷰 기반상에서 동작한다는 뜻임)======");
+            // PC 브라우저상에서는 PelsAndroidBridge 가 존재하지 않음 당연한 것임.
+            // 반드시 안드로이드에 웹뷰에서만 동작하는 부분임. 더 정확히는 PelsAndroidBridge 를 받아줄 수 있는 선언부가
+            // 안드로이드 웹뷰에 있다.
+            // 자바 스크립트 브릿지 인터페이스 자체가 그렇게 동작함으로 이건 기본
+            PelsAndroidBridge.ui
+                .showAlertWithAck(message)
+                .then(function (res) {
+                    console.log('[Web] showAlertWithAck OK', res);
+                })
+                .catch(function (err) {
+                    console.log('[Web] showAlertWithAck FAIL', err);
+                });
+        } else {
+            // 여기는 그냥 PC 브라우저에서 호출한 경우
+            alert(message.data); // console만
+        }
 	}
 	
 	function sendInputRequestWithAck() {
 	  var current = document.getElementById('sampleInputAck').value;
-	  PelsAndroidBridge.input
-	    .requestWithAck('sampleInputAck', current)
-	    .then(function (res) {
-	      console.log('[Web] input.requestWithAck OK', res);
-	    })
-	    .catch(function (err) {
-	      console.log('[Web] input.requestWithAck FAIL', err);
-	    });
+      if (window.PelsAndroidBridge && PelsAndroidBridge.ui && PelsAndroidBridge.input.requestWithAck) {
+            console.log("PelsAndroidBridge Current :: " + current)
+            console.log("=======PelsAndroidBridge 객체 있음 (안드로이드 웹뷰 기반상에서 동작한다는 뜻임)======");
+            PelsAndroidBridge.input
+                .requestWithAck('sampleInputAck', current)
+                .then(function (res) {
+                    console.log('[Web] input.requestWithAck OK', res);
+                })
+                .catch(function (err) {
+                    console.log('[Web] input.requestWithAck FAIL', err);
+                });
+      }else{
+            console.log("Current :: " + current)
+            // 여기는 그냥 PC 브라우저에서 호출한 경우
+            // alert(message.data); // console만
+            alert("input.requestWithAck");
+      }
 	}
 	
 	function sendApiRequestWithAck() {
-	  PelsAndroidBridge.api
-	    .callWithAck('/v1/example',
-	      { code: 'ACK01', date: '2026-03-13' },
-	      'GET')
-	    .then(function (res) {
-	      console.log('[Web] api.callWithAck OK', res);
-	    })
-	    .catch(function (err) {
-	      console.log('[Web] api.callWithAck FAIL', err);
-	    });
+        if (window.PelsAndroidBridge && PelsAndroidBridge.ui && PelsAndroidBridge.api.callWithAck) {
+            PelsAndroidBridge.api
+                .callWithAck('/v1/example',
+                    {code: 'ACK01', date: '2026-03-13'},
+                    'GET')
+                .then(function (res) {
+                    console.log('[Web] api.callWithAck OK', res);
+                })
+                .catch(function (err) {
+                    console.log('[Web] api.callWithAck FAIL', err);
+                });
+        }else{
+            alert('API Call with Ack'); // console만
+        }
 	}
 </script>	
 <style>
