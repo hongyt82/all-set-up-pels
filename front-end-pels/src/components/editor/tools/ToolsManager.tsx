@@ -3,7 +3,7 @@ import type { ToolCategory } from '../EditorHeader.tsx';
 import { devLog } from '../../../utils/devConsole';
 
 // 각 도구별 매니저 import
-import BanToolsManager, { BanToolsDemo } from './BanTools.tsx';
+// import BanToolsManager, { BanToolsDemo } from './BanTools.tsx';
 import type { BanElement } from './BanTools.tsx';
 import TextToolsManager, { TextToolsDemo } from './TextTools.tsx';
 import type { TextElement } from './TextTools.tsx';
@@ -15,7 +15,7 @@ import SignatureToolsManager, {
   SignatureToolsDemo,
 } from './SignatureTools.tsx';
 import type { SignatureElement } from './SignatureTools.tsx';
-import CircleToolsManager, { CircleToolsDemo } from './CircleTools.tsx';
+// import CircleToolsManager, { CircleToolsDemo } from './CircleTools.tsx';
 import type { CircleElement } from './CircleTools.tsx';
 
 // 옵션 타입 정의: 각 도구에서 사용하는 속성의 합집합
@@ -69,7 +69,7 @@ export class ToolsManager {
     });
 
     switch (category) {
-      case 'ban':
+      /*case 'ban':
         switch (tool) {
           case 'ban-circle':
             return BanToolsManager.createBanCircle(x, y, options?.size);
@@ -86,7 +86,7 @@ export class ToolsManager {
             return BanToolsManager.createBanCross(x, y, options?.size);
           default:
             return null;
-        }
+        }*/
 
       case 'textbox':
         switch (tool) {
@@ -174,7 +174,7 @@ export class ToolsManager {
             return null;
         }
 
-      case 'circle':
+      /*case 'circle':
         switch (tool) {
           case 'circle-outline':
             return CircleToolsManager.createCircleOutline(
@@ -190,7 +190,7 @@ export class ToolsManager {
             return CircleToolsManager.createCircleRing(x, y, options?.radius);
           default:
             return null;
-        }
+        }*/
 
       default:
         return null;
@@ -201,11 +201,11 @@ export class ToolsManager {
   static renderElement(element: PDFElement): JSX.Element {
     switch (element.type) {
       // Ban 요소들
-      case 'ban-circle':
+      /* case 'ban-circle':
       case 'ban-square':
       case 'ban-line':
       case 'ban-cross':
-        return BanToolsManager.renderBanElement(element as BanElement);
+        return BanToolsManager.renderBanElement(element as BanElement);*/
 
       // Text 요소들
       case 'text-input':
@@ -245,11 +245,11 @@ export class ToolsManager {
         );
 
       // Circle 요소들
-      case 'circle-outline':
+      /*case 'circle-outline':
       case 'circle-filled':
       case 'circle-dot':
       case 'circle-ring':
-        return CircleToolsManager.renderCircleElement(element as CircleElement);
+        return CircleToolsManager.renderCircleElement(element as CircleElement);*/
 
       default:
         return <div />;
@@ -299,8 +299,8 @@ export const ToolsManagerDemo: React.FC<ToolsManagerProps> = ({
   // 현재 선택된 카테고리에 따라 적절한 도구 컴포넌트 렌더링
   const renderToolDemo = () => {
     switch (selectedCategory) {
-      case 'ban':
-        return <BanToolsDemo {...demoProps} />;
+      /*case 'ban':
+        return <BanToolsDemo {...demoProps} />;*/
       case 'textbox':
         return <TextToolsDemo {...demoProps} />;
       case 'checkbox':
@@ -309,8 +309,8 @@ export const ToolsManagerDemo: React.FC<ToolsManagerProps> = ({
         return <CalendarToolsDemo {...demoProps} />;
       case 'signature':
         return <SignatureToolsDemo {...demoProps} />;
-      case 'circle':
-        return <CircleToolsDemo {...demoProps} />;
+      /*case 'circle':
+        return <CircleToolsDemo {...demoProps} />;*/
       default:
         return null;
     }

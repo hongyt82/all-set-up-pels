@@ -31,7 +31,7 @@ const QUICK_TOOL_BY_CATEGORY: Partial<
 > = {
   textbox: [
     { id: 'textbox', type: 'textbox', label: '단일 텍스트' },
-    { id: 'textbox_ml', type: 'textbox_ml', label: '멀티라인' },
+    { id: 'textbox_multiline', type: 'textbox_multiline', label: '멀티라인' },
     { id: 'textbox_num', type: 'textbox_num', label: '숫자' },
     { id: 'textbox_name', type: 'textbox_name', label: '수행자 이름' },
     { id: 'textbox_verifier', type: 'textbox_verifier', label: '확인자 이름' },
@@ -45,7 +45,9 @@ const QUICK_TOOL_BY_CATEGORY: Partial<
 
   calendar: [
     { id: 'calendar_date', type: 'calendar_date', label: '날짜' },
+    { id: 'calendar_date_y2', type: 'calendar_date_y2', label: '날짜(년도2)' },
     { id: 'calendar_datetime', type: 'calendar_datetime', label: '날짜+시간' },
+    { id: 'calendar_time', type: 'calendar_time', label: '시간' },
   ],
 
   signature: [
@@ -70,6 +72,7 @@ const QUICK_TOOL_BY_CATEGORY: Partial<
     { id: 'button_oxn', type: 'button_oxn', label: 'OXN' },
     { id: 'button_oxt', type: 'button_oxt', label: 'OXT' },
     { id: 'button_oxtn', type: 'button_oxtn', label: 'OXTN' },
+    { id: 'movetopage', type: 'movetopage', label: '페이지 이동' },
   ],
 };
 

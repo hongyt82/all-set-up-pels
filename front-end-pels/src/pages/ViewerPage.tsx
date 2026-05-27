@@ -59,7 +59,7 @@ import type { OverlayType } from '../types';
 const SUPPORTED_TYPES: OverlayType[] = [
   // textbox
   'textbox',
-  'textbox_ml',
+  'textbox_multiline',
   'textbox_num',
   'textbox_unusing',
   'textbox_name',
@@ -73,7 +73,9 @@ const SUPPORTED_TYPES: OverlayType[] = [
 
   // calendar
   'calendar_date',
+  'calendar_date_y2',
   'calendar_datetime',
+  'calendar_time',
 
   // signature
   'signature_worker',
@@ -93,9 +95,145 @@ type SupportedType = OverlayType;
 // 텍스트박스 폰트/테두리 설정
 const TEXTBOX_FONT_PX = 12;
 const PX_TO_PT = 0.75; // 1px ≈ 0.75pt
-const BOX_BORDER_COLOR = rgb(0.6, 0.6, 0.6);
-const BOX_BORDER_W = 0.5;
 
+const formatNumberForDisplay = (value: string) => {
+  const raw = String(value ?? '')
+    .replace(/,/g, '')
+    .trim();
+
+  if (!raw) return '';
+
+  const num = Number(raw);
+
+  if (Number.isNaN(num)) {
+    return String(value ?? '');
+  }
+
+  const hasDecimal = raw.includes('.');
+  const decimal = hasDecimal ? (raw.split('.')[1] ?? '') : '';
+
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: hasDecimal ? decimal.length : 0,
+    maximumFractionDigits: hasDecimal ? decimal.length : 0,
+  });
+};
+
+const formatDateForDisplay = (value: string) => {
+  const raw = String(value ?? '').trim();
+
+  if (raw.includes('.')) {
+    const parts = raw.split('.').map(v => v.replace(/\D/g, ''));
+
+    const year = parts[0] ?? '';
+    const month = parts[1] ? String(Number(parts[1])) : '';
+    const day = parts[2] ? String(Number(parts[2])) : '';
+
+    return [year, month, day].filter(Boolean).join('.');
+  }
+
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+
+  if (digits.length !== 8) return raw;
+
+  const year = digits.slice(0, 4);
+  const month = String(Number(digits.slice(4, 6)));
+  const day = String(Number(digits.slice(6, 8)));
+
+  return `${year}.${month}.${day}`;
+};
+
+/*const formatDateYear2ForDisplay = (value: string) => {
+  const raw = String(value ?? '').trim();
+
+  if (raw.includes('.')) {
+    const parts = raw.split('.').map(v => v.replace(/\D/g, ''));
+
+    const year = parts[0] ? parts[0].slice(-2) : '';
+    const month = parts[1] ? String(Number(parts[1])) : '';
+    const day = parts[2] ? String(Number(parts[2])) : '';
+
+    return [year, month, day].filter(Boolean).join('.');
+  }
+
+  const digits = raw.replace(/\D/g, '').slice(0, 6);
+
+  if (digits.length !== 6) return raw;
+
+  const year = digits.slice(0, 2);
+  const month = String(Number(digits.slice(2, 4)));
+  const day = String(Number(digits.slice(4, 6)));
+
+  return `${year}.${month}.${day}`;
+};*/
+
+const formatDateYear2ForDisplay = (value: string) => {
+  const raw = String(value ?? '').trim();
+  const digits = raw.replace(/\D/g, '');
+
+  if (digits.length === 8) {
+    const year = digits.slice(2, 4);
+    const month = String(Number(digits.slice(4, 6)));
+    const day = String(Number(digits.slice(6, 8)));
+
+    return `${year}.${month}.${day}`;
+  }
+
+  if (digits.length === 6) {
+    const year = digits.slice(0, 2);
+    const month = String(Number(digits.slice(2, 4)));
+    const day = String(Number(digits.slice(4, 6)));
+
+    return `${year}.${month}.${day}`;
+  }
+
+  return raw;
+};
+
+const formatTimeForDisplay = (value: string) => {
+  const raw = String(value ?? '').trim();
+
+  if (raw.includes(':')) {
+    const [h = '', m = ''] = raw.split(':');
+
+    const hour = h.replace(/\D/g, '');
+    const minute = m.replace(/\D/g, '').slice(0, 2);
+
+    if (!hour) return '';
+    if (!minute) return String(Number(hour));
+
+    return `${Number(hour)}:${minute}`;
+  }
+
+  const digits = raw.replace(/\D/g, '').slice(0, 4);
+
+  if (digits.length !== 4) return raw;
+
+  const hour = String(Number(digits.slice(0, 2)));
+  const minute = digits.slice(2, 4);
+
+  return `${hour}:${minute}`;
+};
+
+const formatDateTimeForDisplay = (value: string) => {
+  const raw = String(value ?? '').trim();
+
+  if (raw.includes(' ')) {
+    const [datePart = '', timePart = ''] = raw.split(/\s+/);
+    const date = formatDateForDisplay(datePart);
+    const time = formatTimeForDisplay(timePart);
+
+    return [date, time].filter(Boolean).join(' ');
+  }
+
+  const digits = raw.replace(/\D/g, '').slice(0, 12);
+
+  if (digits.length !== 12) return raw;
+
+  const date = formatDateForDisplay(digits.slice(0, 8));
+  const time = formatTimeForDisplay(digits.slice(8, 12));
+
+  return `${date} ${time}`;
+};
 export function ViewerPage() {
   const [currentFile, setCurrentFile] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | undefined>();
@@ -1394,16 +1532,10 @@ export function ViewerPage() {
           const y = pageH - (c.yPct * pageH + h); // PDF 좌표계 변환
 
           switch (c.type) {
-            case 'textbox': {
-              page.drawRectangle({
-                x,
-                y,
-                width: w,
-                height: h,
-                borderColor: BOX_BORDER_COLOR,
-                borderWidth: BOX_BORDER_W,
-              });
-
+            case 'textbox':
+            case 'textbox_multiline':
+            case 'textbox_name':
+            case 'textbox_verifier': {
               const txt = String(c.value ?? '');
               if (!txt) break;
 
@@ -1478,29 +1610,45 @@ export function ViewerPage() {
               break;
             }
 
-            case 'checkbox': {
-              const s = Math.min(w, h);
-              const ix = x;
-              const iy = y + (h - s);
+            case 'textbox_num': {
+              const txt = formatNumberForDisplay(String(c.value ?? ''));
+              if (!txt) break;
 
-              page.drawRectangle({
-                x: ix,
-                y: iy,
-                width: s,
-                height: s,
-                borderColor: BOX_BORDER_COLOR,
-                borderWidth: BOX_BORDER_W,
+              const size = TEXTBOX_FONT_PX * PX_TO_PT;
+
+              const textWidth = unicodeFont
+                ? unicodeFont.widthOfTextAtSize(txt, size)
+                : txt.length * size * 0.6;
+
+              page.drawText(txt, {
+                x: x + Math.max(1, (w - textWidth) / 2),
+                y: y + (h - size) / 2,
+                size,
+                font: unicodeFont,
+                color: rgb(0, 0, 0),
               });
 
+              break;
+            }
+
+            case 'checkbox': {
+              const s = Math.min(w, h);
+              const ix = x + (w - s) / 2;
+              const iy = y + (h - s) / 2;
+
               const checked = String(c.value || '').toLowerCase() === 'y';
+
               if (checked) {
                 const t = Math.max(1, s * 0.16);
-                const x1 = ix + s * 0.26,
-                  y1 = iy + s * 0.56;
-                const x2 = ix + s * 0.46,
-                  y2 = iy + s * 0.34;
-                const x3 = ix + s * 0.78,
-                  y3 = iy + s * 0.7;
+
+                const x1 = ix + s * 0.26;
+                const y1 = iy + s * 0.56;
+
+                const x2 = ix + s * 0.46;
+                const y2 = iy + s * 0.34;
+
+                const x3 = ix + s * 0.78;
+                const y3 = iy + s * 0.7;
 
                 page.drawLine({
                   start: { x: x1, y: y1 },
@@ -1508,6 +1656,7 @@ export function ViewerPage() {
                   thickness: t,
                   color: rgb(0, 0, 0),
                 });
+
                 page.drawLine({
                   start: { x: x2, y: y2 },
                   end: { x: x3, y: y3 },
@@ -1516,18 +1665,21 @@ export function ViewerPage() {
                 });
 
                 const capR = t / 2;
+
                 page.drawCircle({
                   x: x1,
                   y: y1,
                   size: capR,
                   color: rgb(0, 0, 0),
                 });
+
                 page.drawCircle({
                   x: x2,
                   y: y2,
                   size: capR,
                   color: rgb(0, 0, 0),
                 });
+
                 page.drawCircle({
                   x: x3,
                   y: y3,
@@ -1535,6 +1687,34 @@ export function ViewerPage() {
                   color: rgb(0, 0, 0),
                 });
               }
+
+              break;
+            }
+
+            case 'satisfactionbox': {
+              const value = String(c.value ?? '').toLowerCase();
+
+              const txt =
+                value === 'good' ? '만족' : value === 'bad' ? '불만족' : '';
+
+              if (!txt) {
+                break;
+              }
+
+              const size = Math.min(12, h * 0.65);
+
+              const textWidth = unicodeFont
+                ? unicodeFont.widthOfTextAtSize(txt, size)
+                : txt.length * size * 0.6;
+
+              page.drawText(txt, {
+                x: x + Math.max(1, (w - textWidth) / 2),
+                y: y + (h - size) / 2,
+                size,
+                font: unicodeFont,
+                color: rgb(0, 0, 0),
+              });
+
               break;
             }
 
@@ -1591,74 +1771,115 @@ export function ViewerPage() {
               break;
             }
 
-            case 'calendar_date':
-            case 'calendar_datetime': {
-              page.drawRectangle({
-                x,
-                y,
-                width: w,
-                height: h,
-                borderColor: BOX_BORDER_COLOR,
-                borderWidth: BOX_BORDER_W,
+            case 'button_ox':
+            case 'button_oxn':
+            case 'button_oxt':
+            case 'button_oxtn': {
+              const displayMap: Record<string, string> = {
+                none: '',
+                o: 'O',
+                x: 'X',
+                n: 'N',
+                t: 'T',
+              };
+
+              const value = String(c.value || 'none').toLowerCase();
+              const txt = displayMap[value] ?? '';
+
+              if (!txt) {
+                break;
+              }
+
+              const size = Math.min(14, h * 0.8);
+
+              const textWidth = unicodeFont
+                ? unicodeFont.widthOfTextAtSize(txt, size)
+                : txt.length * size * 0.6;
+
+              page.drawText(txt, {
+                x: x + (w - textWidth) / 2,
+                y: y + (h - size) / 2,
+                size,
+                font: unicodeFont,
+                color: rgb(0, 0, 0),
               });
-              const txt = String(c.value || '');
+
+              break;
+            }
+
+            case 'calendar_date':
+            case 'calendar_date_y2':
+            case 'calendar_datetime':
+            case 'calendar_time': {
+              const raw = String(c.value || '');
+
+              const txt =
+                c.type === 'calendar_date'
+                  ? formatDateForDisplay(raw)
+                  : c.type === 'calendar_date_y2'
+                    ? formatDateYear2ForDisplay(raw)
+                    : c.type === 'calendar_datetime'
+                      ? formatDateTimeForDisplay(raw)
+                      : formatTimeForDisplay(raw);
+
               if (txt) {
+                page.drawRectangle({
+                  x,
+                  y,
+                  width: w,
+                  height: h,
+                  color: rgb(1, 1, 1),
+                });
+
                 const size = Math.min(12, h * 0.6);
+
+                const textWidth = unicodeFont
+                  ? unicodeFont.widthOfTextAtSize(txt, size)
+                  : txt.length * size * 0.6;
+
                 page.drawText(txt, {
-                  x: x + 2,
+                  x: x + Math.max(1, (w - textWidth) / 2),
                   y: y + (h - size) / 2,
                   size,
                   font: unicodeFont,
                   color: rgb(0, 0, 0),
                 });
               }
+
               break;
             }
 
             case 'signature_worker':
             case 'signature_verifier': {
-              page.drawRectangle({
-                x,
-                y,
-                width: w,
-                height: h,
-                borderColor: BOX_BORDER_COLOR,
-                borderWidth: BOX_BORDER_W,
-              });
               const val = String(c.value || '');
-              if (val.startsWith('data:image/')) {
-                const res = await fetch(val);
-                const imgBytes = new Uint8Array(await res.arrayBuffer());
-                const img = val.startsWith('data:image/png')
-                  ? await pdfDocLib.embedPng(imgBytes)
-                  : await pdfDocLib.embedJpg(imgBytes);
 
-                const { width: iw, height: ih } = img.size();
-                const pad = Math.max(2, Math.min(8, Math.min(w, h) * 0.05));
-                const maxW = Math.max(1, w - pad * 2);
-                const maxH = Math.max(1, h - pad * 2);
-                const sImg = Math.min(maxW / iw, maxH / ih);
-                const dw = iw * sImg;
-                const dh = ih * sImg;
-                const dx = x + (w - dw) / 2;
-                const dy = y + (h - dh) / 2;
-
-                page.drawImage(img, {
-                  x: dx,
-                  y: dy,
-                  width: dw,
-                  height: dh,
-                });
-              } else {
-                const size = Math.min(12, h * 0.5);
-                page.drawText('서명 없음', {
-                  x: x + 2,
-                  y: y + (h - size) / 2,
-                  size,
-                  font: unicodeFont,
-                  color: rgb(0.2, 0.2, 0.2),
-                });
+              if (!val.startsWith('data:image/')) {
+                break;
               }
+
+              const res = await fetch(val);
+              const imgBytes = new Uint8Array(await res.arrayBuffer());
+              const img = val.startsWith('data:image/png')
+                ? await pdfDocLib.embedPng(imgBytes)
+                : await pdfDocLib.embedJpg(imgBytes);
+
+              const { width: iw, height: ih } = img.size();
+              const pad = Math.max(2, Math.min(8, Math.min(w, h) * 0.05));
+              const maxW = Math.max(1, w - pad * 2);
+              const maxH = Math.max(1, h - pad * 2);
+              const sImg = Math.min(maxW / iw, maxH / ih);
+              const dw = iw * sImg;
+              const dh = ih * sImg;
+              const dx = x + (w - dw) / 2;
+              const dy = y + (h - dh) / 2;
+
+              page.drawImage(img, {
+                x: dx,
+                y: dy,
+                width: dw,
+                height: dh,
+              });
+
               break;
             }
           }
@@ -1678,6 +1899,222 @@ export function ViewerPage() {
 
           for (const att of attachments) {
             const type = String(att?.type ?? '').toLowerCase();
+
+            if (type === 'auditorbox') {
+              let parsed: any = null;
+
+              try {
+                parsed = att.text ? JSON.parse(att.text) : null;
+              } catch {
+                parsed = null;
+              }
+
+              const wphp = String(parsed?.wphp ?? '').toLowerCase();
+              const date = String(parsed?.date ?? '');
+              const name = String(parsed?.name ?? '');
+              const satisfactionRaw = String(
+                parsed?.satisfaction ?? ''
+              ).toLowerCase();
+
+              const satisfactionText =
+                satisfactionRaw === 'y'
+                  ? '만족'
+                  : satisfactionRaw === 'n'
+                    ? '불만족'
+                    : '';
+
+              const ax = Number(att.x ?? 0);
+              const ay = Number(att.y ?? 0);
+              const aw = Number(att.width ?? 0);
+              const ah = Number(att.height ?? 0);
+
+              if (!aw || !ah) continue;
+
+              const boxX = ax * scaleX;
+              const boxY = pageH - (ay + ah) * scaleY;
+              const boxW = aw * scaleX;
+              const boxH = ah * scaleY;
+
+              const red = rgb(0.827, 0.184, 0.184);
+              const gray = rgb(0.741, 0.741, 0.741);
+              const darkGray = rgb(0.533, 0.533, 0.533);
+              const black = rgb(0, 0, 0);
+
+              const borderW = Math.max(0.5, Math.min(boxW, boxH) * 0.015);
+              const fontSize = Math.max(5, Math.min(10, boxH * 0.15));
+              const rowH = boxH / 3;
+
+              const col1W = (boxW * 1.3) / 4;
+              const col2W = (boxW * 1) / 4;
+              const col3W = boxW - col1W - col2W;
+
+              const drawTextCentered = (
+                text: string,
+                cellX: number,
+                cellY: number,
+                cellW: number,
+                cellH: number,
+                color = black
+              ) => {
+                if (!text) return;
+
+                const textWidth = unicodeFont
+                  ? unicodeFont.widthOfTextAtSize(text, fontSize)
+                  : text.length * fontSize * 0.6;
+
+                page.drawText(text, {
+                  x: cellX + Math.max(1, (cellW - textWidth) / 2),
+                  y: cellY + Math.max(1, (cellH - fontSize) / 2),
+                  size: fontSize,
+                  font: unicodeFont,
+                  color,
+                });
+              };
+
+              const drawTextLeft = (
+                text: string,
+                cellX: number,
+                cellY: number,
+                cellW: number,
+                cellH: number,
+                color = black
+              ) => {
+                if (!text) return;
+
+                const paddingX = Math.min(3, Math.max(1, cellW * 0.04));
+
+                page.drawText(text, {
+                  x: cellX + paddingX,
+                  y: cellY + Math.max(1, (cellH - fontSize) / 2),
+                  size: fontSize,
+                  font: unicodeFont,
+                  color,
+                });
+              };
+
+              // 외곽선
+              page.drawRectangle({
+                x: boxX,
+                y: boxY,
+                width: boxW,
+                height: boxH,
+                borderColor: red,
+                borderWidth: borderW,
+              });
+
+              // 가로선
+              page.drawLine({
+                start: { x: boxX, y: boxY + rowH },
+                end: { x: boxX + boxW, y: boxY + rowH },
+                thickness: borderW,
+                color: red,
+              });
+
+              page.drawLine({
+                start: { x: boxX, y: boxY + rowH * 2 },
+                end: { x: boxX + boxW, y: boxY + rowH * 2 },
+                thickness: borderW,
+                color: red,
+              });
+
+              // 1행 세로선
+              page.drawLine({
+                start: { x: boxX + col1W, y: boxY + rowH * 2 },
+                end: { x: boxX + col1W, y: boxY + boxH },
+                thickness: borderW,
+                color: red,
+              });
+
+              page.drawLine({
+                start: { x: boxX + col1W + col2W, y: boxY + rowH * 2 },
+                end: { x: boxX + col1W + col2W, y: boxY + boxH },
+                thickness: borderW,
+                color: red,
+              });
+
+              // 2행, 3행 세로선
+              page.drawLine({
+                start: { x: boxX + col1W, y: boxY },
+                end: { x: boxX + col1W, y: boxY + rowH * 2 },
+                thickness: borderW,
+                color: red,
+              });
+
+              // 좌표: PDF는 아래에서 위로 증가
+              const row1Y = boxY + rowH * 2;
+              const row2Y = boxY + rowH;
+              const row3Y = boxY;
+
+              // 1행: WP/HP / 입회일 / 날짜
+              const wpColor = wphp === 'wp' ? red : gray;
+              const hpColor = wphp === 'hp' ? red : gray;
+
+              const wpHpY = row1Y + Math.max(1, (rowH - fontSize) / 2);
+              const wpText = 'WP';
+              const slashText = '/';
+              const hpText = 'HP';
+
+              const wpW = unicodeFont
+                ? unicodeFont.widthOfTextAtSize(wpText, fontSize)
+                : wpText.length * fontSize * 0.6;
+              const slashW = unicodeFont
+                ? unicodeFont.widthOfTextAtSize(slashText, fontSize)
+                : slashText.length * fontSize * 0.6;
+              const hpW = unicodeFont
+                ? unicodeFont.widthOfTextAtSize(hpText, fontSize)
+                : hpText.length * fontSize * 0.6;
+
+              const gap = 1.5;
+              const totalWpHpW = wpW + slashW + hpW + gap * 2;
+              let wpHpX = boxX + Math.max(1, (col1W - totalWpHpW) / 2);
+
+              page.drawText(wpText, {
+                x: wpHpX,
+                y: wpHpY,
+                size: fontSize,
+                font: unicodeFont,
+                color: wpColor,
+              });
+
+              wpHpX += wpW + gap;
+
+              page.drawText(slashText, {
+                x: wpHpX,
+                y: wpHpY,
+                size: fontSize,
+                font: unicodeFont,
+                color: darkGray,
+              });
+
+              wpHpX += slashW + gap;
+
+              page.drawText(hpText, {
+                x: wpHpX,
+                y: wpHpY,
+                size: fontSize,
+                font: unicodeFont,
+                color: hpColor,
+              });
+
+              drawTextCentered('입회일', boxX + col1W, row1Y, col2W, rowH, red);
+              drawTextCentered(date, boxX + col1W + col2W, row1Y, col3W, rowH);
+
+              // 2행: 입회자 / 이름
+              drawTextCentered('입회자', boxX, row2Y, col1W, rowH, red);
+              drawTextLeft(name, boxX + col1W, row2Y, boxW - col1W, rowH);
+
+              // 3행: 입회결과 / 만족·불만족
+              drawTextCentered('입회결과', boxX, row3Y, col1W, rowH, red);
+              drawTextLeft(
+                satisfactionText,
+                boxX + col1W,
+                row3Y,
+                boxW - col1W,
+                rowH
+              );
+
+              continue;
+            }
 
             // PDF에는 정지 이미지 위주로 반영
             if (type !== 'image' && type !== 'camera') continue;
@@ -1837,7 +2274,7 @@ export function ViewerPage() {
         `${fileName}.pdf`
       );
 
-      alert(`서식화된 PDF가 저장되었습니다:\n- ${fileName}.pdf`);
+      // alert(`서식화된 PDF가 저장되었습니다:\n- ${fileName}.pdf`);
     } catch (e) {
       console.error(e);
       alert('PDF 서식화 중 오류가 발생했습니다.');
@@ -1885,7 +2322,7 @@ export function ViewerPage() {
                 const H = pg.height || BASE_H;
 
                 (pg.components || []).forEach((c, i) => {
-                  // 지원하지 않는 type은 스킵 (예: satisfactionbox, 기타 사용자 정의 타입 등)
+                  // 지원하지 않는 type은 스킵
                   if (!SUPPORTED_TYPES.includes(c.type as SupportedType)) {
                     devWarn(
                       '[ViewerPage] unsupported component type, skip:',
