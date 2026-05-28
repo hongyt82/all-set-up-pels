@@ -27,6 +27,7 @@ export type OverlayType =
   // textbox
   | 'textbox'
   | 'textbox_ml'
+  | 'textbox_multiline'
   | 'textbox_num'
   | 'textbox_unusing'
   | 'textbox_name'
@@ -40,7 +41,9 @@ export type OverlayType =
 
   // calendar
   | 'calendar_date'
+  | 'calendar_date_y2'
   | 'calendar_datetime'
+  | 'calendar_time'
 
   // signature
   | 'signature_worker'
@@ -51,7 +54,8 @@ export type OverlayType =
   | 'button_ox'
   | 'button_oxn'
   | 'button_oxt'
-  | 'button_oxtn';
+  | 'button_oxtn'
+  | 'movetopage';
 
 export type MajorOverlayType =
   | 'textbox'
@@ -65,6 +69,7 @@ export type MajorOverlayType =
 const OVERLAY_MAJOR_MAP: Record<OverlayType, MajorOverlayType> = {
   textbox: 'textbox',
   textbox_ml: 'textbox',
+  textbox_multiline: 'textbox',
   textbox_num: 'textbox',
   textbox_unusing: 'textbox',
   textbox_name: 'textbox',
@@ -72,7 +77,9 @@ const OVERLAY_MAJOR_MAP: Record<OverlayType, MajorOverlayType> = {
   checkbox: 'checkbox',
   circleslash: 'circleslash',
   calendar_date: 'calendar',
+  calendar_date_y2: 'calendar',
   calendar_datetime: 'calendar',
+  calendar_time: 'calendar',
   signature_worker: 'signature',
   signature_verifier: 'signature',
   satisfactionbox: 'etc',
@@ -80,6 +87,7 @@ const OVERLAY_MAJOR_MAP: Record<OverlayType, MajorOverlayType> = {
   button_oxn: 'button',
   button_oxt: 'button',
   button_oxtn: 'button',
+  movetopage: 'button',
 };
 
 const getMajorType = (type: OverlayType) => OVERLAY_MAJOR_MAP[type];
@@ -130,17 +138,22 @@ const FIXED_H = BASE_PAGE_HEIGHT;
 const isSquareType = (t: OverlayType) =>
   t === 'circleslash' || t === 'checkbox';
 
+//페이지 이동
+const ENABLE_ARROW_PAGE_NAVIGATION = true;
+
 const OVERLAY_PREVIEW: Partial<
   Record<OverlayType, { label?: string; icon?: string; multiline?: boolean }>
 > = {
   textbox: { label: '텍스트' },
-  textbox_ml: { label: '텍스트\n(멀티라인)', multiline: true },
+  textbox_multiline: { label: '텍스트\n(멀티라인)', multiline: true },
   textbox_num: { label: '숫자' },
   textbox_name: { label: '수행자 이름' },
   textbox_verifier: { label: '확인자 이름' },
 
   calendar_date: { icon: '📅', label: '날짜' },
+  calendar_date_y2: { icon: '📅', label: '날짜(년도2)' },
   calendar_datetime: { icon: '📅🕐', label: '날짜 + 시간' },
+  calendar_time: { icon: '🕐', label: '시간' },
 
   signature_worker: { label: '수행자 서명' },
   signature_verifier: { label: '확인자 서명' },
@@ -151,6 +164,7 @@ const OVERLAY_PREVIEW: Partial<
   button_oxn: { label: 'O/X/N' },
   button_oxt: { label: 'O/X/T' },
   button_oxtn: { label: 'O/X/T/N' },
+  movetopage: { label: '페이지 이동' },
 };
 
 function getPageFit(
@@ -215,6 +229,19 @@ export interface EditorWorkspaceProps {
     overlays: OverlayItem[];
     rightClickedUid: string;
   }) => void;
+
+  // PDF 위 component 더블클릭 시 Rule JSON 편집기에 ID 삽입용
+  onDoubleClickOverlayId?: (id: string) => void;
+
+  // component 삭제/초기화 시 Rule 정리용 콜백
+  onDeleteOverlayIds?: (
+    ids: string[],
+    options?: {
+      clearAll?: boolean;
+      clearPage?: boolean;
+      constraintPageNo?: number;
+    }
+  ) => void;
 
   selectedCategory?: MajorOverlayType | null;
 
@@ -330,6 +357,8 @@ export const EditorWorkspace = forwardRef<
     scale = 1,
     onOpenConstraintEditor,
     onCopyPageResult,
+    onDoubleClickOverlayId,
+    onDeleteOverlayIds,
   } = props;
 
   devLog('[EditorWorkspace] docKey:', docKey);
@@ -366,6 +395,7 @@ export const EditorWorkspace = forwardRef<
     signature: 5000,
     button: 7000,
     drawing: 8000,
+    movetopage: 9000,
   });
 
   const [meta, setMeta] = useState({
@@ -459,6 +489,7 @@ export const EditorWorkspace = forwardRef<
       signature: 5000,
       button: 7000,
       drawing: 8000,
+      movetopage: 9000,
     };
 
     items.forEach(o => {
@@ -998,6 +1029,7 @@ export const EditorWorkspace = forwardRef<
 
       textbox: { wPct: 0.32, hPct: 0.04, value: '' },
       textbox_ml: { wPct: 0.32, hPct: 0.08, value: '' },
+      textbox_multiline: { wPct: 0.32, hPct: 0.08, value: '' },
       textbox_num: { wPct: 0.24, hPct: 0.04, value: '' },
       textbox_unusing: { wPct: 0.32, hPct: 0.04, value: '' },
       textbox_name: { wPct: 0.24, hPct: 0.04, value: '' },
@@ -1006,7 +1038,9 @@ export const EditorWorkspace = forwardRef<
       checkbox: { wPct: 0.02, hPct: 0.02, value: 'n' },
 
       calendar_date: { wPct: 0.26, hPct: 0.04, value: '' },
+      calendar_date_y2: { wPct: 0.22, hPct: 0.04, value: '' },
       calendar_datetime: { wPct: 0.26, hPct: 0.04, value: '' },
+      calendar_time: { wPct: 0.18, hPct: 0.04, value: '' },
 
       signature_worker: { wPct: 0.18, hPct: 0.04, value: '' },
       signature_verifier: { wPct: 0.18, hPct: 0.04, value: '' },
@@ -1016,6 +1050,7 @@ export const EditorWorkspace = forwardRef<
       button_oxn: { wPct: 0.18, hPct: 0.04, value: '' },
       button_oxt: { wPct: 0.18, hPct: 0.04, value: '' },
       button_oxtn: { wPct: 0.18, hPct: 0.04, value: '' },
+      movetopage: { wPct: 0.32, hPct: 0.035, value: '' },
     };
 
     const preset = def[type];
@@ -1026,7 +1061,20 @@ export const EditorWorkspace = forwardRef<
     }
 
     let { wPct, hPct } = preset;
-    const { value } = preset;
+    let { value } = preset;
+
+    if (type === 'movetopage') {
+      const target =
+        window.prompt('이동할 페이지 번호를 입력하세요')?.trim() || '';
+      const targetNo = Number(target);
+
+      if (!Number.isFinite(targetNo) || targetNo <= 0) {
+        alert('이동할 페이지 번호는 1 이상의 숫자로 입력해야 합니다.');
+        return;
+      }
+
+      value = String(targetNo);
+    }
     if (isSquareType(type)) {
       const s = Math.min(wPct, hPct);
       wPct = s;
@@ -1054,8 +1102,22 @@ export const EditorWorkspace = forwardRef<
   };
 
   const clearPage = () => {
+    const currentPage = pages.find(p => p.pageId === currentPageId);
+
+    const deletedIds = overlays
+      .filter(o => o.pageId === currentPageId)
+      .map(o => o.id)
+      .filter(Boolean)
+      .map(String);
+
     pushUndoSnapshot();
     setOverlays(prev => prev.filter(o => o.pageId !== currentPageId));
+    setSelected([]);
+
+    onDeleteOverlayIds?.(deletedIds, {
+      clearPage: true,
+      constraintPageNo: currentPage?.constraintPageNo,
+    });
   };
 
   const resetSeqRef = () => {
@@ -1067,16 +1129,24 @@ export const EditorWorkspace = forwardRef<
       signature: 5000,
       button: 7000,
       drawing: 8000,
+      movetopage: 9000,
     };
   };
 
   const clearAll = () => {
+    const deletedIds = overlays
+      .map(o => o.id)
+      .filter(Boolean)
+      .map(String);
+
     pushUndoSnapshot();
     setOverlays([]);
     setSelected([]);
     clearHistory();
 
     resetSeqRef();
+
+    onDeleteOverlayIds?.(deletedIds, { clearAll: true });
   };
 
   // ===== JSON 저장/복원 =====
@@ -1095,6 +1165,7 @@ export const EditorWorkspace = forwardRef<
 
     pages.forEach(pg => {
       const items = overlays.filter(o => o.pageId === pg.pageId);
+      const componentItems = items.filter(o => o.type !== 'movetopage');
 
       out.pages.push({
         page: pg.logicalPageIndex,
@@ -1102,10 +1173,11 @@ export const EditorWorkspace = forwardRef<
         constraintPageNo: pg.constraintPageNo,
         width: pg.width,
         height: pg.height,
-        isChange: items.length > 0 ? 'Y' : 'N',
-        components: items.map(o => ({
+        isChange: componentItems.length > 0 ? 'Y' : 'N',
+        components: componentItems.map(o => ({
           id: o.id,
           ...(o.id_key ? { id_key: o.id_key } : {}),
+          ...(o.type === 'circleslash' ? { title: o.title ?? '' } : {}),
           type: o.type,
           x: Math.round(o.xPct * pg.width),
           y: Math.round(o.yPct * pg.height),
@@ -1125,22 +1197,113 @@ export const EditorWorkspace = forwardRef<
 
   // Rule(JSON) 생성 함수
   const buildRuleJson = () => {
-    if (!constraints) {
-      return { pages: [] };
-    }
+    const baseConstraints = constraints ?? { pages: [] };
 
-    const hasRule =
-      Array.isArray(constraints.pages) &&
-      constraints.pages.some(
-        (p: any) => Array.isArray(p.components) && p.components.length > 0
+    const moveToPageByConstraintPageNo = new Map<number, any[]>();
+
+    pages.forEach(pg => {
+      const moveItems = overlays.filter(
+        o => o.pageId === pg.pageId && o.type === 'movetopage'
       );
 
-    if (!hasRule) {
+      if (moveItems.length === 0) return;
+
+      moveToPageByConstraintPageNo.set(
+        Number(pg.constraintPageNo),
+        moveItems.map(o => ({
+          x: Math.round(o.xPct * pg.width),
+          y: Math.round(o.yPct * pg.height),
+          width: Math.round(o.wPct * pg.width),
+          height: Math.round(o.hPct * pg.height),
+          targetPdfPage: Number(o.value || 1),
+        }))
+      );
+    });
+
+    const existingPages = Array.isArray(baseConstraints.pages)
+      ? baseConstraints.pages
+      : [];
+
+    const used = new Set<number>();
+
+    const managedConstraintPageNos = new Set(
+      pages.map(pg => Number(pg.constraintPageNo)).filter(Number.isFinite)
+    );
+
+    const mergedPages = existingPages.map((page: any) => {
+      const constraintPageNo = Number(page.constraintPageNo);
+      const moveList = moveToPageByConstraintPageNo.get(constraintPageNo);
+
+      if (!managedConstraintPageNos.has(constraintPageNo)) {
+        return page;
+      }
+
+      used.add(constraintPageNo);
+
+      const { movetopage, ...restPage } = page;
+
+      if (!moveList || moveList.length === 0) {
+        return restPage;
+      }
+
+      return {
+        ...restPage,
+        movetopage: moveList,
+      };
+    });
+
+    moveToPageByConstraintPageNo.forEach((moveList, constraintPageNo) => {
+      if (used.has(constraintPageNo)) return;
+
+      mergedPages.push({
+        constraintPageNo,
+        components: [],
+        dialoges: [],
+        qr_dialoges: [],
+        sections: [],
+        movetopage: moveList,
+      });
+    });
+
+    const nextConstraints = {
+      ...baseConstraints,
+      pages: mergedPages,
+    };
+
+    const hasPageRule =
+      Array.isArray(nextConstraints.pages) &&
+      nextConstraints.pages.some((p: any) => {
+        const hasComponents =
+          Array.isArray(p.components) && p.components.length > 0;
+
+        const hasDialoges = Array.isArray(p.dialoges) && p.dialoges.length > 0;
+
+        const hasQrDialoges =
+          Array.isArray(p.qr_dialoges) && p.qr_dialoges.length > 0;
+
+        const hasSections = Array.isArray(p.sections) && p.sections.length > 0;
+
+        const hasMoveToPage =
+          Array.isArray(p.movetopage) && p.movetopage.length > 0;
+
+        return (
+          hasComponents ||
+          hasDialoges ||
+          hasQrDialoges ||
+          hasSections ||
+          hasMoveToPage
+        );
+      });
+
+    const hasTreeList =
+      Array.isArray(nextConstraints.treelist) &&
+      nextConstraints.treelist.length > 0;
+
+    if (!hasPageRule && !hasTreeList) {
       return { pages: [] };
     }
 
-    // 그대로 서버에 저장
-    return constraints;
+    return nextConstraints;
   };
 
   const buildJson = () => {
@@ -1172,6 +1335,7 @@ export const EditorWorkspace = forwardRef<
 
     pages.forEach(pg => {
       const items = overlays.filter(o => o.pageId === pg.pageId);
+      const componentItems = items.filter(o => o.type !== 'movetopage');
 
       out.pages.push({
         page: pg.logicalPageIndex,
@@ -1179,10 +1343,11 @@ export const EditorWorkspace = forwardRef<
         constraintPageNo: pg.constraintPageNo,
         width: pg.width,
         height: pg.height,
-        isChange: items.length > 0 ? 'Y' : 'N',
-        components: items.map(o => ({
+        isChange: componentItems.length > 0 ? 'Y' : 'N',
+        components: componentItems.map(o => ({
           id: o.id,
           ...(o.id_key ? { id_key: o.id_key } : {}),
+          ...(o.type === 'circleslash' ? { title: o.title ?? '' } : {}),
           type: o.type,
           x: Math.round(o.xPct * pg.width),
           y: Math.round(o.yPct * pg.height),
@@ -1267,19 +1432,13 @@ export const EditorWorkspace = forwardRef<
         FRM_CONS_JSON: JSON.stringify(ruleJson).length,
       });
 
-      const API_BASE = import.meta.env.PROD ? '' : '/api';
-
-      const response = await axios.post(
-        `${API_BASE}/FormJsonSave_M.do`,
-        formParams,
-        {
-          withCredentials: true,
-          timeout: 30000,
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
+      const response = await axios.post('/FormJsonSave_M.do', formParams, {
+        withCredentials: true,
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
 
       devLog('[EditorWorkspace] Form JSON saved:', response.data);
       const message = response.data?.resultMsg || '서식이 저장되었습니다.';
@@ -1351,8 +1510,6 @@ export const EditorWorkspace = forwardRef<
         }
 
         (pg.components || []).forEach((c: any) => {
-          if (c.type === 'satisfactionbox') return;
-
           const xPct = typeof c.xPct === 'number' ? c.xPct : c.x / W;
           const yPct = typeof c.yPct === 'number' ? c.yPct : c.y / H;
           const wPct = typeof c.wPct === 'number' ? c.wPct : c.width / W;
@@ -1395,6 +1552,53 @@ export const EditorWorkspace = forwardRef<
       alert('JSON 로드 중 오류가 발생했습니다.');
     }
   };
+
+  useEffect(() => {
+    if (!constraints || !Array.isArray(constraints.pages)) return;
+    if (!pages.length) return;
+
+    const hasMoveToPageInRule = constraints.pages.some(
+      (rulePage: any) =>
+        Array.isArray(rulePage.movetopage) && rulePage.movetopage.length > 0
+    );
+
+    if (!hasMoveToPageInRule) return;
+
+    setOverlays(prev => {
+      const withoutMoveToPage = prev.filter(o => o.type !== 'movetopage');
+      const restoredMoveToPage: OverlayItem[] = [];
+
+      constraints.pages.forEach((rulePage: any) => {
+        const constraintPageNo = Number(rulePage.constraintPageNo);
+        const pg = pages.find(
+          p => Number(p.constraintPageNo) === constraintPageNo
+        );
+
+        if (!pg) return;
+
+        const list = Array.isArray(rulePage.movetopage)
+          ? rulePage.movetopage
+          : [];
+
+        list.forEach((m: any, index: number) => {
+          restoredMoveToPage.push({
+            uid: `movetopage-${constraintPageNo}-${index}-${Date.now()}`,
+            id: `movetopage_${constraintPageNo}_${index + 1}`,
+            title: '',
+            type: 'movetopage',
+            xPct: Number(m.x ?? 0) / pg.width,
+            yPct: Number(m.y ?? 0) / pg.height,
+            wPct: Number(m.width ?? 0) / pg.width,
+            hPct: Number(m.height ?? 0) / pg.height,
+            pageId: pg.pageId,
+            value: String(m.targetPdfPage ?? ''),
+          });
+        });
+      });
+
+      return [...withoutMoveToPage, ...restoredMoveToPage];
+    });
+  }, [constraints, pages]);
 
   // ===== shiftBelowAndNext (아래줄+이후 페이지 이동) =====
 
@@ -1766,6 +1970,54 @@ export const EditorWorkspace = forwardRef<
 
       const inPage = overlays.filter(o => o.pageId === currentPageId);
 
+      const selectedInCurrentPage = inPage.filter(o => selected.includes(o.uid));
+
+      if (e.key === 'PageUp') {
+        goPrevPage();
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'PageDown') {
+        goNextPage();
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'Home') {
+        goToPage(1);
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'End') {
+        goToPage(getTotalPagesInternal());
+        e.preventDefault();
+        return;
+      }
+
+      // 선택된 컴포넌트가 없을 때만 좌우 방향키로 페이지 이동
+      // 필요 없으면 ENABLE_ARROW_PAGE_NAVIGATION 값을 false로 변경
+      if (
+        ENABLE_ARROW_PAGE_NAVIGATION &&
+        selectedInCurrentPage.length === 0 &&
+        !hasCtrl &&
+        !hasShift &&
+        !hasAlt
+      ) {
+        if (e.key === 'ArrowLeft') {
+          goPrevPage();
+          e.preventDefault();
+          return;
+        }
+
+        if (e.key === 'ArrowRight') {
+          goNextPage();
+          e.preventDefault();
+          return;
+        }
+      }
+
       // Undo / Redo
       if (hasCtrl && !hasShift && e.key.toLowerCase() === 'z') {
         undo();
@@ -1868,9 +2120,25 @@ export const EditorWorkspace = forwardRef<
       // Delete
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selected.length === 0) return;
+
+        const deletedIds = overlays
+          .filter(o => selected.includes(o.uid))
+          .map(o => o.id)
+          .filter(Boolean)
+          .map(String);
+
         pushUndoSnapshot();
         setOverlays(prev => prev.filter(o => !selected.includes(o.uid)));
         setSelected([]);
+
+        if (deletedIds.length > 0) {
+          const currentPage = pages.find(p => p.pageId === currentPageId);
+
+          onDeleteOverlayIds?.(deletedIds, {
+            constraintPageNo: currentPage?.constraintPageNo,
+          });
+        }
+
         e.preventDefault();
         return;
       }
@@ -1882,9 +2150,7 @@ export const EditorWorkspace = forwardRef<
         e.key === 'ArrowRight';
       if (!isArrowKey) return;
 
-      const hasSelectedInPage = overlays.some(
-        o => o.pageId === currentPageId && selected.includes(o.uid)
-      );
+      const hasSelectedInPage = selectedInCurrentPage.length > 0;
       if (!hasSelectedInPage) return;
 
       // 단일 이동
@@ -2364,8 +2630,27 @@ export const EditorWorkspace = forwardRef<
       );
     }
 
+    if (ov.type === 'movetopage') {
+      return (
+        <div
+          style={{
+            ...base,
+            background: 'rgba(59, 130, 246, 0.14)',
+            color: '#1d4ed8',
+            fontSize: 11,
+            fontWeight: 700,
+          }}
+        >
+          이동: {ov.value || '?'}p
+        </div>
+      );
+    }
+
+    const majorType = getMajorType(ov.type);
     const meta = OVERLAY_PREVIEW[ov.type] ?? {
-      label: OVERLAY_PREVIEW_MAJOR[getMajorType(ov.type)].defaultLabel,
+      label: majorType
+        ? OVERLAY_PREVIEW_MAJOR[majorType].defaultLabel
+        : String(ov.type),
     };
 
     return (
@@ -2479,9 +2764,80 @@ export const EditorWorkspace = forwardRef<
                     >
                       <div
                         style={{ width: '100%', height: '100%' }}
-                        // � 우클릭 시 constraint 편집 콜백 호출
+                        onDoubleClick={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+
+                          if (ov.type === 'movetopage') {
+                            const target = window
+                              .prompt(
+                                '이동할 페이지 번호를 입력하세요',
+                                String(ov.value ?? '')
+                              )
+                              ?.trim();
+
+                            if (target == null) return;
+
+                            const targetNo = Number(target);
+                            if (!Number.isFinite(targetNo) || targetNo <= 0) {
+                              alert(
+                                '이동할 페이지 번호는 1 이상의 숫자로 입력해야 합니다.'
+                              );
+                              return;
+                            }
+
+                            setOverlays(prev =>
+                              prev.map(item =>
+                                item.uid === ov.uid
+                                  ? {
+                                      ...item,
+                                      value: String(targetNo),
+                                    }
+                                  : item
+                              )
+                            );
+
+                            return;
+                          }
+
+                          onDoubleClickOverlayId?.(`"${ov.id}"`);
+                        }}
+                        // 우클릭 시 constraint 편집 콜백 호출
                         onContextMenu={e => {
                           e.preventDefault();
+
+                          if (ov.type === 'movetopage') {
+                            const target = window
+                              .prompt(
+                                '이동할 페이지 번호를 입력하세요',
+                                String(ov.value ?? '')
+                              )
+                              ?.trim();
+
+                            if (target == null) return;
+
+                            const targetNo = Number(target);
+                            if (!Number.isFinite(targetNo) || targetNo <= 0) {
+                              alert(
+                                '이동할 페이지 번호는 1 이상의 숫자로 입력해야 합니다.'
+                              );
+                              return;
+                            }
+
+                            setOverlays(prev =>
+                              prev.map(item =>
+                                item.uid === ov.uid
+                                  ? {
+                                      ...item,
+                                      value: String(targetNo),
+                                    }
+                                  : item
+                              )
+                            );
+
+                            return;
+                          }
+
                           if (!onOpenConstraintEditor) return;
 
                           const selectedUids = selected.includes(ov.uid)

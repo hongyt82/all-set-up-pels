@@ -51,6 +51,325 @@ function formatConstraintJson(obj: any): string {
   return s;
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function hasDeletedIdReferenceInText(text: unknown, deletedIds: string[]) {
+  if (typeof text !== 'string' || !text) return false;
+
+  return deletedIds.some(id => {
+    const escaped = escapeRegExp(String(id));
+
+    return (
+      // 모바일/공통 방식: W2345A0012003.value
+      new RegExp(`\\b${escaped}\\.value\\b`).test(text) ||
+      // 기존 웹 방식: _W2345A0012003_value
+      new RegExp(`_${escaped}_value`).test(text)
+    );
+  });
+}
+
+function findRulesReferencingDeletedIds(
+  constraintDoc: any,
+  deletedIds: string[]
+) {
+  if (!constraintDoc?.pages || deletedIds.length === 0) return [];
+
+  const result: Array<{
+    constraintPageNo: number;
+    ruleId: string;
+  }> = [];
+
+  for (const page of constraintDoc.pages ?? []) {
+    for (const rule of page.components ?? []) {
+      const hasReference =
+        (rule.calculations ?? []).some(
+          (calc: any) =>
+            hasDeletedIdReferenceInText(calc.expression, deletedIds) ||
+            hasDeletedIdReferenceInText(calc.when, deletedIds)
+        ) ||
+        (rule.constraints ?? []).some((c: any) =>
+          hasDeletedIdReferenceInText(c.expression, deletedIds)
+        ) ||
+        (rule.events ?? []).some(
+          (ev: any) =>
+            hasDeletedIdReferenceInText(ev.condition, deletedIds) ||
+            hasDeletedIdReferenceInText(ev.when, deletedIds)
+        );
+
+      if (hasReference) {
+        result.push({
+          constraintPageNo: Number(page.constraintPageNo),
+          ruleId: String(rule.id),
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+function cleanupConstraintRulesByDeletedIds(
+  constraintDoc: any,
+  deletedIds: string[],
+  options?: {
+    removeExpressionReferenceRules?: boolean;
+    clearAll?: boolean;
+    clearPage?: boolean;
+    constraintPageNo?: number;
+  }
+) {
+  if (!constraintDoc?.pages) return constraintDoc;
+
+  if (options?.clearAll) {
+    return {
+      ...constraintDoc,
+      treelist: [],
+      pages: [],
+    };
+  }
+
+  const ids = Array.from(new Set(deletedIds.filter(Boolean).map(String)));
+  const deletedSet = new Set(ids);
+
+  const cleanupTreeItems = (items: any[] | undefined): any[] | undefined => {
+    if (!Array.isArray(items)) return items;
+
+    return items
+      .filter(item => !deletedSet.has(String(item.id)))
+      .map(item => ({
+        ...item,
+        children: cleanupTreeItems(item.children),
+      }));
+  };
+
+  const cleanupControls = (controls: any[] | undefined): any[] | undefined => {
+    if (!Array.isArray(controls)) return controls;
+
+    return controls.filter(ctrl => !deletedSet.has(String(ctrl.id)));
+  };
+
+  const cleanupDialoges = (dialoges: any[] | undefined): any[] | undefined => {
+    if (!Array.isArray(dialoges)) return dialoges;
+
+    return dialoges
+      .map(dialog => ({
+        ...dialog,
+        controls: cleanupControls(dialog.controls),
+        columnes: Array.isArray(dialog.columnes)
+          ? dialog.columnes
+              .map((col: any) => ({
+                ...col,
+                controls: cleanupControls(col.controls),
+              }))
+              .filter((col: any) => {
+                return !Array.isArray(col.controls) || col.controls.length > 0;
+              })
+          : dialog.columnes,
+        tabs: Array.isArray(dialog.tabs)
+          ? dialog.tabs
+              .map((tab: any) => ({
+                ...tab,
+                controls: cleanupControls(tab.controls),
+                columnes: Array.isArray(tab.columnes)
+                  ? tab.columnes
+                      .map((col: any) => ({
+                        ...col,
+                        controls: cleanupControls(col.controls),
+                      }))
+                      .filter((col: any) => {
+                        return (
+                          !Array.isArray(col.controls) ||
+                          col.controls.length > 0
+                        );
+                      })
+                  : tab.columnes,
+              }))
+              .filter((tab: any) => {
+                const hasControls =
+                  Array.isArray(tab.controls) && tab.controls.length > 0;
+                const hasColumnes =
+                  Array.isArray(tab.columnes) && tab.columnes.length > 0;
+
+                return hasControls || hasColumnes;
+              })
+          : dialog.tabs,
+      }))
+      .filter(dialog => {
+        const hasControls =
+          Array.isArray(dialog.controls) && dialog.controls.length > 0;
+        const hasColumnes =
+          Array.isArray(dialog.columnes) && dialog.columnes.length > 0;
+        const hasTabs = Array.isArray(dialog.tabs) && dialog.tabs.length > 0;
+
+        return hasControls || hasColumnes || hasTabs;
+      });
+  };
+
+  const cleanupSections = (sections: any[] | undefined): any[] | undefined => {
+    if (!Array.isArray(sections)) return sections;
+
+    return sections
+      .map(section => ({
+        ...section,
+        controls: cleanupControls(section.controls),
+      }))
+      .filter(section => {
+        return !Array.isArray(section.controls) || section.controls.length > 0;
+      });
+  };
+
+  const isTargetClearPage = (page: any) => {
+    if (!options?.clearPage) return false;
+    if (options.constraintPageNo === undefined) return false;
+
+    return Number(page.constraintPageNo) === Number(options.constraintPageNo);
+  };
+
+  const nextPages = (constraintDoc.pages ?? [])
+    .map((page: any) => {
+      // 현재 페이지 초기화면 해당 page rule 자체 제거
+      // components 외 dialoges, qr_dialoges, sections, movetopage까지 같이 제거
+      if (isTargetClearPage(page)) {
+        return null;
+      }
+
+      const nextPage = {
+        ...page,
+        components: (page.components ?? [])
+          .filter((rule: any) => {
+            const ruleId = String(rule.id);
+
+            // 삭제된 component 자체 rule은 항상 삭제
+            if (deletedSet.has(ruleId)) return false;
+
+            const hasExpressionReference =
+              (rule.calculations ?? []).some(
+                (calc: any) =>
+                  hasDeletedIdReferenceInText(calc.expression, ids) ||
+                  hasDeletedIdReferenceInText(calc.when, ids)
+              ) ||
+              (rule.constraints ?? []).some((c: any) =>
+                hasDeletedIdReferenceInText(c.expression, ids)
+              ) ||
+              (rule.events ?? []).some(
+                (ev: any) =>
+                  hasDeletedIdReferenceInText(ev.condition, ids) ||
+                  hasDeletedIdReferenceInText(ev.when, ids)
+              );
+
+            if (
+              hasExpressionReference &&
+              options?.removeExpressionReferenceRules
+            ) {
+              return false;
+            }
+
+            return true;
+          })
+          .map((rule: any) => ({
+            ...rule,
+
+            groupby: Array.isArray(rule.groupby)
+              ? rule.groupby.filter((g: any) => !deletedSet.has(String(g.id)))
+              : rule.groupby,
+
+            calculations: Array.isArray(rule.calculations)
+              ? rule.calculations.filter(
+                  (calc: any) => !deletedSet.has(String(calc.targetId))
+                )
+              : rule.calculations,
+
+            events: Array.isArray(rule.events)
+              ? rule.events.filter(
+                  (ev: any) => !deletedSet.has(String(ev.targetId))
+                )
+              : rule.events,
+
+            styles: Array.isArray(rule.styles)
+              ? rule.styles
+                  .map((style: any) => {
+                    if (
+                      style.targetId &&
+                      deletedSet.has(String(style.targetId))
+                    ) {
+                      return null;
+                    }
+
+                    if (Array.isArray(style.targetIds)) {
+                      const nextTargetIds = style.targetIds.filter(
+                        (id: string) => !deletedSet.has(String(id))
+                      );
+
+                      if (nextTargetIds.length === 0) return null;
+
+                      return {
+                        ...style,
+                        targetIds: nextTargetIds,
+                      };
+                    }
+
+                    return style;
+                  })
+                  .filter(Boolean)
+              : rule.styles,
+
+            children: cleanupTreeItems(rule.children),
+          }))
+          .filter((rule: any) => {
+            const hasSomething =
+              rule.calculations?.length ||
+              rule.constraints?.length ||
+              rule.events?.length ||
+              rule.styles?.length ||
+              rule.groupby?.length ||
+              rule.groupType ||
+              rule.children?.length;
+
+            return hasSomething;
+          }),
+
+        dialoges: cleanupDialoges(page.dialoges),
+        qr_dialoges: cleanupDialoges(page.qr_dialoges),
+        sections: cleanupSections(page.sections),
+      };
+
+      return nextPage;
+    })
+    .filter(Boolean)
+    .filter((page: any) => {
+      const hasComponents =
+        Array.isArray(page.components) && page.components.length > 0;
+
+      const hasDialoges =
+        Array.isArray(page.dialoges) && page.dialoges.length > 0;
+
+      const hasQrDialoges =
+        Array.isArray(page.qr_dialoges) && page.qr_dialoges.length > 0;
+
+      const hasSections =
+        Array.isArray(page.sections) && page.sections.length > 0;
+
+      const hasMoveToPage =
+        Array.isArray(page.movetopage) && page.movetopage.length > 0;
+
+      return (
+        hasComponents ||
+        hasDialoges ||
+        hasQrDialoges ||
+        hasSections ||
+        hasMoveToPage
+      );
+    });
+
+  return {
+    ...constraintDoc,
+    treelist: cleanupTreeItems(constraintDoc.treelist) ?? [],
+    pages: nextPages,
+  };
+}
+
 export function EditorPage() {
   const {
     selectedCategory,
@@ -208,6 +527,11 @@ export function EditorPage() {
   // 편집 텍스트 (JSON 형태)
   const [constraintEditorText, setConstraintEditorText] = useState('');
   const [constraintHelperText, setConstraintHelperText] = useState('');
+
+  const [ruleExternalInsertText, setRuleExternalInsertText] = useState<{
+    value: string;
+    seq: number;
+  } | null>(null);
 
   const wsRef = useRef<EditorWorkspaceHandle | null>(null);
 
@@ -687,6 +1011,118 @@ export function EditorPage() {
   const handleResizeMinus = useCallback(() => {
     wsRef.current?.resizeSelectedMinus();
   }, []);
+  const handleDeletedOverlayIds = useCallback(
+    (
+      deletedIds: string[],
+      options?: {
+        clearAll?: boolean;
+        clearPage?: boolean;
+        constraintPageNo?: number;
+      }
+    ) => {
+      const ids = Array.from(new Set(deletedIds.filter(Boolean).map(String)));
+
+      if (options?.clearAll) {
+        setConstraintDoc(prev =>
+          cleanupConstraintRulesByDeletedIds(prev, ids, {
+            clearAll: true,
+          })
+        );
+
+        setConstraintSelection(null);
+        setConstraintEditorText('');
+        setConstraintHelperText('');
+        setRuleExternalInsertText(null);
+        return;
+      }
+
+      if (options?.clearPage) {
+        setConstraintDoc(prev =>
+          cleanupConstraintRulesByDeletedIds(prev, ids, {
+            clearPage: true,
+            constraintPageNo: options.constraintPageNo,
+          })
+        );
+
+        setConstraintSelection(prev => {
+          if (!prev) return prev;
+
+          if (
+            options.constraintPageNo !== undefined &&
+            Number(prev.constraintPageNo) === Number(options.constraintPageNo)
+          ) {
+            setConstraintEditorText('');
+            setConstraintHelperText('');
+            setRuleExternalInsertText(null);
+            return null;
+          }
+
+          return prev;
+        });
+
+        return;
+      }
+
+      if (ids.length === 0) return;
+
+      const referencingRules = findRulesReferencingDeletedIds(
+        constraintDoc,
+        ids
+      ).filter(rule => {
+        if (options?.constraintPageNo === undefined) return true;
+
+        return (
+          Number(rule.constraintPageNo) === Number(options.constraintPageNo)
+        );
+      });
+
+      let removeExpressionReferenceRules = false;
+
+      if (referencingRules.length > 0) {
+        removeExpressionReferenceRules = window.confirm(
+          [
+            '삭제하려는 component ID가 Rule 수식에서 참조되고 있습니다.',
+            '',
+            `삭제 ID: ${ids.join(', ')}`,
+            '',
+            '참조 중인 Rule:',
+            ...referencingRules.map(
+              r => `- page ${r.constraintPageNo} / id ${r.ruleId}`
+            ),
+            '',
+            '이 ID를 참조하는 Rule을 함께 삭제하시겠습니까?',
+            '',
+            '확인: 참조 Rule 삭제',
+            '취소: 참조 Rule 유지',
+          ].join('\n')
+        );
+      }
+
+      setConstraintDoc(prev =>
+        cleanupConstraintRulesByDeletedIds(prev, ids, {
+          constraintPageNo: options?.constraintPageNo,
+          removeExpressionReferenceRules,
+        })
+      );
+
+      setConstraintSelection(prev => {
+        if (!prev) return prev;
+
+        if (ids.includes(String(prev.primaryId))) {
+          setConstraintEditorText('');
+          setConstraintHelperText('');
+          setRuleExternalInsertText(null);
+          return null;
+        }
+
+        return {
+          ...prev,
+          ids: prev.ids.filter(id => !ids.includes(String(id))),
+        };
+      });
+    },
+    [constraintDoc, setConstraintDoc]
+  );
   const handleClearPage = useCallback(() => {
     wsRef.current?.clearPage();
   }, []);
@@ -888,8 +1324,16 @@ export function EditorPage() {
                 scale={pageScale}
                 constraints={constraintDoc}
                 onCopyPageResult={handleCopyPageResult}
+                onDeleteOverlayIds={handleDeletedOverlayIds}
+                onDoubleClickOverlayId={id => {
+                  if (!constraintSelection) return;
+
+                  setRuleExternalInsertText({
+                    value: id,
+                    seq: Date.now(),
+                  });
+                }}
                 onOpenConstraintEditor={({
-                  // page,
                   constraintPageNo,
                   overlays,
                   rightClickedUid,
@@ -951,9 +1395,11 @@ export function EditorPage() {
           onChangeText={setConstraintEditorText}
           helperText={constraintHelperText}
           onChangeHelperText={setConstraintHelperText}
+          externalInsertText={ruleExternalInsertText}
           onClose={() => {
             setConstraintSelection(null);
             setConstraintHelperText('');
+            setRuleExternalInsertText(null);
           }}
           onRevert={() => {
             if (!constraintSelection) return;
@@ -1195,80 +1641,16 @@ export function EditorPage() {
             treeEditorMode === 'edit' ? constraintDoc?.treelist : undefined
           }
           onSave={tree => {
-            const currentPageItem = wsRef.current
-              ?.exportFullState()
-              .pages.find(p => p.logicalPageIndex === pageInfo.current);
-
-            if (!currentPageItem) {
-              alert('현재 페이지 정보를 찾을 수 없습니다.');
-              return;
-            }
-
-            const currentConstraintPageNo = currentPageItem.constraintPageNo;
-
-            const overlayIds = new Set(
-              (wsRef.current?.getAllCircleSlashItems() ?? []).map(o => o.id)
-            );
-
-            const treeIds: string[] = [];
-
-            const collectTreeIds = (nodes: any[]) => {
-              nodes.forEach(n => {
-                if (overlayIds.has(n.id)) {
-                  treeIds.push(String(n.id));
-                }
-                if (Array.isArray(n.children)) {
-                  collectTreeIds(n.children);
-                }
-              });
-            };
-
-            collectTreeIds(tree);
-
             setConstraintDoc(prev => {
               if (!prev) return prev;
-
-              const pages = [...prev.pages];
-              const pageIdx = pages.findIndex(
-                p => p.constraintPageNo === currentConstraintPageNo
-              );
-
-              const pageRule =
-                pageIdx >= 0
-                  ? { ...pages[pageIdx] }
-                  : {
-                      constraintPageNo: currentConstraintPageNo,
-                      components: [],
-                    };
-
-              const comps = [...(pageRule.components || [])];
-
-              treeIds.forEach(id => {
-                const exists = comps.some(c => String(c.id) === String(id));
-                if (!exists) {
-                  comps.push({
-                    id,
-                    groupType: 'circleslash',
-                  });
-                }
-              });
-
-              pageRule.components = comps;
-
-              if (pageIdx >= 0) {
-                pages[pageIdx] = pageRule;
-              } else {
-                pages.push(pageRule);
-              }
 
               return {
                 ...prev,
                 treelist: tree,
-                pages,
               };
             });
 
-            alert('treelist + rule 매핑이 저장되었습니다.');
+            alert('treelist가 저장되었습니다.');
           }}
           onClose={() => setIsTreeEditorOpen(false)}
         />

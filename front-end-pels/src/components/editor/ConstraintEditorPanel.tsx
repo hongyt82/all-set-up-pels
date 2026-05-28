@@ -22,6 +22,11 @@ interface ConstraintEditorPanelProps {
   onDelete?: () => void;
   helperText?: string;
   onChangeHelperText?: (value: string) => void;
+
+  externalInsertText?: {
+    value: string;
+    seq: number;
+  } | null;
 }
 
 export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
@@ -35,6 +40,7 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
   onDelete,
   helperText,
   onChangeHelperText,
+  externalInsertText,
 }) => {
   const { page, primaryId, ids, mode = 'rule' } = selection;
 
@@ -96,6 +102,12 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
     const nextValue = view.state.doc.toString();
     onChangeText(nextValue);
   };
+
+  useEffect(() => {
+    if (!externalInsertText?.value) return;
+
+    insertAtCursor(externalInsertText.value);
+  }, [externalInsertText?.seq]);
 
   {
     /* Formula Validator는 추후 수식 필드 기준으로 별도 적용 */
@@ -308,9 +320,9 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
             </div>
           )}*/}
 
-          <div className="flex-1 flex flex-col gap-1 overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col gap-1 overflow-hidden">
             <span className="text-[11px] text-slate-300">JSON 편집</span>
-            <div className="flex-1 overflow-hidden border border-slate-700 rounded-md bg-slate-950/60">
+            <div className="flex-1 min-h-0 overflow-auto border border-slate-700 rounded-md bg-slate-950/60">
               <CodeMirror
                 value={text}
                 height="100%"
@@ -323,6 +335,7 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
                   bracketMatching: true,
                 }}
                 style={{
+                  height: '100%',
                   fontSize: '12px',
                   fontFamily: 'monospace',
                   lineHeight: '1.4',

@@ -1,14 +1,17 @@
 // src/lib/constraints/constraintsLogic.ts
 import type { ConstraintDoc } from '../../types/constraints';
 
-export function toNumber(value: any): number {
+export function normalizeNumber(value: any): number {
   if (value === null || value === undefined || value === '') return 0;
 
   const normalized = String(value).replaceAll(',', '').trim();
 
-  const n = Number(normalized);
-  return Number.isNaN(n) ? 0 : n;
+  const n = globalThis.Number(normalized);
+  return globalThis.Number.isNaN(n) ? 0 : n;
 }
+
+// 기존 Rule 호환용
+export const toNumber = normalizeNumber;
 
 export function evaluateRuleExpression(
   expression: string | undefined,
@@ -20,8 +23,14 @@ export function evaluateRuleExpression(
   try {
     const fullContext = {
       ...context,
-      toNumber,
-      Number,
+
+      // 기존 웹 Rule 호환
+      toNumber: normalizeNumber,
+
+      // 모바일/일반 수식 작성 방식 호환
+      // expression 안에서 Number("1,234") → 1234 로 동작
+      Number: normalizeNumber,
+
       Math,
       String,
       parseInt,

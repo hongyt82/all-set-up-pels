@@ -1,6 +1,5 @@
 // src/components/editor/EditorHeader.tsx
 import {
-  // Ban,
   Calendar,
   CheckSquare,
   Database,
@@ -301,12 +300,12 @@ export function EditorHeader({
     },
     {
       id: 'satisfactionbox' as const,
-      icon: ThumbsUp, // 만족/불만족 의미 정확
+      icon: ThumbsUp,
       label: (MENU_LABELS.CATEGORIES as any)?.satisfactionbox ?? '만족/불만족',
     },
     {
       id: 'button' as const,
-      icon: ToggleLeft, // 상태 전환 / 선택 버튼 의미
+      icon: ToggleLeft,
       label: (MENU_LABELS.CATEGORIES as any)?.button ?? '버튼',
     },
   ];

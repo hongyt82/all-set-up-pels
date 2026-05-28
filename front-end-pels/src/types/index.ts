@@ -406,7 +406,7 @@ export type DeepReadonly<T> = {
 export type OverlayType =
   // textbox
   | 'textbox'
-  | 'textbox_ml'
+  | 'textbox_multiline'
   | 'textbox_num'
   | 'textbox_unusing'
   | 'textbox_name'
@@ -420,7 +420,9 @@ export type OverlayType =
 
   // calendar
   | 'calendar_date'
+  | 'calendar_date_y2'
   | 'calendar_datetime'
+  | 'calendar_time'
 
   // signature
   | 'signature_worker'
@@ -431,7 +433,9 @@ export type OverlayType =
   | 'button_ox'
   | 'button_oxn'
   | 'button_oxt'
-  | 'button_oxtn';
+  | 'button_oxtn'
+  // rule-only clickable area
+  | 'movetopage';
 
 export interface OverlayItem {
   /** 서버/문서 전역 고유 키 */

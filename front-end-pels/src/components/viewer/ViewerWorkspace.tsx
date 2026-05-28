@@ -90,6 +90,9 @@ export interface ViewerWorkspaceHandle {
 const FIXED_W = BASE_PAGE_WIDTH;
 const FIXED_H = BASE_PAGE_HEIGHT;
 
+//페이지 이동
+const ENABLE_ARROW_PAGE_NAVIGATION = true;
+
 const isSquareType = (t: OverlayItem['type']) =>
   t === 'checkbox' || t === 'circleslash';
 
@@ -196,6 +199,17 @@ export const ViewerWorkspace = forwardRef<
     return Number.isFinite(no) && no > 0 ? no : null;
   };
 
+  const getCurrentRulePage = (page = currentPage) => {
+    const constraintPageNo = getCurrentConstraintPageNo(page);
+    if (!constraintPageNo || !constraintDoc) return null;
+
+    return (
+      constraintDoc.pages?.find(
+        p => Number(p.constraintPageNo) === Number(constraintPageNo)
+      ) ?? null
+    );
+  };
+
   const getConstraintPageNoByOverlay = (ov: OverlayItem): number | null => {
     const lp = findLogicalPage(ov.page) as any;
     if (!lp) return null;
@@ -298,6 +312,24 @@ export const ViewerWorkspace = forwardRef<
     const order = map[type] ?? ['none'];
     const idx = order.indexOf(current || 'none');
     return order[(idx + 1) % order.length];
+  };
+
+  const cycleSatisfactionValue = (current?: string) => {
+    const value = String(current ?? '').toLowerCase();
+
+    if (value === 'good') return 'bad';
+    if (value === 'bad') return '';
+
+    return 'good';
+  };
+
+  const getSatisfactionLabel = (value?: string) => {
+    const v = String(value ?? '').toLowerCase();
+
+    if (v === 'good') return '만족';
+    if (v === 'bad') return '불만족';
+
+    return '만족/불만족';
   };
 
   // ---------------------------------------------------------------------------
@@ -1549,6 +1581,94 @@ export const ViewerWorkspace = forwardRef<
     applyConstraintsCascade(uid, nextValue);
   };
 
+  const normalizeDecimalInput = (value: string) => {
+    let next = value.replace(/[^\d.-]/g, '');
+
+    const minus = next.startsWith('-') ? '-' : '';
+    next = next.replace(/-/g, '');
+
+    const hasDot = next.includes('.');
+    const parts = next.split('.');
+    const rawInt = parts[0] ?? '';
+    const decimal = parts.slice(1).join('');
+
+    if (rawInt === '') {
+      return `${minus}${hasDot ? `.${decimal}` : ''}`;
+    }
+
+    const formattedInt = Number(rawInt).toLocaleString('en-US');
+
+    return `${minus}${formattedInt}${hasDot ? `.${decimal}` : ''}`;
+  };
+
+  const getDatePartsFromValue = (value?: string) => {
+    const raw = String(value ?? '').trim();
+    const digits = raw.replace(/\D/g, '');
+
+    if (digits.length < 8) return null;
+
+    return {
+      year: digits.slice(0, 4),
+      month: digits.slice(4, 6),
+      day: digits.slice(6, 8),
+    };
+  };
+
+  const formatViewerDate = (value?: string) => {
+    const parts = getDatePartsFromValue(value);
+    if (!parts) return String(value ?? '');
+
+    return `${parts.year}.${Number(parts.month)}.${Number(parts.day)}`;
+  };
+
+  const formatViewerDateYear2 = (value?: string) => {
+    const parts = getDatePartsFromValue(value);
+    if (!parts) return String(value ?? '');
+
+    return `${parts.year.slice(-2)}.${Number(parts.month)}.${Number(parts.day)}`;
+  };
+
+  const formatViewerTime = (value?: string) => {
+    const raw = String(value ?? '').trim();
+
+    if (!raw) return '';
+
+    const meridiem = raw.includes('오후')
+      ? 'pm'
+      : raw.includes('오전')
+        ? 'am'
+        : '';
+
+    const match = raw.match(/(\d{1,2}):(\d{2})/);
+
+    if (match) {
+      let hour = Number(match[1]);
+      const minute = match[2];
+
+      if (meridiem === 'pm' && hour < 12) hour += 12;
+      if (meridiem === 'am' && hour === 12) hour = 0;
+
+      return `${hour}:${minute}`;
+    }
+
+    const digits = raw.replace(/\D/g, '').slice(0, 4);
+
+    if (digits.length !== 4) return raw;
+
+    return `${Number(digits.slice(0, 2))}:${digits.slice(2, 4)}`;
+  };
+
+  const formatViewerDateTime = (value?: string) => {
+    const raw = String(value ?? '').trim();
+
+    if (!raw) return '';
+
+    const date = formatViewerDate(raw);
+    const time = formatViewerTime(raw);
+
+    return [date, time].filter(Boolean).join(' ');
+  };
+
   const setText = (uid: string, value: string) => {
     updateOverlaysReadonly(prev =>
       prev.map(o => (o.uid === uid ? { ...o, value } : o))
@@ -1622,6 +1742,71 @@ export const ViewerWorkspace = forwardRef<
     totalPages: getTotalPagesInternal(),
   });
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+
+      if (target) {
+        const tag = target.tagName;
+
+        if (
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          tag === 'SELECT' ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+      }
+
+      if (e.key === 'PageUp') {
+        goPrevPage();
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'PageDown') {
+        goNextPage();
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'Home') {
+        goToPage(1);
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'End') {
+        goToPage(getTotalPagesInternal());
+        e.preventDefault();
+        return;
+      }
+
+      // 좌우 방향키 페이지 이동
+      // 필요 없으면 ENABLE_ARROW_PAGE_NAVIGATION 값을 false로 변경
+      if (ENABLE_ARROW_PAGE_NAVIGATION) {
+        if (e.key === 'ArrowLeft') {
+          goPrevPage();
+          e.preventDefault();
+          return;
+        }
+
+        if (e.key === 'ArrowRight') {
+          goNextPage();
+          e.preventDefault();
+          return;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [currentPage, logicalPages, pdfDoc, numPages]);
+
   useImperativeHandle(ref, () => ({
     goPrevPage,
     goNextPage,
@@ -1645,28 +1830,178 @@ export const ViewerWorkspace = forwardRef<
   // ---------------------------------------------------------------------------
   // 뷰어용 오버레이 렌더링
   // ---------------------------------------------------------------------------
+  const viewerOpaqueInputLeftStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    border: '1px solid rgba(139, 92, 246, 0.35)',
+    background: '#fff',
+    color: '#111',
+    padding: '0 4px',
+    margin: 0,
+    fontSize: 12,
+    boxSizing: 'border-box',
+    outline: 'none',
+    textAlign: 'left',
+  };
+
+  const viewerOpaqueInputCenterStyle: React.CSSProperties = {
+    ...viewerOpaqueInputLeftStyle,
+    textAlign: 'center',
+  };
+
+  const viewerOpaqueButtonStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    border: '1px solid rgba(139, 92, 246, 0.35)',
+    background: '#fff',
+    color: '#111',
+    padding: 0,
+    margin: 0,
+    fontSize: 12,
+    fontWeight: 700,
+    boxSizing: 'border-box',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    lineHeight: 1,
+  };
+
+  const viewerTransparentButtonStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    border: '1px solid rgba(139, 92, 246, 0.35)',
+    background: 'rgba(255, 255, 255, 0.12)',
+    color: '#111',
+    padding: 0,
+    margin: 0,
+    fontSize: 12,
+    fontWeight: 700,
+    boxSizing: 'border-box',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    lineHeight: 1,
+  };
+
+  const renderFormattedPicker = ({
+    value,
+    type,
+    displayValue,
+    icon,
+    onChange,
+  }: {
+    value?: string;
+    type: 'date' | 'datetime-local' | 'time';
+    displayValue: string;
+    icon: string;
+    onChange: (value: string) => void;
+  }) => {
+    return (
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        <div
+          style={{
+            ...viewerOpaqueInputCenterStyle,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingRight: 28,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {displayValue}
+        </div>
+
+        <span
+          style={{
+            position: 'absolute',
+            right: 6,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: 13,
+            lineHeight: 1,
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        >
+          {icon}
+        </span>
+
+        <input
+          type={type}
+          value={value ?? ''}
+          onChange={e => onChange(e.currentTarget.value)}
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            width: 32,
+            height: '100%',
+            opacity: 0,
+            border: 'none',
+            padding: 0,
+            margin: 0,
+            cursor: 'pointer',
+            zIndex: 3,
+          }}
+        />
+      </div>
+    );
+  };
+
   const renderOverlayContent = (ov: OverlayItem) => {
     switch (ov.type) {
       // =========================
       // TEXTBOX 계열
       // =========================
       case 'textbox':
-      case 'textbox_ml':
+        return (
+          <input
+            type="text"
+            value={ov.value ?? ''}
+            onChange={e => setText(ov.uid, e.currentTarget.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+              }
+            }}
+            style={viewerOpaqueInputLeftStyle}
+          />
+        );
+
       case 'textbox_name':
       case 'textbox_verifier':
+        return (
+          <input
+            type="text"
+            value={ov.value ?? ''}
+            onChange={e => setText(ov.uid, e.currentTarget.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+              }
+            }}
+            style={viewerOpaqueInputCenterStyle}
+          />
+        );
+
+      case 'textbox_multiline':
         return (
           <textarea
             value={ov.value ?? ''}
             onChange={e => setText(ov.uid, e.currentTarget.value)}
             rows={3}
             style={{
-              width: '100%',
-              height: '100%',
-              border: '1px solid #aaa',
-              padding: 2,
+              ...viewerOpaqueInputLeftStyle,
               resize: 'none',
-              fontSize: 12,
-              boxSizing: 'border-box',
             }}
           />
         );
@@ -1674,17 +2009,13 @@ export const ViewerWorkspace = forwardRef<
       case 'textbox_num':
         return (
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={ov.value ?? ''}
-            onChange={e => setText(ov.uid, e.currentTarget.value)}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: '1px solid #aaa',
-              padding: 2,
-              fontSize: 12,
-              boxSizing: 'border-box',
-            }}
+            onChange={e =>
+              setText(ov.uid, normalizeDecimalInput(e.currentTarget.value))
+            }
+            style={viewerOpaqueInputCenterStyle}
           />
         );
 
@@ -1692,10 +2023,8 @@ export const ViewerWorkspace = forwardRef<
         return (
           <div
             style={{
-              width: '100%',
-              height: '100%',
-              background: '#f3f4f6',
-              border: '1px dashed #ccc',
+              ...viewerOpaqueButtonStyle,
+              cursor: 'default',
             }}
           />
         );
@@ -1706,13 +2035,38 @@ export const ViewerWorkspace = forwardRef<
 
       case 'checkbox': {
         const checked = (ov.value || '').toLowerCase() === 'y';
+
         return (
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={e => setCheckbox(ov.uid, e.currentTarget.checked)}
-            style={{ width: '100%', height: '100%', cursor: 'pointer' }}
-          />
+          <button
+            type="button"
+            onClick={() => setCheckbox(ov.uid, !checked)}
+            title="체크 전환"
+            style={{
+              ...viewerTransparentButtonStyle,
+              padding: 0,
+            }}
+          >
+            {checked ? (
+              <svg
+                viewBox="0 0 100 100"
+                width="100%"
+                height="100%"
+                style={{
+                  display: 'block',
+                  overflow: 'visible',
+                }}
+              >
+                <path
+                  d="M 26 44 L 46 66 L 78 30"
+                  fill="none"
+                  stroke="#000"
+                  strokeWidth="16"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : null}
+          </button>
         );
       }
       // =========================
@@ -1724,7 +2078,7 @@ export const ViewerWorkspace = forwardRef<
         const value = (ov.value ?? '') as CircleValue;
 
         const displayMap: Record<CircleValue, string> = {
-          '': '공란',
+          '': '',
           c: '◯',
           cs: '⌀',
           na: 'N/A',
@@ -1738,22 +2092,13 @@ export const ViewerWorkspace = forwardRef<
 
         return (
           <button
+            type="button"
             onClick={() => cycleCircle(ov.uid)}
             title="공란 → ◯ → ⌀ → N/A 순환"
             style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 0,
-              margin: 0,
-              border: '',
-              background: 'transparent',
-              cursor: 'pointer',
-              lineHeight: 1,
-              whiteSpace: 'nowrap',
+              ...viewerTransparentButtonStyle,
               fontSize: size,
+              whiteSpace: 'nowrap',
             }}
           >
             {display}
@@ -1766,43 +2111,54 @@ export const ViewerWorkspace = forwardRef<
       // =========================
 
       case 'calendar_date':
-        return (
-          <input
-            type="date"
-            value={ov.value ?? ''}
-            onChange={e => setDate(ov.uid, e.currentTarget.value)}
-            style={{ width: '100%', height: '100%' }}
-          />
-        );
+        return renderFormattedPicker({
+          value: ov.value,
+          type: 'date',
+          displayValue: formatViewerDate(ov.value),
+          icon: '📅',
+          onChange: value => setDate(ov.uid, value),
+        });
+
+      case 'calendar_date_y2':
+        return renderFormattedPicker({
+          value: ov.value,
+          type: 'date',
+          displayValue: formatViewerDateYear2(ov.value),
+          icon: '📅',
+          onChange: value => setDate(ov.uid, value),
+        });
 
       case 'calendar_datetime':
-        return (
-          <input
-            type="datetime-local"
-            value={ov.value ?? ''}
-            onChange={e => setDate(ov.uid, e.currentTarget.value)}
-            style={{ width: '100%', height: '100%' }}
-          />
-        );
+        return renderFormattedPicker({
+          value: ov.value,
+          type: 'datetime-local',
+          displayValue: formatViewerDateTime(ov.value),
+          icon: '📅🕐',
+          onChange: value => setDate(ov.uid, value),
+        });
 
+      case 'calendar_time':
+        return renderFormattedPicker({
+          value: ov.value,
+          type: 'time',
+          displayValue: formatViewerTime(ov.value),
+          icon: '🕐',
+          onChange: value => setDate(ov.uid, value),
+        });
       // =========================
       // SIGNATURE
       // =========================
-
       case 'signature_worker':
       case 'signature_verifier':
         return (
           <div
             style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid #ccc',
+              ...viewerTransparentButtonStyle,
               fontSize: 11,
+              fontWeight: 400,
             }}
             onClick={() => setSignature(ov.uid)}
+            title="서명 업로드"
           >
             {ov.value?.startsWith('data:image/') ? (
               <img
@@ -1810,9 +2166,7 @@ export const ViewerWorkspace = forwardRef<
                 alt="signature"
                 style={{ maxWidth: '100%', maxHeight: '100%' }}
               />
-            ) : (
-              '서명 업로드'
-            )}
+            ) : null}
           </div>
         );
 
@@ -1831,14 +2185,18 @@ export const ViewerWorkspace = forwardRef<
           n: 'N',
           t: 'T',
         };
-        const display = displayMap[ov.value || 'none'] ?? '';
+
+        const value = ov.value || 'none';
+        const display = displayMap[value] ?? '';
+
         return (
           <button
+            type="button"
             onClick={() => setText(ov.uid, cycleButtonValue(ov.type, ov.value))}
+            title="클릭하여 값 변경"
             style={{
-              width: '100%',
-              height: '100%',
-              fontWeight: 600,
+              ...viewerOpaqueButtonStyle,
+              fontSize: '130%',
             }}
           >
             {display}
@@ -1852,20 +2210,73 @@ export const ViewerWorkspace = forwardRef<
 
       case 'satisfactionbox':
         return (
-          <select
-            value={ov.value ?? 'na'}
-            onChange={e => setText(ov.uid, e.currentTarget.value)}
-            style={{ width: '100%', height: '100%' }}
+          <button
+            type="button"
+            onClick={() => setText(ov.uid, cycleSatisfactionValue(ov.value))}
+            title="만족/불만족 → 만족 → 불만족 순환"
+            style={{
+              ...viewerOpaqueButtonStyle,
+              fontSize: 12,
+            }}
           >
-            <option value="na">선택</option>
-            <option value="good">만족</option>
-            <option value="bad">불만족</option>
-          </select>
+            {getSatisfactionLabel(ov.value)}
+          </button>
         );
 
       default:
         return <div />;
     }
+  };
+
+  const renderMoveToPageAreas = () => {
+    const rulePage = getCurrentRulePage();
+    const list = Array.isArray((rulePage as any)?.movetopage)
+      ? (rulePage as any).movetopage
+      : [];
+
+    if (list.length === 0) return null;
+
+    const lp = findLogicalPage(currentPage) as any;
+    const srcW = Number(lp?.width) || pageBox.w;
+    const srcH = Number(lp?.height) || pageBox.h;
+
+    return list.map((item: any, index: number) => {
+      const x = (Number(item.x ?? 0) / srcW) * pageBox.w;
+      const y = (Number(item.y ?? 0) / srcH) * pageBox.h;
+      const w = (Number(item.width ?? 0) / srcW) * pageBox.w;
+      const h = (Number(item.height ?? 0) / srcH) * pageBox.h;
+      const target = Number(item.targetPdfPage ?? 0);
+
+      if (!Number.isFinite(target) || target <= 0) {
+        return null;
+      }
+
+      return (
+        <button
+          key={`movetopage-${currentPage}-${index}`}
+          type="button"
+          title={`페이지 이동: ${target}`}
+          onClick={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            goToPage(target);
+          }}
+          style={{
+            position: 'absolute',
+            left: x,
+            top: y,
+            width: w,
+            height: h,
+            border: 'none',
+            background: 'transparent',
+            padding: 0,
+            margin: 0,
+            cursor: 'pointer',
+            zIndex: 20,
+          }}
+        />
+      );
+    });
   };
 
   // ---------------------------------------------------------------------------
@@ -1906,6 +2317,8 @@ export const ViewerWorkspace = forwardRef<
               height: pageBox.h,
             }}
           >
+            {renderMoveToPageAreas()}
+
             {overlays
               .filter(o => o.page === currentPage)
               .map(ov => {

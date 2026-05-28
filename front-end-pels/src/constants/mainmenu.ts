@@ -1,3 +1,4 @@
+// src/constants/mainmenu.ts
 /**
  * PDF Formatter 메인 메뉴 및 도구 팔레트 문구 중앙 관리
  * 모든 좌측 메뉴, 카테고리, 도구 팔레트에서 사용하는 문구를 이 파일에서 관리합니다.
@@ -27,10 +28,14 @@ export const MENU_LABELS = {
   // 카테고리 라벨
   CATEGORIES: {
     ban: '금지',
+    all: '전체',
     textbox: '텍스트박스',
     checkbox: '체크박스',
+    circleslash: '써클앤슬래시',
     calendar: '캘린더',
     signature: '서명',
+    satisfactionbox: '만족/불만족',
+    button: '버튼',
     circle: '원형',
   },
 
