@@ -28,6 +28,7 @@
 		</script>
 		<script type="text/javascript" src="<%=request.getContextPath()%>/resources/assets/datepicker/jquery-ui.min.js" ></script>
 		<script type="text/javascript" src="<%=request.getContextPath()%>/resources/assets/js/pels_android_js_bridge_all.js"></script>
+		<script type="text/javascript" src="<%=request.getContextPath()%>/resources/assets/js/pels_webview_ime_helper.js"></script>
 		<script type="text/javascript">
 			const PDF_IP = 'http://10.53.0.21';
 		

@@ -8,6 +8,17 @@
 			$('#CHCK_STRT_DT').val('${CHCK_STRT_DT}');
 			$('#CHCK_END_DT').val('${CHCK_END_DT}');
 			$('#REGPR_NM').val('${REGPR_NM}');
+
+			// WebView IME helper: 검색조건 입력(문서유형/번호/부분) Enter → 다음칸 이동
+			if (window.PelsImeHelper && typeof window.PelsImeHelper.bind === 'function') {
+				window.PelsImeHelper.bind({
+					ids: ['SH_DOC_TYP_CD', 'SH_PRCDOC_NO', 'SH_PRT_NO'],
+					enableKeyboardRequest: true,
+					enableEnterFlow: true,
+					log: false,
+					logPrefix: '[Exam_Input_M:IME]'
+				});
+			}
 		})
 		
 		function fnSearch (resultData) {
@@ -17,6 +28,32 @@
 		
 		// 팝업 오픈
 		function MM_openBrWindow(theURL,winName,features, flag) {
+            var SH_DOC_TYP_CD = $('#SH_DOC_TYP_CD').val();
+            var SH_PRCDOC_NO = $('#SH_PRCDOC_NO').val();
+            var SH_PRT_NO = $('#SH_PRT_NO').val();
+
+            console.log('[Exam_Input_M] Before MM_openBrWindow clicked', {
+                SH_DOC_TYP_CD: SH_DOC_TYP_CD,
+                SH_PRCDOC_NO: SH_PRCDOC_NO,
+                SH_PRT_NO: SH_PRT_NO
+            });
+
+            if(!SH_DOC_TYP_CD || !SH_PRCDOC_NO || !SH_PRT_NO){
+                console.log('[Exam_Input_M] After MM_openBrWindow clicked', {
+                    SH_DOC_TYP_CD: SH_DOC_TYP_CD,
+                    SH_PRCDOC_NO: SH_PRCDOC_NO,
+                    SH_PRT_NO: SH_PRT_NO
+                });
+                alert("=============빈칸 허용 안함 Exam_Input_M.jsp ===========");
+                return;
+            }
+
+            try {
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
+            } catch (e) {}
+
 			let form = document.getElementById('form')
 			form.action = "<%=request.getContextPath()%>/Exam_SapList.do"
 			form.submit()
@@ -119,15 +156,15 @@
 									<tr>
 										<td class="Title"><span class="Label">문서유형</span></td>
 										<td class="Value">
-			                            <input type="text" class="TextBox" name="SH_DOC_TYP_CD" id="SH_DOC_TYP_CD" value="${SH_DOC_TYP_CD}" style="width:100px;" />
+			                            <input type="text" class="TextBox" name="SH_DOC_TYP_CD" id="SH_DOC_TYP_CD" value="${SH_DOC_TYP_CD}" style="width:100px;" inputmode="text" enterkeyhint="next" autocomplete="off" autocapitalize="off" />
 										</td>
 										<td class="Title"><span class="Label">문서번호</span></td>
 										<td class="Value">
-			                            	<input type="text" class="TextBox" name="SH_PRCDOC_NO" id="SH_PRCDOC_NO" value="${SH_PRCDOC_NO}" style="width:100px;" />
+			                            	<input type="text" class="TextBox" name="SH_PRCDOC_NO" id="SH_PRCDOC_NO" value="${SH_PRCDOC_NO}" style="width:100px;" inputmode="text" enterkeyhint="next" autocomplete="off" autocapitalize="off" />
 										</td>
 										<td class="Title"><span class="Label">문서부분</span></td>
 										<td class="Value">
-			                                <input type="text" class="TextBox" name="SH_PRT_NO" id="SH_PRT_NO" value="${SH_PRT_NO}" style="width:100px;" />
+			                                <input type="text" class="TextBox" name="SH_PRT_NO" id="SH_PRT_NO" value="${SH_PRT_NO}" style="width:100px;" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="off" />
 										</td>
 									</tr>
 								</table>

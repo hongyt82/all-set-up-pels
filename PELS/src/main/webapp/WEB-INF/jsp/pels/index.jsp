@@ -170,6 +170,12 @@
                                 </a>
                                 <b class="arrow"></b>
                             </li>
+                            <li class="">
+                                <a href="javascript:addTab(4, 'Outcome_Etc_Search', '<%=request.getContextPath()%>/Outcome_Etc_Search.do','기타양식');">
+                                    신규 테스트 (At First)
+                                </a>
+                                <b class="arrow"></b>
+                            </li>
                         </ul>
 					</li>
 					<li class="">
