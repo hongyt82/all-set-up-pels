@@ -313,7 +313,7 @@
 										<th>절차서명</th>
 										<th>시험명</th>
 										<th>상태</th>
-										<th>절차서</th>
+										<th colspan="2" >절차서</th>
 										<th>최종수정일시</th>
 									</tr>
 									<c:forEach var="exam" items="${examList}" begin="0" end="${examList.size()}" step="1">
@@ -336,8 +336,17 @@
 											<td align="center">${exam.PRSTS_CFY_NM}</td>
 											<td align="center">
 												<!-- <a class="SubButton" href="javascript:MM_openViewer('${exam.TST_UNQ_KY_VAL}');"><span class="Text">보기</span></a> -->
-												<a class="SubButton" href="<%=request.getContextPath()%>/Exam_KhnpViewer.do?PWPL_ID=${exam.PWPL_ID}&CHCK_SNO=${exam.CHCK_SNO}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_NM}&CHCK_TITL=${exam.CHCK_TITL}&PRSTS_CFY=${PRSTS_CFY}"><span class="Text">보기</span></a>
+												<a class="SubButton" href="<%=request.getContextPath()%>/Exam_KhnpViewer.do?PWPL_ID=${exam.PWPL_ID}&CHCK_SNO=${exam.CHCK_SNO}&PRCDOC_NO=${exam.PRCDOC_NO}&PRCDOC_NM=${exam.PRCDOC_NM}&CHCK_TITL=${exam.CHCK_TITL}&PRSTS_CFY=${PRSTS_CFY}"><span class="Text">보기1</span></a>
 											</td>
+
+
+											<td align="center">
+												<a class="SubButton"
+												   href="<%=request.getContextPath()%>/api/Exam_Pdf_Download_M?CHCK_SNO=${exam.CHCK_SNO}">
+													<span class="Text">PDF저장</span>
+												</a>
+											</td>
+
 											<td align="center">${exam.FM_RG_DT}</td>
 										</tr>
 									</c:forEach>

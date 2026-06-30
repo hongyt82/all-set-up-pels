@@ -8,6 +8,7 @@ import com.khnp.pels.exam.dto.PdfPage;
 import com.khnp.pels.exam.service.PELSExamService;
 import common.util.StringUtil;
 import common.xss.JsonXssFilter;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
@@ -419,7 +420,8 @@ public class PELSExamController {
 			int canvasWidth = 720;
 			int canvasHeight = 1020;
 			 
-			try (PDDocument document = PDDocument.load(file)) {
+//			try (PDDocument document = PDDocument.load(file)) {
+			try (PDDocument document = Loader.loadPDF(file)) {
 	
 			    int pageCount = document.getNumberOfPages();
 			    System.out.println("pageCount = " + pageCount);

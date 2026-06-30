@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.khnp.pels.exam.service.PELSExamService;
+import com.khnp.pels.api.service.ExamPdfService;
 
 import common.util.StringUtil;
 import common.xss.JsonXssFilter;
@@ -48,9 +49,14 @@ public class PELSExamMobileController {
 	private static final String LOG_NULL_MARKER = "NULL";
 	private static final String LOG_EMPTY_MARKER = "EMPTY";
 
+//	private final PdfService pdfService;
+
+	@Autowired
+	private ExamPdfService examPdfService;
+
 	@Autowired
 	private PELSExamService pelsExamService;
-	
+
 	private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	
 	private JsonXssFilter jsonXssFilter = new JsonXssFilter();
@@ -248,7 +254,8 @@ public class PELSExamMobileController {
 		logMapFields("Exam_JsonSave_M", "RESPONSE", resultMap);
 		return resultMap;
 	}
-	
+
+	/* 추가시작 */
 	@RequestMapping(value = "/api/Exam_Json_M", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
 	@ResponseBody
 	public Map<String, Object> Exam_Json_M_API(HttpServletRequest request) throws Exception {
@@ -319,8 +326,51 @@ public class PELSExamMobileController {
 
 		logMapFields("Exam_Json_M_API", "RESPONSE", result);
 		return result;
-	}	
-	
+	}
+
+	@RequestMapping(value = "/api/Exam_Pdf_Download_M", method = RequestMethod.GET)
+	@ResponseBody
+	public void Exam_Pdf_Download_M_API(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+		String CHCK_SNO = StringUtil.nvl(request.getParameter("CHCK_SNO"), "");
+
+		if ("".equals(CHCK_SNO)) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "CHCK_SNO is required");
+			return;
+		}
+
+		HashMap<String, Object> paramMap = new HashMap<>();
+
+		paramMap.put("CHCK_SNO", CHCK_SNO);
+		paramMap.put("ATFL_NO", "1");
+
+		Map<String, String> mapTemp = pelsExamService.getDetail("ExamJsonDetail", paramMap);
+
+		if (mapTemp == null) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND, "data not found");
+			return;
+		}
+
+		String PELS_IP_URL = this.utilProperties.getProperty("PELS_IP_URL");
+		String pdfPath = PELS_IP_URL + "/upload/" + mapTemp.get("ATFL_PHCL_NM");
+		String overJson = "";
+		Object overClob = mapTemp.get("WRTE_JSON_DCR");
+		if (overClob instanceof Clob) {
+			overJson = clobToString((Clob) overClob);
+		}
+		if (overJson == null || "".equals(overJson)) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND, "Overlay JSON not found");
+			return;
+		}
+		byte[] pdfBytes = examPdfService.generateExamPdf(pdfPath, overJson);
+		response.setContentType("application/pdf");
+		response.setHeader("Content-Disposition", "attachment; filename=\"result.pdf\"");
+		response.setContentLength(pdfBytes.length);
+		response.getOutputStream().write(pdfBytes);
+		response.getOutputStream().flush();
+	}
+
+	/* 추가끝 */
 	
 	@RequestMapping(value = "/proxy/pdf", method = RequestMethod.GET)
 	public void proxyPdf(@RequestParam("path") String path, HttpServletRequest request, HttpServletResponse response) throws Exception {

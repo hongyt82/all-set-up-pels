@@ -31,7 +31,9 @@
 	}
 
 	function pageLoad(){
-		document.getElementById("iframPdfEditor").src = "<%= elinkRoot %>/e-link-v2/viewer?PWPL_ID=${PWPL_ID}&CHCK_SNO=${CHCK_SNO}";
+		/*document.getElementById("iframPdfEditor").src = "<%= elinkRoot%>/e-link-v2/viewer?PWPL_ID=${PWPL_ID}&CHCK_SNO=${CHCK_SNO}";*/
+        document.getElementById("iframPdfEditor").src = "<%= request.getContextPath() %>/e-link-v2/viewer?PWPL_ID=${PWPL_ID}&CHCK_SNO=${CHCK_SNO}";
+        /*document.getElementById("iframPdfEditor").src = "http://localhost:4008/pels/e-link-v2/viewer?PWPL_ID=${PWPL_ID}&CHCK_SNO=${CHCK_SNO}";*/
 	}
 </script>
 <body class="no-skin real-skin" onload="javascript:pageLoad();">
