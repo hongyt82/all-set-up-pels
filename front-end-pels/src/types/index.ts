@@ -427,6 +427,7 @@ export type OverlayType =
 
   // extra
   | 'satisfactionbox'
+  | 'button_o'
   | 'button_ox'
   | 'button_oxn'
   | 'button_oxt'

@@ -55,6 +55,7 @@ const SUPPORTED_TYPES: OverlayType[] = [
 
   // extra (Viewer에서 보여줄 거면 유지)
   'satisfactionbox',
+  'button_o',
   'button_ox',
   'button_oxn',
   'button_oxt',

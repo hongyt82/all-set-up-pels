@@ -309,6 +309,7 @@ export const ViewerWorkspace = forwardRef<
 
   const cycleButtonValue = (type: string, current?: string) => {
     const map: Record<string, string[]> = {
+      button_o: ['none', 'o'],
       button_ox: ['none', 'o', 'x'],
       button_oxn: ['none', 'o', 'x', 'n'],
       button_oxt: ['none', 'o', 'x', 't'],
@@ -2151,8 +2152,11 @@ export const ViewerWorkspace = forwardRef<
       case 'textbox_unusing':
         return (
           <div
+            title="미사용 영역"
             style={{
-              ...viewerOpaqueButtonStyle,
+              ...viewerTransparentButtonStyle,
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px dashed rgba(148, 163, 184, 0.45)',
               cursor: 'default',
             }}
           />
@@ -2344,6 +2348,27 @@ export const ViewerWorkspace = forwardRef<
             style={{
               ...viewerOpaqueButtonStyle,
               fontSize: '130%',
+            }}
+          >
+            {display}
+          </button>
+        );
+      }
+
+      case 'button_o': {
+        const value = ov.value || 'none';
+        const display = value === 'o' ? 'O' : '';
+        const size = '130%';
+
+        return (
+          <button
+            type="button"
+            onClick={() => setText(ov.uid, cycleButtonValue(ov.type, ov.value))}
+            title="공란 → O 순환"
+            style={{
+              ...viewerTransparentButtonStyle,
+              fontSize: size,
+              whiteSpace: 'nowrap',
             }}
           >
             {display}

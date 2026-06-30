@@ -95,6 +95,7 @@ const QUICK_TOOL_BY_CATEGORY: Partial<
   ],
 
   button: [
+    { id: 'button_o', type: 'button_o', label: 'O' },
     { id: 'button_ox', type: 'button_ox', label: 'OX' },
     { id: 'button_oxn', type: 'button_oxn', label: 'OXN' },
     { id: 'button_oxt', type: 'button_oxt', label: 'OXT' },

@@ -48,6 +48,7 @@ export type OverlayType =
 
   // etc
   | 'satisfactionbox'
+  | 'button_o'
   | 'button_ox'
   | 'button_oxn'
   | 'button_oxt'
@@ -78,6 +79,7 @@ const OVERLAY_MAJOR_MAP: Record<OverlayType, MajorOverlayType> = {
   signature_worker: 'signature',
   signature_verifier: 'signature',
   satisfactionbox: 'etc',
+  button_o: 'button',
   button_ox: 'button',
   button_oxn: 'button',
   button_oxt: 'button',
@@ -148,6 +150,7 @@ const FIXED_H = BASE_PAGE_HEIGHT;
 
 const isSquareType = (t: OverlayType) =>
   t === 'circleslash' || t === 'checkbox';
+// t === 'circleslash' || t === 'checkbox' || t === 'button_o';
 
 //페이지 이동
 const ENABLE_ARROW_PAGE_NAVIGATION = true;
@@ -169,6 +172,7 @@ const OVERLAY_PREVIEW: Partial<
 
   satisfactionbox: { label: '만족/불만족' },
 
+  button_o: { label: '공란/O' },
   button_ox: { label: 'O/X' },
   button_oxn: { label: 'O/X/N' },
   button_oxt: { label: 'O/X/T' },
@@ -1102,6 +1106,7 @@ export const EditorWorkspace = forwardRef<
       signature_verifier: { wPct: 0.18, hPct: 0.04, value: '' },
 
       satisfactionbox: { wPct: 0.18, hPct: 0.04, value: '' },
+      button_o: { wPct: 0.055, hPct: 0.04, value: '' },
       button_ox: { wPct: 0.18, hPct: 0.04, value: '' },
       button_oxn: { wPct: 0.18, hPct: 0.04, value: '' },
       button_oxt: { wPct: 0.18, hPct: 0.04, value: '' },
