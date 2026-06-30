@@ -24,6 +24,8 @@ interface UiNode {
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 
+const MAX_TREE_DEPTH = 10;
+
 export const TreeListEditorPanel: React.FC<Props> = ({
   circleSlashItems,
   initialTree,
@@ -147,7 +149,7 @@ export const TreeListEditorPanel: React.FC<Props> = ({
     );
 
   /**
-   * depth 제한 (최대 3단계)
+   * depth 제한 (최대 5단계)
    */
   const getDepth = (nodes: UiNode[], id: string, depth = 1): number | null => {
     for (const n of nodes) {
@@ -169,7 +171,7 @@ export const TreeListEditorPanel: React.FC<Props> = ({
     const targetDepth = getDepth(nodes, targetId);
     if (!targetDepth) return true;
     const movingDepth = Math.max(...movingRoots.map(maxDepthOf));
-    return targetDepth + movingDepth > 3;
+    return targetDepth + movingDepth > MAX_TREE_DEPTH;
   };
 
   /**
@@ -187,7 +189,7 @@ export const TreeListEditorPanel: React.FC<Props> = ({
       .map(n => clone(n!));
 
     if (wouldExceedDepth(tree, targetId, movingNodes)) {
-      alert('최대 3단계까지만 허용됩니다.');
+      alert(`최대 ${MAX_TREE_DEPTH}단계까지만 허용됩니다.`);
       return;
     }
 

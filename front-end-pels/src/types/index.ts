@@ -419,10 +419,7 @@ export type OverlayType =
   | 'circleslash'
 
   // calendar
-  | 'calendar_date'
-  | 'calendar_date_y2'
-  | 'calendar_datetime'
-  | 'calendar_time'
+  | 'calendar'
 
   // signature
   | 'signature_worker'
@@ -434,8 +431,10 @@ export type OverlayType =
   | 'button_oxn'
   | 'button_oxt'
   | 'button_oxtn'
+
   // rule-only clickable area
-  | 'movetopage';
+  | 'movetopage'
+  | 'formdrawing';
 
 export interface OverlayItem {
   /** 서버/문서 전역 고유 키 */
@@ -444,6 +443,7 @@ export interface OverlayItem {
   id: string;
   title?: string;
   type: OverlayType;
+  option?: string;
   /** draw 박스 기준 비율 좌표/크기 (0~1) */
   xPct: number;
   yPct: number;

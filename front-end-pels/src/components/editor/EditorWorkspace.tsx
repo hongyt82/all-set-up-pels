@@ -40,10 +40,7 @@ export type OverlayType =
   | 'circleslash'
 
   // calendar
-  | 'calendar_date'
-  | 'calendar_date_y2'
-  | 'calendar_datetime'
-  | 'calendar_time'
+  | 'calendar'
 
   // signature
   | 'signature_worker'
@@ -55,7 +52,8 @@ export type OverlayType =
   | 'button_oxn'
   | 'button_oxt'
   | 'button_oxtn'
-  | 'movetopage';
+  | 'movetopage'
+  | 'formdrawing';
 
 export type MajorOverlayType =
   | 'textbox'
@@ -76,10 +74,7 @@ const OVERLAY_MAJOR_MAP: Record<OverlayType, MajorOverlayType> = {
   textbox_verifier: 'textbox',
   checkbox: 'checkbox',
   circleslash: 'circleslash',
-  calendar_date: 'calendar',
-  calendar_date_y2: 'calendar',
-  calendar_datetime: 'calendar',
-  calendar_time: 'calendar',
+  calendar: 'calendar',
   signature_worker: 'signature',
   signature_verifier: 'signature',
   satisfactionbox: 'etc',
@@ -88,6 +83,7 @@ const OVERLAY_MAJOR_MAP: Record<OverlayType, MajorOverlayType> = {
   button_oxt: 'button',
   button_oxtn: 'button',
   movetopage: 'button',
+  formdrawing: 'button',
 };
 
 const getMajorType = (type: OverlayType) => OVERLAY_MAJOR_MAP[type];
@@ -105,12 +101,27 @@ const OVERLAY_PREVIEW_MAJOR: Record<
   etc: { defaultLabel: '' },
 };
 
+const getSaveComponentMeta = (type: OverlayType, option?: string) => {
+  if (type === 'calendar') {
+    return { type: 'calendar', option: option || 'yyyy-MM-dd' };
+  }
+
+  return { type };
+};
+
+const getEditorOverlayType = (type: string): OverlayType => {
+  if (type === 'calendar') return 'calendar';
+
+  return type as OverlayType;
+};
+
 export interface OverlayItem {
   uid: string;
   id: string;
   id_key?: string;
   title: string;
   type: OverlayType;
+  option?: string;
   xPct: number;
   yPct: number;
   wPct: number;
@@ -145,15 +156,13 @@ const OVERLAY_PREVIEW: Partial<
   Record<OverlayType, { label?: string; icon?: string; multiline?: boolean }>
 > = {
   textbox: { label: '텍스트' },
-  textbox_multiline: { label: '텍스트\n(멀티라인)', multiline: true },
+  // textbox_multiline: { label: '텍스트\n(멀티라인)', multiline: true },
+  textbox_multiline: { label: '텍스트(멀티라인)' },
   textbox_num: { label: '숫자' },
   textbox_name: { label: '수행자 이름' },
   textbox_verifier: { label: '확인자 이름' },
 
-  calendar_date: { icon: '📅', label: '날짜' },
-  calendar_date_y2: { icon: '📅', label: '날짜(년도2)' },
-  calendar_datetime: { icon: '📅🕐', label: '날짜 + 시간' },
-  calendar_time: { icon: '🕐', label: '시간' },
+  calendar: { icon: '📅', label: '날짜' },
 
   signature_worker: { label: '수행자 서명' },
   signature_verifier: { label: '확인자 서명' },
@@ -165,6 +174,51 @@ const OVERLAY_PREVIEW: Partial<
   button_oxt: { label: 'O/X/T' },
   button_oxtn: { label: 'O/X/T/N' },
   movetopage: { label: '페이지 이동' },
+  formdrawing: { label: '도면조회' },
+};
+
+const CALENDAR_OPTIONS = {
+  date: {
+    option: 'yyyy-MM-dd',
+    icon: '📅',
+    label: '날짜',
+    wPct: 0.26,
+    hPct: 0.04,
+  },
+  dateY2: {
+    option: 'yy-MM-dd',
+    icon: '📅',
+    label: '날짜(년도2)',
+    wPct: 0.22,
+    hPct: 0.04,
+  },
+  datetime: {
+    option: 'yyyy-MM-dd HH:mm',
+    icon: '📅🕐',
+    label: '날짜 + 시간',
+    wPct: 0.26,
+    hPct: 0.04,
+  },
+  monthDay: {
+    option: 'MM-dd',
+    icon: '📅',
+    label: '월/일',
+    wPct: 0.16,
+    hPct: 0.04,
+  },
+  time: {
+    option: 'HH:mm',
+    icon: '🕐',
+    label: '시간',
+    wPct: 0.18,
+    hPct: 0.04,
+  },
+} as const;
+
+const getCalendarPreview = (option?: string) => {
+  const item = Object.values(CALENDAR_OPTIONS).find(v => v.option === option);
+
+  return item ?? CALENDAR_OPTIONS.date;
 };
 
 function getPageFit(
@@ -264,10 +318,11 @@ export interface EditorWorkspaceHandle {
   downloadJson: () => void;
   downloadJsonAs: () => void;
   downloadJsonCreate: () => void; // 새로운 버전 서식 생성 (createNewVersion: true)
+  exportRuleJsonString: () => string;
   changeDocKey: () => void;
 
   // 컴포넌트 조작
-  addOverlay: (type: OverlayType) => void;
+  addOverlay: (type: OverlayType, option?: string) => void;
   clearPage: () => void;
   clearAll: () => void;
 
@@ -284,6 +339,10 @@ export interface EditorWorkspaceHandle {
   // 크기
   resizeSelectedPlus: () => void;
   resizeSelectedMinus: () => void;
+  resizeSelectedWidthPlus: () => void;
+  resizeSelectedWidthMinus: () => void;
+  resizeSelectedHeightPlus: () => void;
+  resizeSelectedHeightMinus: () => void;
 
   // 아래줄 + 이후 페이지 이동
   shiftBelowAndNext: (dxPct: number, dyPct: number) => void;
@@ -785,7 +844,7 @@ export const EditorWorkspace = forwardRef<
           withCMap
             ? {
                 data,
-                cMapUrl: '/pdfjs/cmaps/',
+                cMapUrl: '/pels/static/e-link-v2/pdfjs/cmaps/',
                 cMapPacked: true,
               }
             : { data }
@@ -1006,7 +1065,7 @@ export const EditorWorkspace = forwardRef<
 
   // ===== 오버레이 추가/삭제 =====
 
-  const addOverlay = (type: OverlayType) => {
+  const addOverlay = (type: OverlayType, option?: string) => {
     if (!pdfDoc) return;
 
     // circleslash는 title 필수
@@ -1037,10 +1096,7 @@ export const EditorWorkspace = forwardRef<
 
       checkbox: { wPct: 0.02, hPct: 0.02, value: 'n' },
 
-      calendar_date: { wPct: 0.26, hPct: 0.04, value: '' },
-      calendar_date_y2: { wPct: 0.22, hPct: 0.04, value: '' },
-      calendar_datetime: { wPct: 0.26, hPct: 0.04, value: '' },
-      calendar_time: { wPct: 0.18, hPct: 0.04, value: '' },
+      calendar: { wPct: 0.26, hPct: 0.04, value: '' },
 
       signature_worker: { wPct: 0.18, hPct: 0.04, value: '' },
       signature_verifier: { wPct: 0.18, hPct: 0.04, value: '' },
@@ -1051,6 +1107,7 @@ export const EditorWorkspace = forwardRef<
       button_oxt: { wPct: 0.18, hPct: 0.04, value: '' },
       button_oxtn: { wPct: 0.18, hPct: 0.04, value: '' },
       movetopage: { wPct: 0.32, hPct: 0.035, value: '' },
+      formdrawing: { wPct: 0.32, hPct: 0.035, value: '' },
     };
 
     const preset = def[type];
@@ -1063,6 +1120,15 @@ export const EditorWorkspace = forwardRef<
     let { wPct, hPct } = preset;
     let { value } = preset;
 
+    const finalOption =
+      type === 'calendar' ? option || 'yyyy-MM-dd' : undefined;
+
+    if (type === 'calendar') {
+      const calendarPreview = getCalendarPreview(finalOption);
+      wPct = calendarPreview.wPct;
+      hPct = calendarPreview.hPct;
+    }
+
     if (type === 'movetopage') {
       const target =
         window.prompt('이동할 페이지 번호를 입력하세요')?.trim() || '';
@@ -1074,6 +1140,17 @@ export const EditorWorkspace = forwardRef<
       }
 
       value = String(targetNo);
+    }
+    if (type === 'formdrawing') {
+      const drawingValue =
+        window.prompt('도면조회 연결값을 입력하세요')?.trim() || '';
+
+      if (!drawingValue) {
+        alert('도면조회 연결값은 필수입니다.');
+        return;
+      }
+
+      value = drawingValue;
     }
     if (isSquareType(type)) {
       const s = Math.min(wPct, hPct);
@@ -1091,6 +1168,7 @@ export const EditorWorkspace = forwardRef<
         id,
         title: type === 'circleslash' ? title : '',
         type,
+        ...(finalOption ? { option: finalOption } : {}),
         xPct: 0.25,
         yPct: 0.25,
         wPct,
@@ -1165,7 +1243,9 @@ export const EditorWorkspace = forwardRef<
 
     pages.forEach(pg => {
       const items = overlays.filter(o => o.pageId === pg.pageId);
-      const componentItems = items.filter(o => o.type !== 'movetopage');
+      const componentItems = items.filter(
+        o => o.type !== 'movetopage' && o.type !== 'formdrawing'
+      );
 
       out.pages.push({
         page: pg.logicalPageIndex,
@@ -1174,21 +1254,25 @@ export const EditorWorkspace = forwardRef<
         width: pg.width,
         height: pg.height,
         isChange: componentItems.length > 0 ? 'Y' : 'N',
-        components: componentItems.map(o => ({
-          id: o.id,
-          ...(o.id_key ? { id_key: o.id_key } : {}),
-          ...(o.type === 'circleslash' ? { title: o.title ?? '' } : {}),
-          type: o.type,
-          x: Math.round(o.xPct * pg.width),
-          y: Math.round(o.yPct * pg.height),
-          width: Math.round(o.wPct * pg.width),
-          height: Math.round(o.hPct * pg.height),
-          xPct: o.xPct,
-          yPct: o.yPct,
-          wPct: o.wPct,
-          hPct: o.hPct,
-          value: o.value ?? '',
-        })),
+        components: componentItems.map(o => {
+          const saveMeta = getSaveComponentMeta(o.type, o.option);
+
+          return {
+            id: o.id,
+            ...(o.id_key ? { id_key: o.id_key } : {}),
+            ...(o.type === 'circleslash' ? { title: o.title ?? '' } : {}),
+            ...saveMeta,
+            x: Math.round(o.xPct * pg.width),
+            y: Math.round(o.yPct * pg.height),
+            width: Math.round(o.wPct * pg.width),
+            height: Math.round(o.hPct * pg.height),
+            xPct: o.xPct,
+            yPct: o.yPct,
+            wPct: o.wPct,
+            hPct: o.hPct,
+            value: o.value ?? '',
+          };
+        }),
       });
     });
 
@@ -1201,23 +1285,42 @@ export const EditorWorkspace = forwardRef<
 
     const moveToPageByConstraintPageNo = new Map<number, any[]>();
 
+    const formDrawingByConstraintPageNo = new Map<number, any[]>();
+
     pages.forEach(pg => {
       const moveItems = overlays.filter(
         o => o.pageId === pg.pageId && o.type === 'movetopage'
       );
 
-      if (moveItems.length === 0) return;
+      if (moveItems.length > 0) {
+        moveToPageByConstraintPageNo.set(
+          Number(pg.constraintPageNo),
+          moveItems.map(o => ({
+            x: Math.round(o.xPct * pg.width),
+            y: Math.round(o.yPct * pg.height),
+            width: Math.round(o.wPct * pg.width),
+            height: Math.round(o.hPct * pg.height),
+            targetPdfPage: Number(o.value || 1),
+          }))
+        );
+      }
 
-      moveToPageByConstraintPageNo.set(
-        Number(pg.constraintPageNo),
-        moveItems.map(o => ({
-          x: Math.round(o.xPct * pg.width),
-          y: Math.round(o.yPct * pg.height),
-          width: Math.round(o.wPct * pg.width),
-          height: Math.round(o.hPct * pg.height),
-          targetPdfPage: Number(o.value || 1),
-        }))
+      const formDrawingItems = overlays.filter(
+        o => o.pageId === pg.pageId && o.type === 'formdrawing'
       );
+
+      if (formDrawingItems.length > 0) {
+        formDrawingByConstraintPageNo.set(
+          Number(pg.constraintPageNo),
+          formDrawingItems.map(o => ({
+            x: Math.round(o.xPct * pg.width),
+            y: Math.round(o.yPct * pg.height),
+            width: Math.round(o.wPct * pg.width),
+            height: Math.round(o.hPct * pg.height),
+            value: String(o.value ?? ''),
+          }))
+        );
+      }
     });
 
     const existingPages = Array.isArray(baseConstraints.pages)
@@ -1233,6 +1336,8 @@ export const EditorWorkspace = forwardRef<
     const mergedPages = existingPages.map((page: any) => {
       const constraintPageNo = Number(page.constraintPageNo);
       const moveList = moveToPageByConstraintPageNo.get(constraintPageNo);
+      const formDrawingList =
+        formDrawingByConstraintPageNo.get(constraintPageNo);
 
       if (!managedConstraintPageNos.has(constraintPageNo)) {
         return page;
@@ -1240,29 +1345,50 @@ export const EditorWorkspace = forwardRef<
 
       used.add(constraintPageNo);
 
-      const { movetopage, ...restPage } = page;
+      const { movetopage, formdrawing, ...restPage } = page;
 
-      if (!moveList || moveList.length === 0) {
-        return restPage;
+      const nextPage: any = { ...restPage };
+
+      if (moveList && moveList.length > 0) {
+        nextPage.movetopage = moveList;
       }
 
-      return {
-        ...restPage,
-        movetopage: moveList,
-      };
+      if (formDrawingList && formDrawingList.length > 0) {
+        nextPage.formdrawing = formDrawingList;
+      }
+
+      return nextPage;
     });
 
-    moveToPageByConstraintPageNo.forEach((moveList, constraintPageNo) => {
+    const extraConstraintPageNos = new Set<number>([
+      ...Array.from(moveToPageByConstraintPageNo.keys()),
+      ...Array.from(formDrawingByConstraintPageNo.keys()),
+    ]);
+
+    extraConstraintPageNos.forEach(constraintPageNo => {
       if (used.has(constraintPageNo)) return;
 
-      mergedPages.push({
+      const moveList = moveToPageByConstraintPageNo.get(constraintPageNo);
+      const formDrawingList =
+        formDrawingByConstraintPageNo.get(constraintPageNo);
+
+      const nextPage: any = {
         constraintPageNo,
         components: [],
         dialoges: [],
         qr_dialoges: [],
         sections: [],
-        movetopage: moveList,
-      });
+      };
+
+      if (moveList && moveList.length > 0) {
+        nextPage.movetopage = moveList;
+      }
+
+      if (formDrawingList && formDrawingList.length > 0) {
+        nextPage.formdrawing = formDrawingList;
+      }
+
+      mergedPages.push(nextPage);
     });
 
     const nextConstraints = {
@@ -1286,12 +1412,16 @@ export const EditorWorkspace = forwardRef<
         const hasMoveToPage =
           Array.isArray(p.movetopage) && p.movetopage.length > 0;
 
+        const hasFormDrawing =
+          Array.isArray(p.formdrawing) && p.formdrawing.length > 0;
+
         return (
           hasComponents ||
           hasDialoges ||
           hasQrDialoges ||
           hasSections ||
-          hasMoveToPage
+          hasMoveToPage ||
+          hasFormDrawing
         );
       });
 
@@ -1335,7 +1465,9 @@ export const EditorWorkspace = forwardRef<
 
     pages.forEach(pg => {
       const items = overlays.filter(o => o.pageId === pg.pageId);
-      const componentItems = items.filter(o => o.type !== 'movetopage');
+      const componentItems = items.filter(
+        o => o.type !== 'movetopage' && o.type !== 'formdrawing'
+      );
 
       out.pages.push({
         page: pg.logicalPageIndex,
@@ -1344,21 +1476,25 @@ export const EditorWorkspace = forwardRef<
         width: pg.width,
         height: pg.height,
         isChange: componentItems.length > 0 ? 'Y' : 'N',
-        components: componentItems.map(o => ({
-          id: o.id,
-          ...(o.id_key ? { id_key: o.id_key } : {}),
-          ...(o.type === 'circleslash' ? { title: o.title ?? '' } : {}),
-          type: o.type,
-          x: Math.round(o.xPct * pg.width),
-          y: Math.round(o.yPct * pg.height),
-          width: Math.round(o.wPct * pg.width),
-          height: Math.round(o.hPct * pg.height),
-          xPct: o.xPct,
-          yPct: o.yPct,
-          wPct: o.wPct,
-          hPct: o.hPct,
-          value: o.value ?? '',
-        })),
+        components: componentItems.map(o => {
+          const saveMeta = getSaveComponentMeta(o.type, o.option);
+
+          return {
+            id: o.id,
+            ...(o.id_key ? { id_key: o.id_key } : {}),
+            ...(o.type === 'circleslash' ? { title: o.title ?? '' } : {}),
+            ...saveMeta,
+            x: Math.round(o.xPct * pg.width),
+            y: Math.round(o.yPct * pg.height),
+            width: Math.round(o.wPct * pg.width),
+            height: Math.round(o.hPct * pg.height),
+            xPct: o.xPct,
+            yPct: o.yPct,
+            wPct: o.wPct,
+            hPct: o.hPct,
+            value: o.value ?? '',
+          };
+        }),
       });
     });
 
@@ -1402,8 +1538,14 @@ export const EditorWorkspace = forwardRef<
     // Constraint(JSON)
     const ruleJson = buildRuleJson();
 
-    devLog('downloadJsonCreate = templateJson =', templateJson);
-    devLog('downloadJsonCreate = ruleJson =', ruleJson);
+    /*devLog('downloadJsonCreate size =', {
+      overlayCount:
+        templateJson?.pages?.reduce(
+          (sum: number, page: any) => sum + (page.components?.length ?? 0),
+          0
+        ) ?? 0,
+      rulePageCount: ruleJson?.pages?.length ?? 0,
+    });*/
 
     if (!templateJson) return;
 
@@ -1420,24 +1562,15 @@ export const EditorWorkspace = forwardRef<
         `[EditorWorkspace] API Request: POST /FormJsonSave_M.do (FRM_UNQ_KY_VAL=${FRM_UNQ_KY_VAL})`
       );
 
-      // � 핵심: form-urlencoded 로 변환
-      const formParams = new URLSearchParams();
-      formParams.append('FRM_UNQ_KY_VAL', FRM_UNQ_KY_VAL);
-      formParams.append('FRM_OVER_JSON', JSON.stringify(templateJson));
-      formParams.append('FRM_CONS_JSON', JSON.stringify(ruleJson));
+      // 큰 JSON 전송 안정성을 위해 FormData 사용
+      const formData = new FormData();
+      formData.append('FRM_UNQ_KY_VAL', FRM_UNQ_KY_VAL);
+      formData.append('FRM_OVER_JSON', JSON.stringify(templateJson));
+      formData.append('FRM_CONS_JSON', JSON.stringify(ruleJson));
 
-      devLog('SAVE PAYLOAD', {
-        FRM_UNQ_KY_VAL,
-        FRM_OVER_JSON: JSON.stringify(templateJson).length,
-        FRM_CONS_JSON: JSON.stringify(ruleJson).length,
-      });
-
-      const response = await axios.post('/FormJsonSave_M.do', formParams, {
+      const response = await axios.post('/pels/FormJsonSave_M.do', formData, {
         withCredentials: true,
         timeout: 30000,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
       });
 
       devLog('[EditorWorkspace] Form JSON saved:', response.data);
@@ -1515,20 +1648,28 @@ export const EditorWorkspace = forwardRef<
           const wPct = typeof c.wPct === 'number' ? c.wPct : c.width / W;
           const hPct = typeof c.hPct === 'number' ? c.hPct : c.height / H;
 
+          const editorType = getEditorOverlayType(String(c.type));
+          const editorOption =
+            editorType === 'calendar'
+              ? String(c.option || 'yyyy-MM-dd')
+              : undefined;
+
           let id = String(c.id);
 
-          // ★ 이미 사용된 ID면 새로 생성
+          // 이미 사용된 ID면 새로 생성
           if (usedIds.has(id)) {
-            id = nextId(c.type as OverlayType, pageNo);
+            id = nextId(editorType, pageNo);
           }
+
           usedIds.add(id);
 
           restored.push({
-            uid: `${c.type}-${Date.now()}-${Math.random()}`,
+            uid: `${editorType}-${Date.now()}-${Math.random()}`,
             id,
             id_key: typeof c.id_key === 'string' ? c.id_key : undefined,
-            title: c.type === 'circleslash' ? (c.title ?? '') : '',
-            type: c.type as OverlayType,
+            title: editorType === 'circleslash' ? (c.title ?? '') : '',
+            type: editorType,
+            ...(editorOption ? { option: editorOption } : {}),
             xPct: Math.max(0, Math.min(1, xPct)),
             yPct: Math.max(0, Math.min(1, yPct)),
             wPct: Math.max(MIN_PCT, Math.min(1, wPct)),
@@ -1557,16 +1698,22 @@ export const EditorWorkspace = forwardRef<
     if (!constraints || !Array.isArray(constraints.pages)) return;
     if (!pages.length) return;
 
-    const hasMoveToPageInRule = constraints.pages.some(
+    const hasRuleOnlyOverlayInRule = constraints.pages.some(
       (rulePage: any) =>
-        Array.isArray(rulePage.movetopage) && rulePage.movetopage.length > 0
+        (Array.isArray(rulePage.movetopage) &&
+          rulePage.movetopage.length > 0) ||
+        (Array.isArray(rulePage.formdrawing) && rulePage.formdrawing.length > 0)
     );
 
-    if (!hasMoveToPageInRule) return;
+    if (!hasRuleOnlyOverlayInRule) return;
 
     setOverlays(prev => {
-      const withoutMoveToPage = prev.filter(o => o.type !== 'movetopage');
+      const withoutRuleOnly = prev.filter(
+        o => o.type !== 'movetopage' && o.type !== 'formdrawing'
+      );
+
       const restoredMoveToPage: OverlayItem[] = [];
+      const restoredFormDrawing: OverlayItem[] = [];
 
       constraints.pages.forEach((rulePage: any) => {
         const constraintPageNo = Number(rulePage.constraintPageNo);
@@ -1594,9 +1741,32 @@ export const EditorWorkspace = forwardRef<
             value: String(m.targetPdfPage ?? ''),
           });
         });
+
+        const drawingList = Array.isArray(rulePage.formdrawing)
+          ? rulePage.formdrawing
+          : [];
+
+        drawingList.forEach((m: any, index: number) => {
+          restoredFormDrawing.push({
+            uid: `formdrawing-${constraintPageNo}-${index}-${Date.now()}`,
+            id: `formdrawing_${constraintPageNo}_${index + 1}`,
+            title: '',
+            type: 'formdrawing',
+            xPct: Number(m.x ?? 0) / pg.width,
+            yPct: Number(m.y ?? 0) / pg.height,
+            wPct: Number(m.width ?? 0) / pg.width,
+            hPct: Number(m.height ?? 0) / pg.height,
+            pageId: pg.pageId,
+            value: String(m.value ?? ''),
+          });
+        });
       });
 
-      return [...withoutMoveToPage, ...restoredMoveToPage];
+      return [
+        ...withoutRuleOnly,
+        ...restoredMoveToPage,
+        ...restoredFormDrawing,
+      ];
     });
   }, [constraints, pages]);
 
@@ -1762,7 +1932,7 @@ export const EditorWorkspace = forwardRef<
         }
         existingIds.add(newId);
 
-        const x = Math.max(0, Math.min(1 - b.wPct, b.xPct));
+        const x = Math.max(0, Math.min(1 - b.wPct, b.xPct + 0.05));
         const y = Math.max(0, Math.min(1 - b.hPct, b.yPct));
 
         next.push({
@@ -1970,7 +2140,9 @@ export const EditorWorkspace = forwardRef<
 
       const inPage = overlays.filter(o => o.pageId === currentPageId);
 
-      const selectedInCurrentPage = inPage.filter(o => selected.includes(o.uid));
+      const selectedInCurrentPage = inPage.filter(o =>
+        selected.includes(o.uid)
+      );
 
       if (e.key === 'PageUp') {
         goPrevPage();
@@ -2405,7 +2577,63 @@ export const EditorWorkspace = forwardRef<
       })
     );
   };
+  const resizeSelectedAxis = (axis: 'width' | 'height', factor: number) => {
+    const items = overlays.filter(
+      o => o.pageId === currentPageId && selected.includes(o.uid)
+    );
 
+    if (items.length === 0) return;
+
+    pushUndoSnapshot();
+
+    const minPx = 14;
+
+    setOverlays(prev =>
+      prev.map(o => {
+        if (o.pageId !== currentPageId || !selected.includes(o.uid)) return o;
+
+        if (isSquareType(o.type)) {
+          return o;
+        }
+
+        const PB = getPageSize(o.pageId);
+        const r = toPx(o);
+
+        let newW = r.w;
+        let newH = r.h;
+
+        if (axis === 'width') {
+          newW = Math.max(minPx, r.w * factor);
+        }
+
+        if (axis === 'height') {
+          newH = Math.max(minPx, r.h * factor);
+        }
+
+        newW = Math.min(PB.w, newW);
+        newH = Math.min(PB.h, newH);
+
+        let nx = r.x + r.w / 2 - newW / 2;
+        let ny = r.y + r.h / 2 - newH / 2;
+
+        nx = Math.max(0, Math.min(PB.w - newW, nx));
+        ny = Math.max(0, Math.min(PB.h - newH, ny));
+
+        const wPct = newW / PB.w;
+        const hPct = newH / PB.h;
+        const xPct = nx / PB.w;
+        const yPct = ny / PB.h;
+
+        return {
+          ...o,
+          xPct: Math.max(0, Math.min(1 - wPct, xPct)),
+          yPct: Math.max(0, Math.min(1 - hPct, yPct)),
+          wPct,
+          hPct,
+        };
+      })
+    );
+  };
   // ===== 문서키 변경 =====
 
   const changeDocKey = () => {
@@ -2489,6 +2717,10 @@ export const EditorWorkspace = forwardRef<
     distributeVertically,
     resizeSelectedPlus: () => resizeSelected(1.1),
     resizeSelectedMinus: () => resizeSelected(0.9),
+    resizeSelectedWidthPlus: () => resizeSelectedAxis('width', 1.1),
+    resizeSelectedWidthMinus: () => resizeSelectedAxis('width', 0.9),
+    resizeSelectedHeightPlus: () => resizeSelectedAxis('height', 1.1),
+    resizeSelectedHeightMinus: () => resizeSelectedAxis('height', 0.9),
     shiftBelowAndNext,
     autoDetectGlyphCheckboxes,
     autoDetectCircleSlashByNumber,
@@ -2551,6 +2783,10 @@ export const EditorWorkspace = forwardRef<
       const json = buildJson();
       return json ? JSON.stringify(json) : '';
     },
+    exportRuleJsonString() {
+      const json = buildRuleJson();
+      return json ? JSON.stringify(json) : '';
+    },
     restoreFromJsonString(json: string) {
       const file = new File([json], 'overlay.json', {
         type: 'application/json',
@@ -2584,21 +2820,28 @@ export const EditorWorkspace = forwardRef<
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: 14,
+      fontSize: 12,
       color: '#333',
       textAlign: 'center',
-      background: 'rgba(255,255,255,0.9)',
-      whiteSpace: 'pre-line',
+      background: 'rgba(255,255,255,0.3)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
       pointerEvents: 'none',
     };
 
     // checkbox / circleslash 는 특수 처리
     if (ov.type === 'checkbox') {
       return (
-        <input
-          type="checkbox"
-          disabled
-          style={{ width: '100%', height: '100%' }}
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            boxSizing: 'border-box',
+            border: '1.5px solid #c4b5fd',
+            background: 'rgba(255,255,255,0.2)',
+            pointerEvents: 'none',
+          }}
         />
       );
     }
@@ -2646,17 +2889,36 @@ export const EditorWorkspace = forwardRef<
       );
     }
 
+    if (ov.type === 'formdrawing') {
+      return (
+        <div
+          style={{
+            ...base,
+            background: 'rgba(16, 185, 129, 0.14)',
+            color: '#047857',
+            fontSize: 11,
+            fontWeight: 700,
+          }}
+        >
+          도면조회: {ov.value || '?'}
+        </div>
+      );
+    }
+
     const majorType = getMajorType(ov.type);
-    const meta = OVERLAY_PREVIEW[ov.type] ?? {
-      label: majorType
-        ? OVERLAY_PREVIEW_MAJOR[majorType].defaultLabel
-        : String(ov.type),
-    };
+    const meta =
+      ov.type === 'calendar'
+        ? getCalendarPreview(ov.option)
+        : (OVERLAY_PREVIEW[ov.type] ?? {
+            label: majorType
+              ? OVERLAY_PREVIEW_MAJOR[majorType].defaultLabel
+              : String(ov.type),
+          });
 
     return (
       <div style={base}>
         {meta.icon && <span style={{ marginRight: 4 }}>{meta.icon}</span>}
-        {meta.label}
+        {String(meta.label ?? '').replace(/\n/g, ' ')}
       </div>
     );
   };
@@ -2751,19 +3013,35 @@ export const EditorWorkspace = forwardRef<
                         )
                       }
                       style={{
-                        border: isSel ? '2px solid #1e90ff' : '1px dashed #d33',
-                        background: isSel
-                          ? 'rgba(30,144,255,0.12)'
-                          : 'rgba(255,0,0,0.06)',
+                        border:
+                          ov.type === 'checkbox'
+                            ? isSel
+                              ? '2px solid #1e90ff'
+                              : '1px dashed rgba(220, 38, 38, 0.45)'
+                            : isSel
+                              ? '2px solid #1e90ff'
+                              : '1px dashed #d33',
+                        background:
+                          ov.type === 'checkbox'
+                            ? isSel
+                              ? 'rgba(30,144,255,0.08)'
+                              : 'transparent'
+                            : isSel
+                              ? 'rgba(30,144,255,0.12)'
+                              : 'rgba(255,0,0,0.06)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        overflow: 'hidden',
+                        overflow: 'visible',
                         boxSizing: 'border-box',
                       }}
                     >
                       <div
-                        style={{ width: '100%', height: '100%' }}
+                        style={{
+                          position: 'relative',
+                          width: '100%',
+                          height: '100%',
+                        }}
                         onDoubleClick={e => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -2800,11 +3078,40 @@ export const EditorWorkspace = forwardRef<
                             return;
                           }
 
+                          if (ov.type === 'formdrawing') {
+                            const drawingValue = window
+                              .prompt(
+                                '도면조회 연결값을 입력하세요',
+                                String(ov.value ?? '')
+                              )
+                              ?.trim();
+
+                            if (drawingValue == null) return;
+
+                            if (!drawingValue) {
+                              alert('도면조회 연결값은 필수입니다.');
+                              return;
+                            }
+
+                            setOverlays(prev =>
+                              prev.map(item =>
+                                item.uid === ov.uid
+                                  ? {
+                                      ...item,
+                                      value: drawingValue,
+                                    }
+                                  : item
+                              )
+                            );
+
+                            return;
+                          }
+
                           onDoubleClickOverlayId?.(`"${ov.id}"`);
                         }}
-                        // 우클릭 시 constraint 편집 콜백 호출
                         onContextMenu={e => {
                           e.preventDefault();
+                          e.stopPropagation();
 
                           if (ov.type === 'movetopage') {
                             const target = window
@@ -2838,6 +3145,35 @@ export const EditorWorkspace = forwardRef<
                             return;
                           }
 
+                          if (ov.type === 'formdrawing') {
+                            const drawingValue = window
+                              .prompt(
+                                '도면조회 연결값을 입력하세요',
+                                String(ov.value ?? '')
+                              )
+                              ?.trim();
+
+                            if (drawingValue == null) return;
+
+                            if (!drawingValue) {
+                              alert('도면조회 연결값은 필수입니다.');
+                              return;
+                            }
+
+                            setOverlays(prev =>
+                              prev.map(item =>
+                                item.uid === ov.uid
+                                  ? {
+                                      ...item,
+                                      value: drawingValue,
+                                    }
+                                  : item
+                              )
+                            );
+
+                            return;
+                          }
+
                           if (!onOpenConstraintEditor) return;
 
                           const selectedUids = selected.includes(ov.uid)
@@ -2851,6 +3187,7 @@ export const EditorWorkspace = forwardRef<
                           );
 
                           const pg = pages.find(p => p.pageId === ov.pageId);
+
                           onOpenConstraintEditor({
                             constraintPageNo: pg?.constraintPageNo ?? 1,
                             overlays:
@@ -2860,6 +3197,23 @@ export const EditorWorkspace = forwardRef<
                         }}
                       >
                         {renderOverlayContent(ov)}
+
+                        {(r.w < 24 || r.h < 24) && (
+                          <div
+                            title="우클릭: 속성 / Rule 편집"
+                            style={{
+                              position: 'absolute',
+                              left: '50%',
+                              top: '50%',
+                              width: 24,
+                              height: 24,
+                              transform: 'translate(-50%, -50%)',
+                              background: 'rgba(0,0,0,0)',
+                              pointerEvents: 'auto',
+                              zIndex: 10,
+                            }}
+                          />
+                        )}
                       </div>
                     </Rnd>
                   );

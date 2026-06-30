@@ -10,7 +10,7 @@ interface ToolPaletteProps {
   selectedCategory?: ToolCategory | null;
   selectedTool?: string | null; // 🔹 이제 "툴 id" 기준으로 씀
   onToolSelect?: (tool: string) => void; //   (예: 'calendar_default', 'calendar_datetime')
-  onAddOverlay?: (tool: OverlayType) => void;
+  onAddOverlay?: (tool: OverlayType, option?: string) => void;
   isOverlayVisible?: boolean;
 }
 
@@ -22,6 +22,7 @@ type ToolConfig = {
   id: string;
   type: OverlayType;
   label: string;
+  option?: string;
 };
 
 // 🔹 카테고리 → 퀵 추가 버튼들
@@ -44,10 +45,36 @@ const QUICK_TOOL_BY_CATEGORY: Partial<
   ],
 
   calendar: [
-    { id: 'calendar_date', type: 'calendar_date', label: '날짜' },
-    { id: 'calendar_date_y2', type: 'calendar_date_y2', label: '날짜(년도2)' },
-    { id: 'calendar_datetime', type: 'calendar_datetime', label: '날짜+시간' },
-    { id: 'calendar_time', type: 'calendar_time', label: '시간' },
+    {
+      id: 'calendar_date',
+      type: 'calendar',
+      option: 'yyyy-MM-dd',
+      label: '날짜',
+    },
+    {
+      id: 'calendar_date_y2',
+      type: 'calendar',
+      option: 'yy-MM-dd',
+      label: '날짜(년도2)',
+    },
+    {
+      id: 'calendar_datetime',
+      type: 'calendar',
+      option: 'yyyy-MM-dd HH:mm',
+      label: '날짜+시간',
+    },
+    {
+      id: 'calendar_month_day',
+      type: 'calendar',
+      option: 'MM-dd',
+      label: '월/일',
+    },
+    {
+      id: 'calendar_time',
+      type: 'calendar',
+      option: 'HH:mm',
+      label: '시간',
+    },
   ],
 
   signature: [
@@ -73,6 +100,7 @@ const QUICK_TOOL_BY_CATEGORY: Partial<
     { id: 'button_oxt', type: 'button_oxt', label: 'OXT' },
     { id: 'button_oxtn', type: 'button_oxtn', label: 'OXTN' },
     { id: 'movetopage', type: 'movetopage', label: '페이지 이동' },
+    { id: 'formdrawing', type: 'formdrawing', label: '도면조회' },
   ],
 };
 
@@ -127,8 +155,13 @@ const ToolPalette = React.memo(
                 // 선택된 툴 id 저장 (스타일용)
                 onToolSelect?.(config.id);
                 // 실제 오버레이 타입은 여기서 전달
-                onAddOverlay?.(config.type);
-                devLog('[ToolPalette] add overlay:', config.type, config.id);
+                onAddOverlay?.(config.type, config.option);
+                devLog(
+                  '[ToolPalette] add overlay:',
+                  config.type,
+                  config.option,
+                  config.id
+                );
               };
 
               return (
