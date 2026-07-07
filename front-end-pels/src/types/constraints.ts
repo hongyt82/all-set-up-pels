@@ -26,9 +26,28 @@ export interface ConstraintComponentRule {
   groupType?: 'checkbox' | 'circleslash';
 }
 
+export interface MoveToPageRuleArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  targetPdfPage: number;
+}
+
+export interface FormDrawingRuleArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  value: string;
+}
+
 export interface ConstraintPageRule {
   constraintPageNo: number;
-  components: ConstraintComponentRule[]; // 해당 페이지의 컴포넌트 규칙들
+  components: ConstraintComponentRule[];
+  movetopage?: MoveToPageRuleArea[];
+  formdrawing?: FormDrawingRuleArea[];
+  sections?: any[];
 
   dialoges?: {
     sectionId?: string;

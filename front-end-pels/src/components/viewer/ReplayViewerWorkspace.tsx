@@ -141,7 +141,7 @@ export const ReplayViewerWorkspace = forwardRef<
         withCMap
           ? {
               data,
-              cMapUrl: '/pdfjs/cmaps/',
+              cMapUrl: '/pels/static/e-link-v2/pdfjs/cmaps/',
               cMapPacked: true,
             }
           : { data }
@@ -215,7 +215,7 @@ export const ReplayViewerWorkspace = forwardRef<
             withCMap
               ? {
                   data,
-                  cMapUrl: '/pdfjs/cmaps/',
+                  cMapUrl: '/pels/static/e-link-v2/pdfjs/cmaps/',
                   cMapPacked: true,
                 }
               : { data }

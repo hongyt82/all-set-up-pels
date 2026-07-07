@@ -66,6 +66,10 @@ interface EditorHeaderProps {
   onDistributeVertically?: () => void;
   onResizePlus?: () => void;
   onResizeMinus?: () => void;
+  onResizeWidthPlus?: () => void;
+  onResizeWidthMinus?: () => void;
+  onResizeHeightPlus?: () => void;
+  onResizeHeightMinus?: () => void;
   onClearPage?: () => void;
   onClearAll?: () => void;
 
@@ -127,6 +131,10 @@ export function EditorHeader({
   onDistributeVertically,
   onResizePlus,
   onResizeMinus,
+  onResizeWidthPlus,
+  onResizeWidthMinus,
+  onResizeHeightPlus,
+  onResizeHeightMinus,
   onClearPage,
   onClearAll,
   onAutoDetectGlyphCheckboxes,
@@ -802,14 +810,15 @@ export function EditorHeader({
               >
                 삭제
               </Button>
-            </div>
-            <Button size="sm" onClick={onUndo} disabled={!canUndo}>
-              ⟲
-            </Button>
+              <div className="w-px h-4 bg-white/20 mx-1" />
+              <Button size="sm" onClick={onUndo} disabled={!canUndo}>
+                ⟲
+              </Button>
 
-            <Button size="sm" onClick={onRedo} disabled={!canRedo}>
-              ⟳
-            </Button>
+              <Button size="sm" onClick={onRedo} disabled={!canRedo}>
+                ⟳
+              </Button>
+            </div>
             {/* 정렬 */}
             <div className="flex items-center space-x-1 bg-white/5 rounded-xl px-2 py-1">
               <span className="text-[11px] text-slate-200 mr-1">정렬:</span>
@@ -896,23 +905,75 @@ export function EditorHeader({
             {/* 크기 */}
             <div className="flex items-center space-x-1 bg-white/5 rounded-xl px-2 py-1">
               <span className="text-[11px] text-slate-200 mr-1">크기:</span>
+
               <Button
                 variant="ghost"
                 size="sm"
                 className="px-2 py-1 text-[11px] hover:bg-white/15"
                 disabled={actionDisabled}
                 onClick={onResizePlus}
+                title="가로/세로 같이 확대"
               >
-                +
+                전체 +
               </Button>
+
               <Button
                 variant="ghost"
                 size="sm"
                 className="px-2 py-1 text-[11px] hover:bg-white/15"
                 disabled={actionDisabled}
                 onClick={onResizeMinus}
+                title="가로/세로 같이 축소"
               >
-                -
+                전체 -
+              </Button>
+
+              <div className="w-px h-4 bg-white/20 mx-1" />
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-2 py-1 text-[11px] hover:bg-white/15"
+                disabled={actionDisabled}
+                onClick={onResizeWidthPlus}
+                title="가로 크기 확대"
+              >
+                가로 +
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-2 py-1 text-[11px] hover:bg-white/15"
+                disabled={actionDisabled}
+                onClick={onResizeWidthMinus}
+                title="가로 크기 축소"
+              >
+                가로 -
+              </Button>
+
+              <div className="w-px h-4 bg-white/20 mx-1" />
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-2 py-1 text-[11px] hover:bg-white/15"
+                disabled={actionDisabled}
+                onClick={onResizeHeightPlus}
+                title="세로 크기 확대"
+              >
+                세로 +
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-2 py-1 text-[11px] hover:bg-white/15"
+                disabled={actionDisabled}
+                onClick={onResizeHeightMinus}
+                title="세로 크기 축소"
+              >
+                세로 -
               </Button>
             </div>
 

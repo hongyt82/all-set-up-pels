@@ -193,7 +193,13 @@ export const ViewerWorkspace = forwardRef<
 
   const getCurrentConstraintPageNo = (page = currentPage): number | null => {
     const lp = findLogicalPage(page) as any;
-    if (!lp) return null;
+
+    // Overlay JSON / logicalPages가 없는 로컬 테스트 fallback
+    // 이 경우 PDF page 번호와 constraintPageNo가 같다고 가정한다.
+    if (!lp) {
+      const fallbackNo = Number(page);
+      return Number.isFinite(fallbackNo) && fallbackNo > 0 ? fallbackNo : null;
+    }
 
     const no = Number(lp.constraintPageNo);
     return Number.isFinite(no) && no > 0 ? no : null;
@@ -233,7 +239,7 @@ export const ViewerWorkspace = forwardRef<
         withCMap
           ? {
               data,
-              cMapUrl: '/pdfjs/cmaps/',
+              cMapUrl: '/pels/static/e-link-v2/pdfjs/cmaps/',
               cMapPacked: true,
             }
           : { data }
@@ -303,6 +309,7 @@ export const ViewerWorkspace = forwardRef<
 
   const cycleButtonValue = (type: string, current?: string) => {
     const map: Record<string, string[]> = {
+      button_o: ['none', 'o'],
       button_ox: ['none', 'o', 'x'],
       button_oxn: ['none', 'o', 'x', 'n'],
       button_oxt: ['none', 'o', 'x', 't'],
@@ -379,7 +386,7 @@ export const ViewerWorkspace = forwardRef<
             withCMap
               ? {
                   data,
-                  cMapUrl: '/pdfjs/cmaps/',
+                  cMapUrl: '/pels/static/e-link-v2/pdfjs/cmaps/',
                   cMapPacked: true,
                 }
               : { data }
@@ -653,7 +660,7 @@ export const ViewerWorkspace = forwardRef<
     }
 
     const pageInfo = constraintDoc.pages?.find(
-      p => p.constraintPageNo === constraintPageNo
+      p => Number(p.constraintPageNo) === Number(constraintPageNo)
     );
 
     props.onDialogInfoChange?.({
@@ -911,6 +918,29 @@ export const ViewerWorkspace = forwardRef<
 
     if (String(target.value ?? '') !== nextValue) {
       target.value = nextValue;
+    }
+
+    if (target.type === 'checkbox' && nextValue === 'y' && constraintDoc) {
+      const constraintPageNo = getConstraintPageNoByOverlay(target);
+
+      if (constraintPageNo) {
+        const groupIds = getCheckboxGroupIdsFull(
+          constraintDoc,
+          constraintPageNo,
+          target.id
+        );
+
+        if (groupIds.length > 1) {
+          working.forEach(o => {
+            if (o.page !== page) return;
+            if (o.type !== 'checkbox') return;
+            if (String(o.id) === String(target.id)) return;
+            if (!groupIds.includes(String(o.id))) return;
+
+            o.value = 'n';
+          });
+        }
+      }
     }
 
     return target;
@@ -1383,7 +1413,10 @@ export const ViewerWorkspace = forwardRef<
             status = evaluated.status;
             result = evaluated.result;
 
-            highlightOverlayStatus(ov.id, status);
+            requestAnimationFrame(() => {
+              highlightOverlayStatus(ov.id, status);
+            });
+
             applyStylesForStatus((rule as any).styles, status, String(ov.id));
           }
 
@@ -1542,8 +1575,11 @@ export const ViewerWorkspace = forwardRef<
 
   const cycleCircle = (uid: string) => {
     let nextValue: string = '';
+    let affectedOverlayIds = new Set<string>();
 
     updateOverlaysReadonly(prev => {
+      const target = prev.find(o => o.uid === uid);
+
       const updated = prev.map(o => {
         if (o.uid !== uid) return o;
 
@@ -1556,10 +1592,7 @@ export const ViewerWorkspace = forwardRef<
       });
 
       // na일 때만 전파
-      if (!constraintDoc || nextValue !== 'na') return updated;
-
-      const target = prev.find(o => o.uid === uid);
-      if (!target) return updated;
+      if (!constraintDoc || nextValue !== 'na' || !target) return updated;
 
       const rootTreelistId = String(target.id);
 
@@ -1567,16 +1600,35 @@ export const ViewerWorkspace = forwardRef<
       collectDescendants(rootTreelistId, affectedTreelistIds);
       affectedTreelistIds.add(rootTreelistId);
 
-      const affectedOverlayIds = new Set<string>();
       affectedTreelistIds.forEach(tid => {
         const oids = treelistToOverlayIdsRef.current.get(tid) ?? [];
         oids.forEach(oid => affectedOverlayIds.add(String(oid)));
       });
 
+      // 현재 페이지 즉시 반영
       return updated.map(o =>
         affectedOverlayIds.has(String(o.id)) ? { ...o, value: 'na' } : o
       );
     });
+
+    // 다른 페이지까지 부모 state에 반영
+    if (
+      constraintDoc &&
+      nextValue === 'na' &&
+      affectedOverlayIds.size > 0 &&
+      overlaysByPage &&
+      onOverlaysChange
+    ) {
+      Object.entries(overlaysByPage).forEach(([pageKey, items]) => {
+        const pageNo = Number(pageKey);
+
+        const nextItems = items.map(o =>
+          affectedOverlayIds.has(String(o.id)) ? { ...o, value: 'na' } : o
+        );
+
+        onOverlaysChange(pageNo, nextItems);
+      });
+    }
 
     applyConstraintsCascade(uid, nextValue);
   };
@@ -1605,6 +1657,14 @@ export const ViewerWorkspace = forwardRef<
     const raw = String(value ?? '').trim();
     const digits = raw.replace(/\D/g, '');
 
+    if (digits.length === 6) {
+      return {
+        year: `20${digits.slice(0, 2)}`,
+        month: digits.slice(2, 4),
+        day: digits.slice(4, 6),
+      };
+    }
+
     if (digits.length < 8) return null;
 
     return {
@@ -1626,6 +1686,31 @@ export const ViewerWorkspace = forwardRef<
     if (!parts) return String(value ?? '');
 
     return `${parts.year.slice(-2)}.${Number(parts.month)}.${Number(parts.day)}`;
+  };
+
+  const formatViewerMonthDay = (value?: string) => {
+    const raw = String(value ?? '').trim();
+
+    if (!raw) return '';
+
+    // input type="date" 값: yyyy-MM-dd
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return `${Number(raw.slice(5, 7))}/${Number(raw.slice(8, 10))}`;
+    }
+
+    const digits = raw.replace(/\D/g, '');
+
+    // yyyyMMdd
+    if (digits.length === 8) {
+      return `${Number(digits.slice(4, 6))}/${Number(digits.slice(6, 8))}`;
+    }
+
+    // MMdd
+    if (digits.length === 4) {
+      return `${Number(digits.slice(0, 2))}/${Number(digits.slice(2, 4))}`;
+    }
+
+    return raw;
   };
 
   const formatViewerTime = (value?: string) => {
@@ -1676,11 +1761,56 @@ export const ViewerWorkspace = forwardRef<
     applyConstraintsCascade(uid, value);
   };
 
-  const setDate = (uid: string, value: string) => {
+  const normalizeCalendarValue = (
+    option: string | undefined,
+    value: string
+  ) => {
+    const raw = String(value ?? '').trim();
+
+    if (!raw) return '';
+
+    if (option === 'yy-MM-dd') {
+      return raw.length >= 10 ? raw.slice(2, 10) : raw;
+    }
+
+    if (option === 'MM-dd') {
+      return raw.length >= 10 ? raw.slice(5, 10) : raw;
+    }
+
+    if (option === 'yyyy-MM-dd HH:mm') {
+      return raw.replace('T', ' ');
+    }
+
+    return raw;
+  };
+
+  const toCalendarInputValue = (option: string | undefined, value?: string) => {
+    const raw = String(value ?? '').trim();
+
+    if (!raw) return '';
+
+    if (option === 'yy-MM-dd') {
+      return /^\d{2}-\d{2}-\d{2}$/.test(raw) ? `20${raw}` : raw;
+    }
+
+    if (option === 'MM-dd') {
+      return /^\d{2}-\d{2}$/.test(raw) ? `2026-${raw}` : raw;
+    }
+
+    if (option === 'yyyy-MM-dd HH:mm') {
+      return raw.replace(' ', 'T');
+    }
+
+    return raw;
+  };
+
+  const setDate = (uid: string, value: string, option?: string) => {
+    const nextValue = normalizeCalendarValue(option, value);
+
     updateOverlaysReadonly(prev =>
-      prev.map(o => (o.uid === uid ? { ...o, value } : o))
+      prev.map(o => (o.uid === uid ? { ...o, value: nextValue } : o))
     );
-    applyConstraintsCascade(uid, value);
+    applyConstraintsCascade(uid, nextValue);
   };
 
   const setSignature = (uid: string) => {
@@ -2022,8 +2152,11 @@ export const ViewerWorkspace = forwardRef<
       case 'textbox_unusing':
         return (
           <div
+            title="미사용 영역"
             style={{
-              ...viewerOpaqueButtonStyle,
+              ...viewerTransparentButtonStyle,
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px dashed rgba(148, 163, 184, 0.45)',
               cursor: 'default',
             }}
           />
@@ -2088,7 +2221,8 @@ export const ViewerWorkspace = forwardRef<
 
         let size = '160%';
         if (value === 'c' || value === 'cs') size = '200%';
-        if (value === '' || value === 'na') size = '130%';
+        if (value === '') size = '130%';
+        if (value === 'na') size = '95%';
 
         return (
           <button
@@ -2110,41 +2244,58 @@ export const ViewerWorkspace = forwardRef<
       // CALENDAR
       // =========================
 
-      case 'calendar_date':
+      case 'calendar': {
+        const option = String((ov as any).option || 'yyyy-MM-dd');
+
+        if (option === 'yy-MM-dd') {
+          return renderFormattedPicker({
+            value: toCalendarInputValue(option, ov.value),
+            type: 'date',
+            displayValue: formatViewerDateYear2(ov.value),
+            icon: '📅',
+            onChange: value => setDate(ov.uid, value, option),
+          });
+        }
+
+        if (option === 'MM-dd') {
+          return renderFormattedPicker({
+            value: toCalendarInputValue(option, ov.value),
+            type: 'date',
+            displayValue: formatViewerMonthDay(ov.value),
+            icon: '📅',
+            onChange: value => setDate(ov.uid, value, option),
+          });
+        }
+
+        if (option === 'yyyy-MM-dd HH:mm') {
+          return renderFormattedPicker({
+            value: toCalendarInputValue(option, ov.value),
+            type: 'datetime-local',
+            displayValue: formatViewerDateTime(ov.value),
+            icon: '📅🕐',
+            onChange: value => setDate(ov.uid, value, option),
+          });
+        }
+
+        if (option === 'HH:mm') {
+          return renderFormattedPicker({
+            value: ov.value,
+            type: 'time',
+            displayValue: formatViewerTime(ov.value),
+            icon: '🕐',
+            onChange: value => setDate(ov.uid, value, option),
+          });
+        }
+
         return renderFormattedPicker({
           value: ov.value,
           type: 'date',
           displayValue: formatViewerDate(ov.value),
           icon: '📅',
-          onChange: value => setDate(ov.uid, value),
+          onChange: value => setDate(ov.uid, value, option),
         });
+      }
 
-      case 'calendar_date_y2':
-        return renderFormattedPicker({
-          value: ov.value,
-          type: 'date',
-          displayValue: formatViewerDateYear2(ov.value),
-          icon: '📅',
-          onChange: value => setDate(ov.uid, value),
-        });
-
-      case 'calendar_datetime':
-        return renderFormattedPicker({
-          value: ov.value,
-          type: 'datetime-local',
-          displayValue: formatViewerDateTime(ov.value),
-          icon: '📅🕐',
-          onChange: value => setDate(ov.uid, value),
-        });
-
-      case 'calendar_time':
-        return renderFormattedPicker({
-          value: ov.value,
-          type: 'time',
-          displayValue: formatViewerTime(ov.value),
-          icon: '🕐',
-          onChange: value => setDate(ov.uid, value),
-        });
       // =========================
       // SIGNATURE
       // =========================
@@ -2197,6 +2348,27 @@ export const ViewerWorkspace = forwardRef<
             style={{
               ...viewerOpaqueButtonStyle,
               fontSize: '130%',
+            }}
+          >
+            {display}
+          </button>
+        );
+      }
+
+      case 'button_o': {
+        const value = ov.value || 'none';
+        const display = value === 'o' ? 'O' : '';
+        const size = '130%';
+
+        return (
+          <button
+            type="button"
+            onClick={() => setText(ov.uid, cycleButtonValue(ov.type, ov.value))}
+            title="공란 → O 순환"
+            style={{
+              ...viewerTransparentButtonStyle,
+              fontSize: size,
+              whiteSpace: 'nowrap',
             }}
           >
             {display}
@@ -2267,14 +2439,106 @@ export const ViewerWorkspace = forwardRef<
             top: y,
             width: w,
             height: h,
-            border: 'none',
-            background: 'transparent',
+            border: '1px solid rgba(59, 130, 246, 0.65)',
+            background: 'rgba(59, 130, 246, 0.12)',
+            color: '#1d4ed8',
             padding: 0,
             margin: 0,
+            boxSizing: 'border-box',
+            borderRadius: 4,
             cursor: 'pointer',
+            zIndex: 21,
+            overflow: 'hidden',
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              right: 3,
+              top: 2,
+              maxWidth: 'calc(100% - 6px)',
+              padding: '1px 4px',
+              borderRadius: 3,
+              background: 'rgba(30, 64, 175, 0.88)',
+              color: '#ffffff',
+              fontSize: 10,
+              fontWeight: 700,
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              pointerEvents: 'none',
+            }}
+          >
+            이동: {target}
+          </span>
+        </button>
+      );
+    });
+  };
+
+  const renderFormDrawingAreas = () => {
+    const rulePage = getCurrentRulePage();
+    const list = Array.isArray((rulePage as any)?.formdrawing)
+      ? (rulePage as any).formdrawing
+      : [];
+
+    if (list.length === 0) return null;
+
+    const lp = findLogicalPage(currentPage) as any;
+    const srcW = Number(lp?.width) || pageBox.w;
+    const srcH = Number(lp?.height) || pageBox.h;
+
+    return list.map((item: any, index: number) => {
+      const x = (Number(item.x ?? 0) / srcW) * pageBox.w;
+      const y = (Number(item.y ?? 0) / srcH) * pageBox.h;
+      const w = (Number(item.width ?? 0) / srcW) * pageBox.w;
+      const h = (Number(item.height ?? 0) / srcH) * pageBox.h;
+      const value = String(item.value ?? '');
+
+      return (
+        <div
+          key={`formdrawing-${currentPage}-${index}`}
+          title={`도면: ${value}`}
+          style={{
+            position: 'absolute',
+            left: x,
+            top: y,
+            width: w,
+            height: h,
+            border: '1px solid rgba(16, 185, 129, 0.55)',
+            background: 'rgba(16, 185, 129, 0.08)',
+            padding: 0,
+            margin: 0,
+            boxSizing: 'border-box',
+            borderRadius: 4,
+            overflow: 'hidden',
+            pointerEvents: 'none',
             zIndex: 20,
           }}
-        />
+        >
+          <span
+            style={{
+              position: 'absolute',
+              right: 3,
+              top: 2,
+              maxWidth: 'calc(100% - 6px)',
+              padding: '1px 4px',
+              borderRadius: 3,
+              background: 'rgba(4, 120, 87, 0.88)',
+              color: '#ffffff',
+              fontSize: 10,
+              fontWeight: 700,
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              pointerEvents: 'none',
+            }}
+          >
+            도면: {value || '-'}
+          </span>
+        </div>
       );
     });
   };
@@ -2318,6 +2582,7 @@ export const ViewerWorkspace = forwardRef<
             }}
           >
             {renderMoveToPageAreas()}
+            {renderFormDrawingAreas()}
 
             {overlays
               .filter(o => o.page === currentPage)

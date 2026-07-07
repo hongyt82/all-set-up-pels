@@ -1,5 +1,6 @@
 // src/lib/constraints/constraintsLogic.ts
 import type { ConstraintDoc } from '../../types/constraints';
+import { decodeHtmlEntities } from '../../utils/ruleHtmlDecode';
 
 export function normalizeNumber(value: any): number {
   if (value === null || value === undefined || value === '') return 0;
@@ -18,7 +19,10 @@ export function evaluateRuleExpression(
   context: Record<string, any>
 ): any {
   if (!expression) return undefined;
-  if (expression === 'default') return '__DEFAULT__';
+
+  const safeExpression = decodeHtmlEntities(String(expression));
+
+  if (safeExpression === 'default') return '__DEFAULT__';
 
   try {
     const fullContext = {
@@ -37,13 +41,17 @@ export function evaluateRuleExpression(
       parseFloat,
     };
 
-    const argNames = Object.keys(fullContext);
-    const argValues = Object.values(fullContext);
+    const entries = Object.entries(fullContext).filter(([key]) =>
+      /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)
+    );
 
-    const fn = new Function(...argNames, `return (${expression});`);
+    const argNames = entries.map(([key]) => key);
+    const argValues = entries.map(([, value]) => value);
+
+    const fn = new Function(...argNames, `return (${safeExpression});`);
     return fn(...argValues);
   } catch (e) {
-    console.error('[Constraint] expression 에러:', expression, e);
+    console.error('[Constraint] expression 에러:', safeExpression, e);
     return undefined;
   }
 }
@@ -233,19 +241,39 @@ export function applyOverlayRuleStyle(id: string, style: any): void {
 
 // status 에 따른 하이라이트
 export function highlightOverlayStatus(id: string, status: string): void {
-  const el = document.getElementById(`overlay-${id}`);
-  if (!el) return;
+  const root = document.getElementById(`overlay-${id}`);
+  if (!root) return;
+
+  const target = root.querySelector('input, textarea, select, button') ?? root;
+
+  const htmlTarget = target as HTMLElement;
 
   const color =
     {
       allow: 'transparent',
-      warning: 'rgba(255, 215, 0, 0.45)',
-      error: 'rgba(255, 0, 0, 0.18)',
+      warning: 'rgba(255, 215, 0, 0.18)',
+      error: 'rgba(255, 0, 0, 0.12)',
       empty: 'transparent',
       none: 'transparent',
     }[status] || 'transparent';
 
-  el.style.backgroundColor = color;
+  root.style.backgroundColor = color;
+
+  if (status === 'warning') {
+    htmlTarget.style.border = '1.5px solid rgba(255, 215, 0, 0.9)';
+    return;
+  }
+
+  if (status === 'error') {
+    htmlTarget.style.border = '1.5px solid rgba(255, 0, 0, 0.75)';
+    return;
+  }
+
+  htmlTarget.style.border = '1px solid rgba(139, 92, 246, 0.35)';
+  htmlTarget.style.borderRightWidth = '';
+  htmlTarget.style.borderLeftWidth = '';
+  htmlTarget.style.borderTopWidth = '';
+  htmlTarget.style.borderBottomWidth = '';
 }
 
 // ---------------------------------------------------------------------------
@@ -293,65 +321,3 @@ export function getCheckboxGroupIdsFull(
 
   return Array.from(ids);
 }
-
-// ============================================================================
-// circleslash 그룹 "트리형 연쇄" N/A 전파
-// - changedId가 속한 모든 circleslash rule을 seed로 잡는다 (union).
-// - seed rule의 멤버들을 추가하고,
-// - 멤버 중 "대표 id(rule.id)"로 존재하는 것이 있으면 그 rule도 계속 확장(BFS).
-// ============================================================================
-/*export function getCircleSlashGroupIds(
-  constraintDoc: ConstraintDoc | null | undefined,
-  changedId: string,
-  newValue: string
-): string[] {
-  if (!constraintDoc?.pages) return [];
-  if (newValue !== 'N/A') return [];
-
-  const result = new Set<string>();
-
-  const collect = (node: any) => {
-    if (!node?.id) return;
-    const id = String(node.id);
-    if (result.has(id)) return;
-
-    result.add(id);
-    if (Array.isArray(node.children)) {
-      node.children.forEach(collect);
-    }
-  };
-
-  for (const page of constraintDoc.pages) {
-    for (const rule of page.components || []) {
-      if (rule.groupType !== 'circleslash') continue;
-
-      // 1️⃣ rule 자체가 changedId인 경우
-      if (String(rule.id) === String(changedId)) {
-        result.add(String(rule.id));
-        if (Array.isArray(rule.children)) {
-          rule.children.forEach(collect);
-        }
-        return Array.from(result);
-      }
-
-      // 2️⃣ children 트리 안에서 changedId 찾기
-      const stack = Array.isArray(rule.children) ? [...rule.children] : [];
-      while (stack.length) {
-        const cur = stack.pop();
-        if (!cur) continue;
-
-        if (String(cur.id) === String(changedId)) {
-          collect(cur);
-          return Array.from(result);
-        }
-
-        if (Array.isArray(cur.children)) {
-          stack.push(...cur.children);
-        }
-      }
-    }
-  }
-
-  // fallback: 자기 자신만
-  return [String(changedId)];
-}*/

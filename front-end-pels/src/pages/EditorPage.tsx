@@ -29,6 +29,11 @@ import { TreeListEditorPanel } from '../components/editor/TreeListEditorPanel';
 // import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { devLog, devWarn } from '../utils/devConsole';
+import {
+  decodeRuleComponent,
+  decodeRuleExpressions,
+  decodeRulePage,
+} from '../utils/ruleHtmlDecode';
 
 // V1 과 동일한 A4 비율 기준
 const DESIGN_RATIO = PDF_BOUNDARY.height / PDF_BOUNDARY.width; // 736/520
@@ -49,6 +54,42 @@ function formatConstraintJson(obj: any): string {
   );
 
   return s;
+}
+
+function hasRuleData(ruleJson: any) {
+  const hasPageRule =
+    Array.isArray(ruleJson?.pages) &&
+    ruleJson.pages.some((p: any) => {
+      const hasComponents =
+        Array.isArray(p.components) && p.components.length > 0;
+
+      const hasDialoges = Array.isArray(p.dialoges) && p.dialoges.length > 0;
+
+      const hasQrDialoges =
+        Array.isArray(p.qr_dialoges) && p.qr_dialoges.length > 0;
+
+      const hasSections = Array.isArray(p.sections) && p.sections.length > 0;
+
+      const hasMoveToPage =
+        Array.isArray(p.movetopage) && p.movetopage.length > 0;
+
+      const hasFormDrawing =
+        Array.isArray(p.formdrawing) && p.formdrawing.length > 0;
+
+      return (
+        hasComponents ||
+        hasDialoges ||
+        hasQrDialoges ||
+        hasSections ||
+        hasMoveToPage ||
+        hasFormDrawing
+      );
+    });
+
+  const hasTreeList =
+    Array.isArray(ruleJson?.treelist) && ruleJson.treelist.length > 0;
+
+  return hasPageRule || hasTreeList;
 }
 
 function escapeRegExp(value: string) {
@@ -354,12 +395,16 @@ function cleanupConstraintRulesByDeletedIds(
       const hasMoveToPage =
         Array.isArray(page.movetopage) && page.movetopage.length > 0;
 
+      const hasFormDrawing =
+        Array.isArray(page.formdrawing) && page.formdrawing.length > 0;
+
       return (
         hasComponents ||
         hasDialoges ||
         hasQrDialoges ||
         hasSections ||
-        hasMoveToPage
+        hasMoveToPage ||
+        hasFormDrawing
       );
     });
 
@@ -519,9 +564,11 @@ export function EditorPage() {
 
   const [rightClickedOverlay, setRightClickedOverlay] = useState<{
     uid: string;
+    id: string;
     type: OverlayType;
     option?: string;
     id_key?: string;
+    title?: string;
   } | null>(null);
 
   // 편집 텍스트 (JSON 형태)
@@ -689,7 +736,7 @@ export function EditorPage() {
     if (pageInfo.total > 0) return;
 
     const load = async () => {
-      const metaRes = await axios.get('/pels/api/Form_Json_M', {
+      const metaRes = await axios.get('/pels//api/Form_Json_M', {
         params: { FRM_UNQ_KY_VAL },
         withCredentials: true,
       });
@@ -743,7 +790,8 @@ export function EditorPage() {
 
       // Constraint
       if (FRM_CONS_JSON) {
-        setConstraintDoc(JSON.parse(FRM_CONS_JSON));
+        const parsedConsDoc = JSON.parse(FRM_CONS_JSON);
+        setConstraintDoc(decodeRuleExpressions(parsedConsDoc));
       }
 
       // Overlay (PDF 이후)
@@ -850,8 +898,11 @@ export function EditorPage() {
 
   // ===== constraint JSON 저장 =====
   const handleSaveConstraintJson = () => {
-    if (!constraintDoc || !constraintDoc.pages.length) {
-      alert('저장할 Rule 조건 데이터가 없습니다.');
+    const ruleJsonText = wsRef.current?.exportRuleJsonString?.();
+    const ruleJson = ruleJsonText ? JSON.parse(ruleJsonText) : constraintDoc;
+
+    if (!hasRuleData(ruleJson)) {
+      alert('저장할 Rule 데이터가 없습니다.');
       return;
     }
 
@@ -864,7 +915,6 @@ export function EditorPage() {
     );
 
     if (input === null) {
-      // 취소
       return;
     }
 
@@ -878,7 +928,7 @@ export function EditorPage() {
       ? safeBase
       : `${safeBase}.json`;
 
-    const blob = new Blob([formatConstraintJson(constraintDoc)], {
+    const blob = new Blob([formatConstraintJson(ruleJson)], {
       type: 'application/json',
     });
 
@@ -892,7 +942,7 @@ export function EditorPage() {
     reader.onload = () => {
       try {
         const text = String(reader.result || '');
-        const obj = JSON.parse(text);
+        const obj = decodeRuleExpressions(JSON.parse(text));
 
         if (!obj || !Array.isArray(obj.pages)) {
           alert(
@@ -919,11 +969,35 @@ export function EditorPage() {
         // 🔍 2) 정말 constraint JSON 같이 생겼는지 한 번 더 체크
         const looksLikeConstraint =
           !!obj.docId ||
-          obj.pages.some((p: any) =>
-            (p.components || []).some(
+          obj.pages.some((p: any) => {
+            const hasComponentRule = (p.components || []).some(
               (c: any) => c.constraints || c.events || c.groupby
-            )
-          );
+            );
+
+            const hasMoveToPage =
+              Array.isArray(p.movetopage) && p.movetopage.length > 0;
+
+            const hasFormDrawing =
+              Array.isArray(p.formdrawing) && p.formdrawing.length > 0;
+
+            const hasDialoges =
+              Array.isArray(p.dialoges) && p.dialoges.length > 0;
+
+            const hasQrDialoges =
+              Array.isArray(p.qr_dialoges) && p.qr_dialoges.length > 0;
+
+            const hasSections =
+              Array.isArray(p.sections) && p.sections.length > 0;
+
+            return (
+              hasComponentRule ||
+              hasMoveToPage ||
+              hasFormDrawing ||
+              hasDialoges ||
+              hasQrDialoges ||
+              hasSections
+            );
+          });
 
         if (!looksLikeConstraint) {
           alert(
@@ -1010,6 +1084,21 @@ export function EditorPage() {
   }, []);
   const handleResizeMinus = useCallback(() => {
     wsRef.current?.resizeSelectedMinus();
+  }, []);
+  const handleResizeWidthPlus = useCallback(() => {
+    wsRef.current?.resizeSelectedWidthPlus();
+  }, []);
+
+  const handleResizeWidthMinus = useCallback(() => {
+    wsRef.current?.resizeSelectedWidthMinus();
+  }, []);
+
+  const handleResizeHeightPlus = useCallback(() => {
+    wsRef.current?.resizeSelectedHeightPlus();
+  }, []);
+
+  const handleResizeHeightMinus = useCallback(() => {
+    wsRef.current?.resizeSelectedHeightMinus();
   }, []);
   const handleDeletedOverlayIds = useCallback(
     (
@@ -1149,9 +1238,25 @@ export function EditorPage() {
 
   // const selectedOverlay = wsRef.current?.getSelectedOverlay?.() ?? null;
   const [idKeyDraft, setIdKeyDraft] = useState('');
+  const [titleDraft, setTitleDraft] = useState('');
+
+  const updateTreeListTitleById = (
+    items: any[] | undefined,
+    targetId: string,
+    title: string
+  ): any[] | undefined => {
+    if (!Array.isArray(items)) return items;
+
+    return items.map(item => ({
+      ...item,
+      title: String(item.id) === String(targetId) ? title : item.title,
+      children: updateTreeListTitleById(item.children, targetId, title),
+    }));
+  };
 
   useEffect(() => {
     setIdKeyDraft(rightClickedOverlay?.id_key ?? '');
+    setTitleDraft(rightClickedOverlay?.title ?? '');
   }, [rightClickedOverlay]);
 
   useEffect(() => {
@@ -1200,6 +1305,10 @@ export function EditorPage() {
           onDistributeVertically={handleDistributeVertically}
           onResizePlus={handleResizePlus}
           onResizeMinus={handleResizeMinus}
+          onResizeWidthPlus={handleResizeWidthPlus}
+          onResizeWidthMinus={handleResizeWidthMinus}
+          onResizeHeightPlus={handleResizeHeightPlus}
+          onResizeHeightMinus={handleResizeHeightMinus}
           onClearPage={handleClearPage}
           onClearAll={handleClearAll}
           // 자동 체크박스 감지
@@ -1266,33 +1375,97 @@ export function EditorPage() {
         <ToolPalette
           selectedCategory={selectedCategory}
           onToolSelect={handleToolSelect}
-          onAddOverlay={tool => wsRef.current?.addOverlay(tool)}
+          onAddOverlay={(tool, option) =>
+            wsRef.current?.addOverlay(tool, option)
+          }
           isOverlayVisible={isOverlayVisible}
         />
         {/* 선택된 Overlay 속성 패널 */}
-        {/*{selectedOverlay && (*/}
-        {rightClickedOverlay && rightClickedOverlay.type === 'textbox' && (
-          <div className="px-3 py-2 border-b bg-white text-sm">
-            <label className="block text-xs text-slate-500 mb-1">
-              ID KEY (선택)
-            </label>
+        {rightClickedOverlay && (
+          <div className="px-3 py-2 border-b bg-white text-sm space-y-2">
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">
+                ID KEY (선택)
+              </label>
 
-            <input
-              className="w-full border rounded px-2 py-1 text-sm"
-              placeholder="id_key 입력 (선택)"
-              value={idKeyDraft}
-              onChange={e => setIdKeyDraft(e.target.value)}
-              onBlur={() => {
-                const v = idKeyDraft.trim();
-                if (!rightClickedOverlay) return;
+              <input
+                className="w-full border rounded px-2 py-1 text-sm"
+                placeholder="id_key 입력 (선택)"
+                value={idKeyDraft}
+                onChange={e => setIdKeyDraft(e.target.value)}
+              />
+            </div>
 
-                wsRef.current?.updateOverlayByUid?.(rightClickedOverlay.uid, {
-                  id_key: v.length > 0 ? v : undefined,
-                });
+            {rightClickedOverlay.type === 'circleslash' && (
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">
+                  Title
+                </label>
 
-                setRightClickedOverlay(null);
-              }}
-            />
+                <input
+                  className="w-full border rounded px-2 py-1 text-sm"
+                  placeholder="title 입력"
+                  value={titleDraft}
+                  onChange={e => setTitleDraft(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="px-2 py-1 border rounded text-xs"
+                onClick={() => setRightClickedOverlay(null)}
+              >
+                닫기
+              </button>
+
+              <button
+                type="button"
+                className="px-2 py-1 border rounded text-xs bg-slate-800 text-white"
+                onClick={() => {
+                  if (!rightClickedOverlay) return;
+
+                  const nextIdKey = idKeyDraft.trim();
+                  const nextTitle = titleDraft.trim();
+
+                  if (
+                    rightClickedOverlay.type === 'circleslash' &&
+                    !nextTitle
+                  ) {
+                    alert('title은 필수입니다.');
+                    return;
+                  }
+
+                  wsRef.current?.updateOverlayByUid?.(rightClickedOverlay.uid, {
+                    id_key: nextIdKey.length > 0 ? nextIdKey : undefined,
+                    ...(rightClickedOverlay.type === 'circleslash'
+                      ? { title: nextTitle }
+                      : {}),
+                  });
+
+                  if (rightClickedOverlay.type === 'circleslash') {
+                    setConstraintDoc(prev => {
+                      if (!prev?.treelist) return prev;
+
+                      return {
+                        ...prev,
+                        treelist:
+                          updateTreeListTitleById(
+                            prev.treelist,
+                            rightClickedOverlay.id,
+                            nextTitle
+                          ) ?? [],
+                      };
+                    });
+                  }
+
+                  setRightClickedOverlay(null);
+                }}
+              >
+                적용
+              </button>
+            </div>
           </div>
         )}
 
@@ -1346,8 +1519,10 @@ export function EditorPage() {
 
                   setRightClickedOverlay({
                     uid: rightClickedUid,
+                    id: primary.id,
                     type: primary.type,
                     id_key: primary.id_key,
+                    title: primary.title,
                   });
 
                   const ids = overlays.map(o => o.id);
@@ -1437,7 +1612,12 @@ export function EditorPage() {
             const { constraintPageNo, primaryId, mode } = constraintSelection;
 
             try {
-              const parsed = JSON.parse(constraintEditorText || '{}') as any;
+              const rawParsed = JSON.parse(constraintEditorText || '{}') as any;
+
+              const parsed =
+                mode === 'page'
+                  ? decodeRulePage(rawParsed)
+                  : decodeRuleComponent(rawParsed);
 
               if (mode === 'page') {
                 const targetConstraintPageNo = Number(
