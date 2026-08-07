@@ -357,8 +357,8 @@ export async function exportFilledPdf(params: {
 
         case 'checkbox': {
           const s = Math.min(w, h);
-          const ix = x + (w - s) / 2;
-          const iy = y + (h - s) / 2;
+          const ix = x;
+          const iy = y + h - s;
 
           const checked = String(c.value || '').toLowerCase() === 'y';
 
@@ -495,6 +495,7 @@ export async function exportFilledPdf(params: {
           break;
         }
 
+        case 'button_o':
         case 'button_ox':
         case 'button_oxn':
         case 'button_oxt':

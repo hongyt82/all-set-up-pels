@@ -1074,6 +1074,9 @@ export function ViewerPage() {
             (map[pg.page] ||= []).push({
               uid: `${c.type}-${Date.now()}-${Math.random()}`,
               id: String(c.id ?? `${pg.page}-${i}`),
+              id_key: c.id_key,
+              checked_value: c.checked_value,
+              checked_value_source_id: c.checked_value_source_id,
               type: c.type as any,
               option: c.option,
               page: pg.page,
@@ -1187,6 +1190,13 @@ export function ViewerPage() {
 
       const components = items.map(o => ({
         id: o.id,
+        ...(o.id_key ? { id_key: o.id_key } : {}),
+        ...(o.type === 'checkbox' && o.checked_value
+          ? { checked_value: o.checked_value }
+          : {}),
+        ...(o.type === 'checkbox' && o.checked_value_source_id
+          ? { checked_value_source_id: o.checked_value_source_id }
+          : {}),
         type: o.type,
         ...(o.option ? { option: o.option } : {}),
         x: Math.round(o.xPct * W),
@@ -1362,6 +1372,9 @@ export function ViewerPage() {
                   (map[pg.page] ||= []).push({
                     uid: `${c.type}-${Date.now()}-${Math.random()}`,
                     id: String(c.id ?? `${pg.page}-${i}`),
+                    id_key: c.id_key,
+                    checked_value: c.checked_value,
+                    checked_value_source_id: c.checked_value_source_id,
                     type: c.type as any,
                     option: c.option,
                     page: pg.page,

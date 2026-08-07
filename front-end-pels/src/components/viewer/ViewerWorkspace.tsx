@@ -1259,6 +1259,41 @@ export const ViewerWorkspace = forwardRef<
     return result;
   };
 
+  const runTimeDifference = (
+    working: OverlayItem[],
+    page: number,
+    calc: any
+  ): Array<{ targetId: string; value: string }> => {
+    const ids: string[] = calc.sourceIds ?? [calc.startId, calc.endId];
+    const targetId = calc.targetId ? String(calc.targetId) : '';
+    if (ids.length < 2 || !ids[0] || !ids[1] || !targetId) return [];
+
+    const toMinutes = (value: string): number | null => {
+      const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+      if (!match) return null;
+
+      const hour = Number(match[1]);
+      const minute = Number(match[2]);
+      if (hour > 23 || minute > 59) return null;
+      return hour * 60 + minute;
+    };
+
+    const start = toMinutes(
+      findWorkingOverlay(working, page, ids[0])?.value ?? ''
+    );
+    const end = toMinutes(
+      findWorkingOverlay(working, page, ids[1])?.value ?? ''
+    );
+    if (start == null || end == null) return [{ targetId, value: '' }];
+
+    let difference = end - start;
+    if (difference < 0) difference += 24 * 60;
+
+    const hour = String(Math.floor(difference / 60)).padStart(2, '0');
+    const minute = String(difference % 60).padStart(2, '0');
+    return [{ targetId, value: `${hour}:${minute}` }];
+  };
+
   const applyConstraintsCascade = (startUid: string, startRawValue: string) => {
     if (!constraintDoc) return;
 
@@ -1377,6 +1412,8 @@ export const ViewerWorkspace = forwardRef<
                 }
               } else if (calc.type === 'timeCalculation') {
                 results.push(...runTimeCalculation(working, ov.page, calc));
+              } else if (calc.type === 'timeDifference') {
+                results.push(...runTimeDifference(working, ov.page, calc));
               } else if (calc.targetId && calc.expression) {
                 const value = evaluateRuleExpression(calc.expression, context);
                 results.push({

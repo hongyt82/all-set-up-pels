@@ -442,6 +442,12 @@ export interface OverlayItem {
   uid: string;
   /** 페이지 내 요소 식별자 */
   id: string;
+  /** 서버 업무 데이터 키 (선택) */
+  id_key?: string;
+  /** 체크박스 선택 시 사용할 고정 업무값 (선택) */
+  checked_value?: string;
+  /** 체크박스 선택 시 값을 읽을 텍스트박스 ID (선택) */
+  checked_value_source_id?: string;
   title?: string;
   type: OverlayType;
   option?: string;
