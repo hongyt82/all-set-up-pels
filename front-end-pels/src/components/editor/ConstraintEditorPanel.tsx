@@ -44,12 +44,17 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
 }) => {
   const { page, primaryId, ids, mode = 'rule' } = selection;
 
-  const [size, setSize] = useState({ width: 440, height: 440 });
+  const [size, setSize] = useState({ width: 490, height: 560 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
+  const sizeRef = useRef(size);
   const editorRef = useRef<any>(null);
 
   const [jsonError, setJsonError] = useState('');
+
+  useEffect(() => {
+    sizeRef.current = size;
+  }, [size]);
 
   {
     /* 필드 참조는 수식 문법 확정 후 다시 활성화 */
@@ -124,14 +129,26 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const margin = 24;
-    const x = window.innerWidth - size.width - margin;
-    const y = window.innerHeight - size.height - 140;
+    const updatePosition = () => {
+      const margin = 15;
+      const currentSize = sizeRef.current;
 
-    setPosition({
-      x: Math.max(margin, x),
-      y: Math.max(80, y),
-    });
+      const x = window.innerWidth - currentSize.width - margin;
+      const y = window.innerHeight - currentSize.height - 45;
+
+      setPosition({
+        x: Math.max(margin, x),
+        y: Math.max(80, y),
+      });
+    };
+
+    updatePosition();
+
+    window.addEventListener('resize', updatePosition);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+    };
   }, []);
 
   const formatConstraintJson = (obj: any): string => {
@@ -171,7 +188,7 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
         setPosition({ x: pos.x, y: pos.y });
       }}
       minWidth={360}
-      minHeight={260}
+      minHeight={340}
       bounds="window"
       dragHandleClassName="cep-drag-handle"
       style={{

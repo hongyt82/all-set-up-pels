@@ -1,3 +1,5 @@
+// src/components/editor/tools/CalendarTools.tsx
+
 import type React from 'react';
 import { Calendar, CalendarDays, Clock, Plus } from 'lucide-react';
 import { devLog } from '../../../utils/devConsole';

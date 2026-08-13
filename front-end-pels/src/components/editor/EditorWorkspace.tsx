@@ -121,6 +121,8 @@ export interface OverlayItem {
   uid: string;
   id: string;
   id_key?: string;
+  checked_value?: string;
+  checked_value_source_id?: string;
   title: string;
   type: OverlayType;
   option?: string;
@@ -269,6 +271,7 @@ function getNextConstraintPageNo(items: PageItem[]) {
 // -----------------------------------------------------------------------------
 
 export interface EditorWorkspaceProps {
+  activeIdKeyOverlayUid?: string | null;
   onPageInfoChange?: (info: {
     currentPage: number;
     totalPages: number;
@@ -413,6 +416,7 @@ export const EditorWorkspace = forwardRef<
   const {
     constraints,
     onPageInfoChange,
+    activeIdKeyOverlayUid,
     docId,
     docKey = 'DOC0001',
     onChangeDocKey,
@@ -456,6 +460,7 @@ export const EditorWorkspace = forwardRef<
     checkbox: 3000,
     calendar: 4000,
     signature: 5000,
+    etc: 6000,
     button: 7000,
     drawing: 8000,
     movetopage: 9000,
@@ -550,6 +555,7 @@ export const EditorWorkspace = forwardRef<
       checkbox: 3000,
       calendar: 4000,
       signature: 5000,
+      etc: 6000,
       button: 7000,
       drawing: 8000,
       movetopage: 9000,
@@ -848,7 +854,7 @@ export const EditorWorkspace = forwardRef<
           withCMap
             ? {
                 data,
-                cMapUrl: '/pels/static/e-link-v2/pdfjs/cmaps/',
+                cMapUrl: '/mpps/static/e-link-v2/pdfjs/cmaps/',
                 cMapPacked: true,
               }
             : { data }
@@ -1210,6 +1216,7 @@ export const EditorWorkspace = forwardRef<
       checkbox: 3000,
       calendar: 4000,
       signature: 5000,
+      etc: 6000,
       button: 7000,
       drawing: 8000,
       movetopage: 9000,
@@ -1233,26 +1240,14 @@ export const EditorWorkspace = forwardRef<
   };
 
   // ===== JSON 저장/복원 =====
-  const buildTemplateJson = () => {
-    if (!pdfDoc) return null;
-
-    const out: any = {
-      doc: {
-        id: '',
-        publishId: '',
-        name: '',
-        doc_type: '',
-      },
-      pages: [] as any[],
-    };
-
-    pages.forEach(pg => {
+  const buildPagesJson = () => {
+    return pages.map(pg => {
       const items = overlays.filter(o => o.pageId === pg.pageId);
       const componentItems = items.filter(
         o => o.type !== 'movetopage' && o.type !== 'formdrawing'
       );
 
-      out.pages.push({
+      return {
         page: pg.logicalPageIndex,
         pdfPageNo: pg.pdfPageNo,
         constraintPageNo: pg.constraintPageNo,
@@ -1265,6 +1260,12 @@ export const EditorWorkspace = forwardRef<
           return {
             id: o.id,
             ...(o.id_key ? { id_key: o.id_key } : {}),
+            ...(o.type === 'checkbox' && o.checked_value
+              ? { checked_value: o.checked_value }
+              : {}),
+            ...(o.type === 'checkbox' && o.checked_value_source_id
+              ? { checked_value_source_id: o.checked_value_source_id }
+              : {}),
             ...(o.type === 'circleslash' ? { title: o.title ?? '' } : {}),
             ...saveMeta,
             x: Math.round(o.xPct * pg.width),
@@ -1278,10 +1279,22 @@ export const EditorWorkspace = forwardRef<
             value: o.value ?? '',
           };
         }),
-      });
+      };
     });
+  };
 
-    return out;
+  const buildTemplateJson = () => {
+    if (!pdfDoc) return null;
+
+    return {
+      doc: {
+        id: '',
+        publishId: '',
+        name: '',
+        doc_type: '',
+      },
+      pages: buildPagesJson(),
+    };
   };
 
   // Rule(JSON) 생성 함수
@@ -1441,73 +1454,8 @@ export const EditorWorkspace = forwardRef<
     return nextConstraints;
   };
 
-  const buildJson = () => {
-    if (!pdfDoc) return null;
-
-    const now = new Date();
-    const z = (n: number) => String(n).padStart(2, '0');
-    const nowStr = `${now.getFullYear()}-${z(now.getMonth() + 1)}-${z(
-      now.getDate()
-    )} ${z(now.getHours())}:${z(now.getMinutes())}:${z(now.getSeconds())}`;
-
-    const createDate = meta.creationDate || nowStr;
-
-    const out: any = {
-      createDate,
-      updateDate: nowStr,
-      startDate: '0000-00-00 00:00:00',
-      endDate: '0000-00-00 00:00:00',
-      logVersion: 0,
-      doc: {
-        id: '',
-        publishId: '',
-        name: '',
-        doc_type: '',
-      },
-      department: meta.department || '경영팀',
-      pages: [] as any[],
-    };
-
-    pages.forEach(pg => {
-      const items = overlays.filter(o => o.pageId === pg.pageId);
-      const componentItems = items.filter(
-        o => o.type !== 'movetopage' && o.type !== 'formdrawing'
-      );
-
-      out.pages.push({
-        page: pg.logicalPageIndex,
-        pdfPageNo: pg.pdfPageNo,
-        constraintPageNo: pg.constraintPageNo,
-        width: pg.width,
-        height: pg.height,
-        isChange: componentItems.length > 0 ? 'Y' : 'N',
-        components: componentItems.map(o => {
-          const saveMeta = getSaveComponentMeta(o.type, o.option);
-
-          return {
-            id: o.id,
-            ...(o.id_key ? { id_key: o.id_key } : {}),
-            ...(o.type === 'circleslash' ? { title: o.title ?? '' } : {}),
-            ...saveMeta,
-            x: Math.round(o.xPct * pg.width),
-            y: Math.round(o.yPct * pg.height),
-            width: Math.round(o.wPct * pg.width),
-            height: Math.round(o.hPct * pg.height),
-            xPct: o.xPct,
-            yPct: o.yPct,
-            wPct: o.wPct,
-            hPct: o.hPct,
-            value: o.value ?? '',
-          };
-        }),
-      });
-    });
-
-    return out;
-  };
-
   const downloadJson = () => {
-    const data = buildJson();
+    const data = buildTemplateJson();
     if (!data) return;
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: 'application/json',
@@ -1516,7 +1464,7 @@ export const EditorWorkspace = forwardRef<
   };
 
   const downloadJsonAs = () => {
-    const data = buildJson();
+    const data = buildTemplateJson();
     if (!data) return;
     const today = new Date().toISOString().slice(0, 10);
     const defaultBase = `template_${docKey}_${today}`;
@@ -1573,7 +1521,7 @@ export const EditorWorkspace = forwardRef<
       formData.append('FRM_OVER_JSON', JSON.stringify(templateJson));
       formData.append('FRM_CONS_JSON', JSON.stringify(ruleJson));
 
-      const response = await axios.post('/pels/FormJsonSave_M.do', formData, {
+      const response = await axios.post('/mpps/FormJsonSave_M.do', formData, {
         withCredentials: true,
         timeout: 30000,
       });
@@ -1672,6 +1620,15 @@ export const EditorWorkspace = forwardRef<
             uid: `${editorType}-${Date.now()}-${Math.random()}`,
             id,
             id_key: typeof c.id_key === 'string' ? c.id_key : undefined,
+            checked_value:
+              editorType === 'checkbox' && typeof c.checked_value === 'string'
+                ? c.checked_value
+                : undefined,
+            checked_value_source_id:
+              editorType === 'checkbox' &&
+              typeof c.checked_value_source_id === 'string'
+                ? c.checked_value_source_id
+                : undefined,
             title: editorType === 'circleslash' ? (c.title ?? '') : '',
             type: editorType,
             ...(editorOption ? { option: editorOption } : {}),
@@ -1713,8 +1670,17 @@ export const EditorWorkspace = forwardRef<
     if (!hasRuleOnlyOverlayInRule) return;
 
     setOverlays(prev => {
-      const withoutRuleOnly = prev.filter(
-        o => o.type !== 'movetopage' && o.type !== 'formdrawing'
+      const isRestoredRuleOnlyOverlay = (overlay: OverlayItem) =>
+        (overlay.type === 'movetopage' &&
+          overlay.id.startsWith('movetopage_')) ||
+        (overlay.type === 'formdrawing' &&
+          overlay.id.startsWith('formdrawing_'));
+
+      // Rule에서 복원된 항목만 교체한다.
+      // 에디터에서 새로 추가했지만 아직 Rule에 저장되지 않은 항목은 유지해야
+      // 일반 컴포넌트를 삭제할 때 함께 사라지지 않는다.
+      const withoutRestoredRuleOnly = prev.filter(
+        overlay => !isRestoredRuleOnlyOverlay(overlay)
       );
 
       const restoredMoveToPage: OverlayItem[] = [];
@@ -1768,7 +1734,7 @@ export const EditorWorkspace = forwardRef<
       });
 
       return [
-        ...withoutRuleOnly,
+        ...withoutRestoredRuleOnly,
         ...restoredMoveToPage,
         ...restoredFormDrawing,
       ];
@@ -1913,6 +1879,15 @@ export const EditorWorkspace = forwardRef<
 
     if (boxes.length === 0) return;
 
+    const uniqueBoxes = Array.from(
+      new Map(
+        boxes.map(b => [
+          `${b.page}-${b.text}-${b.xPct.toFixed(4)}-${b.yPct.toFixed(4)}`,
+          b,
+        ])
+      ).values()
+    );
+
     pushUndoSnapshot();
 
     const epsilon = 0.002;
@@ -1921,14 +1896,22 @@ export const EditorWorkspace = forwardRef<
       const next = [...prev];
       const existingIds = new Set(next.map(o => o.id));
 
-      for (const b of boxes) {
+      for (const b of uniqueBoxes) {
+        const page = pages[b.page - 1];
+        if (!page) continue;
+
+        const x = Math.max(0, Math.min(1 - b.wPct, b.xPct + 0.05));
+        const y = Math.max(0, Math.min(1 - b.hPct, b.yPct));
+
         const exists = next.some(
           o =>
-            o.pageId === pages[b.page - 1]?.pageId &&
+            o.pageId === page.pageId &&
             o.type === 'circleslash' &&
-            Math.abs(o.xPct - b.xPct) < epsilon &&
-            Math.abs(o.yPct - b.yPct) < epsilon
+            o.title === b.text &&
+            Math.abs(o.xPct - x) < epsilon &&
+            Math.abs(o.yPct - y) < epsilon
         );
+
         if (exists) continue;
 
         let newId = nextId('circleslash', b.page);
@@ -1937,15 +1920,12 @@ export const EditorWorkspace = forwardRef<
         }
         existingIds.add(newId);
 
-        const x = Math.max(0, Math.min(1 - b.wPct, b.xPct + 0.05));
-        const y = Math.max(0, Math.min(1 - b.hPct, b.yPct));
-
         next.push({
           uid: `circleslash-${Date.now()}-${Math.random()}`,
           id: newId,
           title: b.text,
           type: 'circleslash',
-          pageId: pages[b.page - 1].pageId,
+          pageId: page.pageId,
           xPct: x,
           yPct: y,
           wPct: b.wPct,
@@ -2785,7 +2765,7 @@ export const EditorWorkspace = forwardRef<
       );
     },
     exportToJsonString() {
-      const json = buildJson();
+      const json = buildTemplateJson();
       return json ? JSON.stringify(json) : '';
     },
     exportRuleJsonString() {
@@ -2933,6 +2913,10 @@ export const EditorWorkspace = forwardRef<
     <div className="flex items-start justify-start">
       {pdfDoc ? (
         <div
+          onContextMenu={e => {
+            // 컴포넌트 핸들러는 이벤트 전파를 막으므로, PDF/캔버스의 빈 영역 클릭만 여기까지 전달된다.
+            e.preventDefault();
+          }}
           style={{
             position: 'relative',
             width: pageBox.w,
@@ -2973,6 +2957,7 @@ export const EditorWorkspace = forwardRef<
                 .map(ov => {
                   const r = toPx(ov);
                   const isSel = selected.includes(ov.uid);
+                  const isIdKeyActive = activeIdKeyOverlayUid === ov.uid;
                   const isSquare = isSquareType(ov.type);
                   const isTextboxType = (t: OverlayType) =>
                     t.startsWith('textbox');
@@ -3018,22 +3003,24 @@ export const EditorWorkspace = forwardRef<
                         )
                       }
                       style={{
-                        border:
-                          ov.type === 'checkbox'
-                            ? isSel
-                              ? '2px solid #1e90ff'
-                              : '1px dashed rgba(220, 38, 38, 0.45)'
-                            : isSel
-                              ? '2px solid #1e90ff'
-                              : '1px dashed #d33',
-                        background:
-                          ov.type === 'checkbox'
-                            ? isSel
-                              ? 'rgba(30,144,255,0.08)'
-                              : 'transparent'
-                            : isSel
-                              ? 'rgba(30,144,255,0.12)'
-                              : 'rgba(255,0,0,0.06)',
+                        border: isIdKeyActive
+                          ? '2px solid #f97316'
+                          : isSel
+                            ? '2px solid #1e90ff'
+                            : '1px dashed #d33',
+
+                        background: isIdKeyActive
+                          ? 'rgba(249,115,22,0.16)'
+                          : isSel
+                            ? 'rgba(30,144,255,0.12)'
+                            : 'rgba(255,0,0,0.06)',
+
+                        boxShadow: isIdKeyActive
+                          ? '0 0 0 3px rgba(249,115,22,0.25)'
+                          : undefined,
+
+                        zIndex: isIdKeyActive ? 50 : isSel ? 40 : undefined,
+
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
