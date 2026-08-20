@@ -175,7 +175,80 @@
 		let form = document.getElementById('form')
 		form.action = '<%=request.getContextPath()%>/Exam_Excel.do'
 		form.submit()
-	}	
+	}
+
+	function fnCheckAllPdf(element) {
+		$('#form input[name=PDF_CHK_ITEM]').prop('checked', element.checked);
+	}
+
+	function fnPdfFailureMessage(failures) {
+		let message = '다음 PDF를 생성하지 못했습니다.\n\n';
+		for (let i = 0; i < failures.length; i++) {
+			message += '- ' + failures[i].name;
+			if (failures[i].reason) message += ': ' + failures[i].reason;
+			message += '\n';
+		}
+		return message;
+	}
+
+	function fnCancelPdfZip(token) {
+		$.ajax({
+			type: 'POST',
+			url: '<%=request.getContextPath()%>/api/Exam_Pdf_Zip_Cancel_M',
+			data: { token: token }
+		});
+	}
+
+	function fnSelectedPdfDownload() {
+		const selectedCheckNumbers = $('#form input[name=PDF_CHK_ITEM]:checked').map(function () {
+			return this.value;
+		}).get();
+
+		if (selectedCheckNumbers.length === 0) {
+			alert('PDF로 저장할 시험을 선택해 주세요.');
+			return;
+		}
+
+		if (selectedCheckNumbers.length > 50) {
+			alert('PDF는 한 번에 최대 50건까지 저장할 수 있습니다.');
+			return;
+		}
+
+		$.ajax({
+			type: 'POST',
+			url: '<%=request.getContextPath()%>/api/Exam_Pdf_Zip_Prepare_M',
+			data: { CHCK_SNO: selectedCheckNumbers },
+			traditional: true,
+			dataType: 'json',
+			success: function (result) {
+				const failures = result.failures || [];
+
+				if (!result.resultCd) {
+					let message = result.resultMsg || 'PDF 생성에 실패했습니다.';
+					if (failures.length > 0) message += '\n\n' + fnPdfFailureMessage(failures);
+					alert(message);
+					return;
+				}
+
+				if (failures.length > 0) {
+					const message = fnPdfFailureMessage(failures)
+						+ '\n실패 항목을 제외하고 '
+						+ result.successCount
+						+ '건을 다운로드하시겠습니까?';
+					if (!confirm(message)) {
+						fnCancelPdfZip(result.token);
+						return;
+					}
+				}
+
+				window.location.href = '<%=request.getContextPath()%>/api/Exam_Pdf_Zip_Download_M?token='
+					+ encodeURIComponent(result.token);
+			},
+			error: function () {
+				alert('PDF ZIP 준비 중 오류가 발생했습니다.');
+			}
+		});
+	}
 </script>
 <body class="no-skin real-skin">
 <form id="formPopup" name="formPopup" method="post">
@@ -221,6 +294,7 @@
 			</div><!-- /page-header -->
 			<!-- #section:basics/page-button -->
 			<div class="PageButtonGroup" style="text-align:right">
+				<a class="btn-m" href="javascript:fnSelectedPdfDownload();"><span class="Text">선택 PDF 저장</span></a>
 				<a class="btn-m" href="javascript:fnExamReplay();"><span class="Text">리플레이</span></a>
 				<!-- 
 				<a class="btn-m" href="javascript:fnExamInput();"><span class="Text">등록</span></a>
@@ -298,16 +372,19 @@
 								<table cellspacing="0" cellpadding="0" border="0" class="Outline">
 									<colgroup>
 										<col width="70px" />
+										<col width="55px" />
 										<col width="200px" />
                                         <col width="150px" />
 					  					<col width="*" />
                                         <col width="*" />
                                         <col width="80px" />
-                                        <col width="70px" />
-                                        <col width="150px" />
+										<col width="70px" />
+										<col width="70px" />
+										<col width="150px" />
 									</colgroup>
 									<tr class="Header">
 										<th>선택</th>
+										<th>PDF <input type="checkbox" id="PDF_CHK_ALL" onclick="fnCheckAllPdf(this)" title="PDF 전체 선택"></th>
 										<th>시험기간</th>
 										<th>절차서번호</th>
 										<th>절차서명</th>
@@ -328,6 +405,9 @@
 												<input name="ATFL_PHCL_NM" id="ATFL_PHCL_NM" type="hidden" value="">
 												<input name="CNMR_ID" id="CNMR_ID" type="hidden" value="${exam.CNMR_ID}">
 												<input name="CHKPR_ID" id="CHKPR_ID" type="hidden" value="${exam.CHKPR_ID}">
+											</td>
+											<td align="center">
+												<input name="PDF_CHK_ITEM" type="checkbox" value="${exam.CHCK_SNO}">
 											</td>
 											<td align="center">${exam.CHCK_DT}</td>
 											<td align="center">${exam.PRCDOC_NO}</td>
@@ -352,7 +432,7 @@
 									</c:forEach>
 									<c:if test="${examList.size() eq 0}">
 										<tr class="Item">
-											<td colspan=7" style="text-align: center;">조회된 자료가 없습니다.</td>
+											<td colspan="10" style="text-align: center;">조회된 자료가 없습니다.</td>
 										</tr>
 									</c:if>                                              
 									</table>

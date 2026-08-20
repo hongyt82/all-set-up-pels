@@ -238,20 +238,26 @@
 
 	<select id="ExamJsonDetail" resultType="java.util.HashMap" parameterType="java.util.HashMap">
 		SELECT 
-			PWPL_ID,
-			CHCK_SNO,
-			ATFL_NO,
-			ATFL_PHCL_NM,
-			WRTE_JSON_DCR,
-			CMP_JSON_DCR,
-			REGPR_ID,
-			REGPR_FNM,
-			RG_DT,
-			TO_CHAR(RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
+			A.PWPL_ID,
+			A.CHCK_SNO,
+			A.ATFL_NO,
+			A.ATFL_PHCL_NM,
+			A.WRTE_JSON_DCR,
+			A.CMP_JSON_DCR,
+			B.CHCK_TITL,
+			C.PRCDOC_NM,
+			A.REGPR_ID,
+			A.REGPR_FNM,
+			A.RG_DT,
+			TO_CHAR(A.RG_DT, 'YYYY-MM-DD') AS FM_RG_DT
 		FROM GE_PL_CHCK0101_D A
-		WHERE CHCK_SNO = #{CHCK_SNO}
+		LEFT JOIN GE_PL_CHCK01_M B
+		  ON B.CHCK_SNO = A.CHCK_SNO
+		LEFT JOIN GE_PL_PRCDOC01_M C
+		  ON C.PRCDOC_SNO = B.PRCDOC_SNO
+		WHERE A.CHCK_SNO = #{CHCK_SNO}
 		<if test='ATFL_NO != ""'>
-		   AND ATFL_NO  = #{ATFL_NO}
+		   AND A.ATFL_NO = #{ATFL_NO}
 		</if>
 	</select>	
 	

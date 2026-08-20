@@ -1,19 +1,30 @@
 package com.khnp.pels.exam.controller;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.sql.Clob;
+import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletException;
@@ -339,35 +350,235 @@ public class PELSExamMobileController {
 			return;
 		}
 
-		HashMap<String, Object> paramMap = new HashMap<>();
-
-		paramMap.put("CHCK_SNO", CHCK_SNO);
-		paramMap.put("ATFL_NO", "1");
-
-		Map<String, String> mapTemp = pelsExamService.getDetail("ExamJsonDetail", paramMap);
-
-		if (mapTemp == null) {
-			response.sendError(HttpServletResponse.SC_NOT_FOUND, "data not found");
+		ExamPdfDownloadData pdfData;
+		try {
+			pdfData = createExamPdfDownloadData(CHCK_SNO);
+		} catch (IllegalArgumentException e) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
 			return;
 		}
 
-		String PELS_IP_URL = this.utilProperties.getProperty("PELS_IP_URL");
-		String pdfPath = PELS_IP_URL + "/upload/" + mapTemp.get("ATFL_PHCL_NM");
-		String overJson = "";
-		Object overClob = mapTemp.get("WRTE_JSON_DCR");
-		if (overClob instanceof Clob) {
-			overJson = clobToString((Clob) overClob);
-		}
-		if (overJson == null || "".equals(overJson)) {
-			response.sendError(HttpServletResponse.SC_NOT_FOUND, "Overlay JSON not found");
-			return;
-		}
-		byte[] pdfBytes = examPdfService.generateExamPdf(pdfPath, overJson);
+		byte[] pdfBytes = pdfData.pdfBytes;
 		response.setContentType("application/pdf");
 		response.setHeader("Content-Disposition", "attachment; filename=\"result.pdf\"");
 		response.setContentLength(pdfBytes.length);
 		response.getOutputStream().write(pdfBytes);
 		response.getOutputStream().flush();
+	}
+
+	@RequestMapping(value = "/api/Exam_Pdf_Zip_Prepare_M", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> Exam_Pdf_Zip_Prepare_M_API(HttpServletRequest request) throws Exception {
+		Map<String, Object> result = new HashMap<String, Object>();
+		String[] checkNumbers = request.getParameterValues("CHCK_SNO");
+
+		if (checkNumbers == null || checkNumbers.length == 0) {
+			result.put("resultCd", false);
+			result.put("resultMsg", "PDF 저장 대상을 선택해 주세요.");
+			return result;
+		}
+		if (checkNumbers.length > 50) {
+			result.put("resultCd", false);
+			result.put("resultMsg", "PDF는 한 번에 최대 50건까지 저장할 수 있습니다.");
+			return result;
+		}
+
+		File zipFile = File.createTempFile("pels-exam-pdf-", ".zip");
+		zipFile.deleteOnExit();
+		List<Map<String, String>> failures = new ArrayList<Map<String, String>>();
+		Map<String, Integer> usedNames = new HashMap<String, Integer>();
+		int successCount = 0;
+
+		try (ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(zipFile))) {
+			for (String checkNumber : checkNumbers) {
+				try {
+					ExamPdfDownloadData pdfData = createExamPdfDownloadData(checkNumber);
+					String entryName = uniqueZipEntryName(pdfData.fileName, usedNames);
+					zip.putNextEntry(new ZipEntry(entryName));
+					zip.write(pdfData.pdfBytes);
+					zip.closeEntry();
+					successCount++;
+				} catch (Exception e) {
+					Map<String, String> failure = new HashMap<String, String>();
+					failure.put("checkNumber", checkNumber);
+					failure.put("name", getExamDisplayName(checkNumber));
+					failure.put("reason", e.getMessage() == null ? "PDF 생성 실패" : e.getMessage());
+					failures.add(failure);
+					log.error("PDF ZIP item generation failed. CHCK_SNO=" + checkNumber, e);
+				}
+			}
+		}
+
+		if (successCount == 0) {
+			zipFile.delete();
+			result.put("resultCd", false);
+			result.put("resultMsg", "생성 가능한 PDF가 없습니다.");
+			result.put("failures", failures);
+			return result;
+		}
+
+		String token = UUID.randomUUID().toString();
+		getPdfZipJobs(request.getSession()).put(token, zipFile.getAbsolutePath());
+		result.put("resultCd", true);
+		result.put("token", token);
+		result.put("successCount", successCount);
+		result.put("failures", failures);
+		return result;
+	}
+
+	@RequestMapping(value = "/api/Exam_Pdf_Zip_Download_M", method = RequestMethod.GET)
+	public void Exam_Pdf_Zip_Download_M_API(
+			HttpServletRequest request,
+			HttpServletResponse response
+	) throws Exception {
+		String token = StringUtil.nvl(request.getParameter("token"), "");
+		String path = getPdfZipJobs(request.getSession()).remove(token);
+
+		if (path == null) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND, "PDF ZIP 작업을 찾을 수 없습니다.");
+			return;
+		}
+
+		File zipFile = new File(path);
+		if (!zipFile.isFile()) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND, "PDF ZIP 파일을 찾을 수 없습니다.");
+			return;
+		}
+
+		String zipName = "선택_PDF_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".zip";
+		response.setContentType("application/zip");
+		response.setHeader("Content-Disposition", buildAttachmentHeader(zipName));
+		response.setHeader("Content-Length", String.valueOf(zipFile.length()));
+
+		try (InputStream input = new FileInputStream(zipFile);
+			 OutputStream output = response.getOutputStream()) {
+			byte[] buffer = new byte[8192];
+			int length;
+			while ((length = input.read(buffer)) != -1) {
+				output.write(buffer, 0, length);
+			}
+			output.flush();
+		} finally {
+			if (!zipFile.delete()) {
+				log.warn("Temporary PDF ZIP delete failed: " + zipFile.getAbsolutePath());
+			}
+		}
+	}
+
+	@RequestMapping(value = "/api/Exam_Pdf_Zip_Cancel_M", method = RequestMethod.POST)
+	@ResponseBody
+	public Map<String, Object> Exam_Pdf_Zip_Cancel_M_API(HttpServletRequest request) {
+		String token = StringUtil.nvl(request.getParameter("token"), "");
+		String path = getPdfZipJobs(request.getSession()).remove(token);
+		if (path != null) {
+			new File(path).delete();
+		}
+
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("resultCd", true);
+		return result;
+	}
+
+	private ExamPdfDownloadData createExamPdfDownloadData(String checkNumber) throws Exception {
+		HashMap<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put("CHCK_SNO", checkNumber);
+		paramMap.put("ATFL_NO", "1");
+
+		Map<String, String> exam = pelsExamService.getDetail("ExamJsonDetail", paramMap);
+		if (exam == null) {
+			throw new IllegalArgumentException("시험 데이터를 찾을 수 없습니다.");
+		}
+
+		String physicalName = valueOrDefault(exam.get("ATFL_PHCL_NM"), "");
+		if ("".equals(physicalName)) {
+			throw new IllegalArgumentException("원본 PDF 정보를 찾을 수 없습니다.");
+		}
+
+		Object overlayClob = exam.get("WRTE_JSON_DCR");
+		String overlayJson = overlayClob instanceof Clob
+				? clobToString((Clob) overlayClob)
+				: valueOrDefault(overlayClob, "");
+		if ("".equals(overlayJson)) {
+			throw new IllegalArgumentException("Overlay JSON을 찾을 수 없습니다.");
+		}
+
+		String pdfPath = utilProperties.getProperty("PELS_IP_URL") + "/upload/" + physicalName;
+		byte[] pdfBytes = examPdfService.generateExamPdf(pdfPath, overlayJson);
+		String procedureName = valueOrDefault(exam.get("PRCDOC_NM"), "절차서");
+		String examName = valueOrDefault(exam.get("CHCK_TITL"), "시험");
+		String fileName = sanitizeFileName(procedureName + "_" + examName + "_" + checkNumber) + ".pdf";
+
+		return new ExamPdfDownloadData(pdfBytes, fileName);
+	}
+
+	private String getExamDisplayName(String checkNumber) {
+		try {
+			HashMap<String, Object> paramMap = new HashMap<String, Object>();
+			paramMap.put("CHCK_SNO", checkNumber);
+			paramMap.put("ATFL_NO", "1");
+			Map<String, String> exam = pelsExamService.getDetail("ExamJsonDetail", paramMap);
+			if (exam != null) {
+				String procedureName = valueOrDefault(exam.get("PRCDOC_NM"), "절차서");
+				String examName = valueOrDefault(exam.get("CHCK_TITL"), "시험");
+				return procedureName + " / " + examName + " (" + checkNumber + ")";
+			}
+		} catch (Exception ignored) {
+			log.warn("Failed to load exam name. CHCK_SNO=" + checkNumber, ignored);
+		}
+		return checkNumber;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Map<String, String> getPdfZipJobs(HttpSession session) {
+		synchronized (session) {
+			Object jobs = session.getAttribute("PELS_PDF_ZIP_JOBS");
+			if (jobs instanceof Map) {
+				return (Map<String, String>) jobs;
+			}
+			Map<String, String> newJobs = Collections.synchronizedMap(new HashMap<String, String>());
+			session.setAttribute("PELS_PDF_ZIP_JOBS", newJobs);
+			return newJobs;
+		}
+	}
+
+	private String uniqueZipEntryName(String fileName, Map<String, Integer> usedNames) {
+		Integer count = usedNames.get(fileName);
+		if (count == null) {
+			usedNames.put(fileName, 1);
+			return fileName;
+		}
+		usedNames.put(fileName, count + 1);
+		int dot = fileName.lastIndexOf('.');
+		String base = dot >= 0 ? fileName.substring(0, dot) : fileName;
+		String extension = dot >= 0 ? fileName.substring(dot) : "";
+		return base + "_" + (count + 1) + extension;
+	}
+
+	private String sanitizeFileName(String value) {
+		String sanitized = value == null ? "PDF" : value.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+		if ("".equals(sanitized)) sanitized = "PDF";
+		return sanitized.length() > 150 ? sanitized.substring(0, 150) : sanitized;
+	}
+
+	private String valueOrDefault(Object value, String defaultValue) {
+		if (value == null) return defaultValue;
+		String text = String.valueOf(value).trim();
+		return "".equals(text) || "null".equalsIgnoreCase(text) ? defaultValue : text;
+	}
+
+	private String buildAttachmentHeader(String fileName) throws UnsupportedEncodingException {
+		String encoded = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
+		return "attachment; filename=\"download.zip\"; filename*=UTF-8''" + encoded;
+	}
+
+	private static class ExamPdfDownloadData {
+		private final byte[] pdfBytes;
+		private final String fileName;
+
+		private ExamPdfDownloadData(byte[] pdfBytes, String fileName) {
+			this.pdfBytes = pdfBytes;
+			this.fileName = fileName;
+		}
 	}
 
 	/* 추가끝 */
