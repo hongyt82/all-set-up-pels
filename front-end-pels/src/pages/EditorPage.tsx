@@ -1246,15 +1246,33 @@ export function EditorPage() {
     [constraintDoc, setConstraintDoc]
   );
   const handleClearPage = useCallback(() => {
+    // 현재 페이지의 컴포넌트와 Rule이 함께 삭제되므로 실행 전 확인한다.
+    if (!window.confirm('현재 페이지의 모든 컴포넌트를 초기화하시겠습니까?')) {
+      return;
+    }
+
     wsRef.current?.clearPage();
   }, []);
   const handleClearAll = useCallback(() => {
+    // 전체 페이지의 컴포넌트와 Rule이 함께 삭제되므로 실행 전 확인한다.
+    if (!window.confirm('전체 페이지의 모든 컴포넌트를 초기화하시겠습니까?')) {
+      return;
+    }
+
     wsRef.current?.clearAll();
   }, []);
   const handleAutoDetectGlyphCheckboxes = useCallback(() => {
+    if (!window.confirm("현재 PDF의 '□' 문자를 찾아 체크박스를 자동 배치하시겠습니까?")) {
+      return;
+    }
+
     wsRef.current?.autoDetectGlyphCheckboxes?.();
   }, []);
   const handleAutoDetectCircleSlashByNumber = useCallback(() => {
+    if (!window.confirm('숫자 패턴을 찾아 ⌀ 를 자동 배치하시겠습니까?')) {
+      return;
+    }
+
     wsRef.current?.autoDetectCircleSlashByNumber?.();
   }, []);
 
