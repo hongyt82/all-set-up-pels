@@ -1258,6 +1258,7 @@ export function ReplayViewerPage() {
       return {
         key: `${event.EVENT_SNO}-${originalIndex}`,
         index: originalIndex,
+        event,
         displayIndex: originalIndex + 1,
         eventLabel,
         userName,
@@ -1269,6 +1270,42 @@ export function ReplayViewerPage() {
     });
 
   const totalEvents = events.length;
+
+  const handleDownloadReplayCsv = () => {
+    if (replayEventList.length === 0) {
+      alert('다운로드할 Replay 로그가 없습니다.');
+      return;
+    }
+
+    const escapeCsv = (value: unknown) => {
+      const text = String(value ?? '');
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const rows = [
+      ['순번', '이벤트 유형', '사용자', '수행자', '페이지', '발생일시'],
+      ...replayEventList.map(item => [
+        item.displayIndex,
+        item.eventLabel,
+        item.userName,
+        item.chkprBlngJbpsNm,
+        item.event.PAGE_CNT,
+        item.timeText,
+      ]),
+    ];
+    const csv = `\uFEFF${rows
+      .map(row => row.map(escapeCsv).join(','))
+      .join('\r\n')}`;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+
+    link.href = url;
+    link.download = `replay_log_${chckSno || 'export'}_${date}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <BaseLayout>
@@ -1474,8 +1511,14 @@ export function ReplayViewerPage() {
           className=" fixed
           left-4
           top-25
-          w-[360px]
+          w-[370px]
+          h-[520px]
+          min-w-[260px]
+          min-h-[240px]
+          max-w-[calc(100vw-2rem)]
           max-h-[80vh]
+          resize
+          overflow-hidden
           bg-slate-900
           text-slate-50
           border border-slate-700
@@ -1492,6 +1535,15 @@ export function ReplayViewerPage() {
             <div className="text-xs font-semibold">Replay 목록</div>
 
             <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="text-[10px] px-2 py-0.5 rounded bg-emerald-700 text-white hover:bg-emerald-600"
+                onClick={handleDownloadReplayCsv}
+                title="현재 목록을 CSV로 다운로드"
+              >
+                목록 다운로드
+              </button>
+
               <button
                 type="button"
                 className={`text-[10px] px-2 py-0.5 rounded ${
