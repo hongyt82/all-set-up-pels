@@ -75,6 +75,18 @@ const QUICK_TOOL_BY_CATEGORY: Partial<
       option: 'HH:mm',
       label: '시간',
     },
+    {
+      id: 'calendar_time_seconds',
+      type: 'calendar',
+      option: 'HH:mm:ss',
+      label: '시분초',
+    },
+    {
+      id: 'calendar_minute_seconds',
+      type: 'calendar',
+      option: 'mm:ss',
+      label: '분초',
+    },
   ],
 
   signature: [

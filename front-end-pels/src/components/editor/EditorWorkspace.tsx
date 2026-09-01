@@ -219,6 +219,20 @@ const CALENDAR_OPTIONS = {
     wPct: 0.18,
     hPct: 0.04,
   },
+  timeSeconds: {
+    option: 'HH:mm:ss',
+    icon: '🕰️',
+    label: '시분초',
+    wPct: 0.2,
+    hPct: 0.04,
+  },
+  minuteSeconds: {
+    option: 'mm:ss',
+    icon: '⏱️',
+    label: '분초',
+    wPct: 0.18,
+    hPct: 0.04,
+  },
 } as const;
 
 const getCalendarPreview = (option?: string) => {
@@ -1748,6 +1762,34 @@ export const EditorWorkspace = forwardRef<
     if (items.length === 0) return;
 
     const anchorY = Math.min(...items.map(o => o.yPct));
+    const anchorItem = items.find(o => o.yPct === anchorY);
+    const currentPageIndex = pages.findIndex(p => p.pageId === currentPageId);
+
+    // 선택 기준 컴포넌트가 페이지 경계를 넘으면 에디터 화면도 같은 페이지로 이동한다.
+    if (anchorItem && currentPageIndex !== -1 && deltaYPct !== 0) {
+      let nextAnchorY = anchorItem.yPct + deltaYPct;
+      let nextPageIndex = currentPageIndex;
+
+      if (deltaYPct > 0) {
+        while (
+          nextAnchorY + anchorItem.hPct > 1 &&
+          nextPageIndex < pages.length - 1
+        ) {
+          nextAnchorY -= 1;
+          nextPageIndex += 1;
+        }
+      } else {
+        while (nextAnchorY < 0 && nextPageIndex > 0) {
+          nextAnchorY += 1;
+          nextPageIndex -= 1;
+        }
+      }
+
+      if (nextPageIndex !== currentPageIndex) {
+        setCurrentPageId(pages[nextPageIndex].pageId);
+      }
+    }
+
     // const totalPages = getTotalPagesInternal();
 
     setOverlays(prev =>

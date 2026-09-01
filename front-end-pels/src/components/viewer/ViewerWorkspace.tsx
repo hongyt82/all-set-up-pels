@@ -1780,6 +1780,48 @@ export const ViewerWorkspace = forwardRef<
     return `${Number(digits.slice(0, 2))}:${digits.slice(2, 4)}`;
   };
 
+  const formatViewerTimeSeconds = (value?: string) => {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+
+    const match = raw.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+    if (match) {
+      return `${match[1].padStart(2, '0')}:${match[2]}:${match[3]}`;
+    }
+
+    const digits = raw.replace(/\D/g, '').slice(0, 6);
+    if (digits.length !== 6) return raw;
+
+    return `${digits.slice(0, 2)}:${digits.slice(2, 4)}:${digits.slice(4, 6)}`;
+  };
+
+  const formatViewerMinuteSeconds = (value?: string) => {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+
+    const match = raw.match(/^(\d{1,2}):(\d{2})$/);
+    if (match) {
+      return `${match[1].padStart(2, '0')}:${match[2]}`;
+    }
+
+    const digits = raw.replace(/\D/g, '').slice(0, 4);
+    if (digits.length !== 4) return raw;
+
+    return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+  };
+
+  const toMinuteSecondsPickerValue = (value?: string) => {
+    const displayValue = formatViewerMinuteSeconds(value);
+    return /^\d{2}:\d{2}$/.test(displayValue)
+      ? `00:${displayValue}`
+      : '';
+  };
+
+  const fromMinuteSecondsPickerValue = (value: string) => {
+    const match = value.match(/^\d{2}:(\d{2}):(\d{2})$/);
+    return match ? `${match[1]}:${match[2]}` : '';
+  };
+
   const formatViewerDateTime = (value?: string) => {
     const raw = String(value ?? '').trim();
 
@@ -2058,12 +2100,14 @@ export const ViewerWorkspace = forwardRef<
     displayValue,
     icon,
     onChange,
+    step,
   }: {
     value?: string;
     type: 'date' | 'datetime-local' | 'time';
     displayValue: string;
     icon: string;
     onChange: (value: string) => void;
+    step?: number;
   }) => {
     return (
       <div
@@ -2105,6 +2149,7 @@ export const ViewerWorkspace = forwardRef<
         <input
           type={type}
           value={value ?? ''}
+          step={step}
           onChange={e => onChange(e.currentTarget.value)}
           style={{
             position: 'absolute',
@@ -2321,6 +2366,33 @@ export const ViewerWorkspace = forwardRef<
             displayValue: formatViewerTime(ov.value),
             icon: '🕐',
             onChange: value => setDate(ov.uid, value, option),
+          });
+        }
+
+        if (option === 'HH:mm:ss') {
+          return renderFormattedPicker({
+            value: ov.value,
+            type: 'time',
+            step: 1,
+            displayValue: formatViewerTimeSeconds(ov.value),
+            icon: '🕰️',
+            onChange: value => setDate(ov.uid, value, option),
+          });
+        }
+
+        if (option === 'mm:ss') {
+          return renderFormattedPicker({
+            value: toMinuteSecondsPickerValue(ov.value),
+            type: 'time',
+            step: 1,
+            displayValue: formatViewerMinuteSeconds(ov.value),
+            icon: '⏱️',
+            onChange: value =>
+              setDate(
+                ov.uid,
+                fromMinuteSecondsPickerValue(value),
+                option
+              ),
           });
         }
 

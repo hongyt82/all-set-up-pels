@@ -151,6 +151,31 @@ const formatTimeForDisplay = (value: string) => {
   return `${hour}:${minute}`;
 };
 
+const formatTimeSecondsForDisplay = (value: string) => {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+
+  const match = raw.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (match) {
+    return `${match[1].padStart(2, '0')}:${match[2]}:${match[3]}`;
+  }
+
+  const digits = raw.replace(/\D/g, '').slice(0, 6);
+  if (digits.length !== 6) return raw;
+
+  return `${digits.slice(0, 2)}:${digits.slice(2, 4)}:${digits.slice(4, 6)}`;
+};
+
+const formatMinuteSecondsForDisplay = (value: string) => {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+
+  const digits = raw.replace(/\D/g, '').slice(0, 4);
+  if (digits.length !== 4) return raw;
+
+  return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+};
+
 const formatDateTimeForDisplay = (value: string) => {
   const raw = String(value ?? '').trim();
 
@@ -545,7 +570,11 @@ export async function exportFilledPdf(params: {
                   ? formatDateTimeForDisplay(raw)
                   : option === 'HH:mm'
                     ? formatTimeForDisplay(raw)
-                    : formatDateForDisplay(raw);
+                    : option === 'HH:mm:ss'
+                      ? formatTimeSecondsForDisplay(raw)
+                      : option === 'mm:ss'
+                        ? formatMinuteSecondsForDisplay(raw)
+                        : formatDateForDisplay(raw);
 
           if (txt) {
             page.drawRectangle({
