@@ -19,6 +19,7 @@ interface ConstraintEditorPanelProps {
   onRevert: () => void;
   onSave: () => void;
   onAppendSelectedIds: () => void;
+  onAddSelectedToDialog?: (target: 'dialoges' | 'qr_dialoges') => void;
   onDelete?: () => void;
   helperText?: string;
   onChangeHelperText?: (value: string) => void;
@@ -37,6 +38,7 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
   onRevert,
   onSave,
   onAppendSelectedIds,
+  onAddSelectedToDialog,
   onDelete,
   helperText,
   onChangeHelperText,
@@ -293,6 +295,25 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
                   : '선택 추가(groupby)'}
               </button>
             </div>
+
+            {mode === 'page' && onAddSelectedToDialog && (
+              <div className="flex flex-wrap justify-end gap-1">
+                <button
+                  type="button"
+                  className="px-2 py-0.5 rounded bg-cyan-800 hover:bg-cyan-700 text-[11px]"
+                  onClick={() => onAddSelectedToDialog('dialoges')}
+                >
+                  선택 → 다이얼로그
+                </button>
+                <button
+                  type="button"
+                  className="px-2 py-0.5 rounded bg-violet-800 hover:bg-violet-700 text-[11px]"
+                  onClick={() => onAddSelectedToDialog('qr_dialoges')}
+                >
+                  선택 → QR 다이얼로그
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-1">

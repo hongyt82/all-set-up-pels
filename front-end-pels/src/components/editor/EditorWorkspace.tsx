@@ -385,6 +385,8 @@ export interface EditorWorkspaceHandle {
   restoreFromJsonString: (json: string) => void;
   // 선택된 컴포넌트 ID
   getSelectedOverlayIds: () => string[];
+  // 선택된 컴포넌트 정보 (다이얼로그 JSON 생성용)
+  getSelectedOverlays: () => OverlayItem[];
 
   // treelist용: 현재 문서의 모든 circleslash title 목록
   // getAllCircleSlashTitles: () => string[];
@@ -2762,6 +2764,10 @@ export const EditorWorkspace = forwardRef<
       selected
         .map(uid => overlays.find(o => o.uid === uid)?.id)
         .filter((id): id is string => !!id),
+    getSelectedOverlays: () =>
+      selected
+        .map(uid => overlays.find(o => o.uid === uid))
+        .filter((overlay): overlay is OverlayItem => !!overlay),
     // getAllCircleSlashTitles: () =>
     //   overlays.filter(o => o.type === 'circleslash').map(o => o.title),
     getAllCircleSlashItems: () =>
