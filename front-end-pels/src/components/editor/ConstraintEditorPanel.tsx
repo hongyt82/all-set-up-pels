@@ -1,8 +1,10 @@
 // src/components/editor/ConstraintEditorPanel.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Rnd } from 'react-rnd';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
+import { search } from '@codemirror/search';
+import { EditorView } from '@codemirror/view';
 
 interface ConstraintSelection {
   page: number;
@@ -19,6 +21,7 @@ interface ConstraintEditorPanelProps {
   onRevert: () => void;
   onSave: () => void;
   onAppendSelectedIds: () => void;
+  onAddSelectedToDialog?: (target: 'dialoges' | 'qr_dialoges') => void;
   onDelete?: () => void;
   helperText?: string;
   onChangeHelperText?: (value: string) => void;
@@ -37,6 +40,7 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
   onRevert,
   onSave,
   onAppendSelectedIds,
+  onAddSelectedToDialog,
   onDelete,
   helperText,
   onChangeHelperText,
@@ -63,6 +67,49 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
 
   const [cursorInfo, setCursorInfo] = useState({ from: 0, to: 0 });
   const [canSave, setCanSave] = useState(true);
+
+  // 상위 상태 변경 때마다 확장을 새로 만들지 않아 Ctrl+F 검색창 상태를 유지한다.
+  const codeMirrorExtensions = useMemo(
+    () => [json(), search({ top: false })],
+    []
+  );
+
+  const codeMirrorBasicSetup = useMemo(
+    () => ({
+      lineNumbers: true,
+      foldGutter: true,
+      autocompletion: true,
+      bracketMatching: true,
+    }),
+    []
+  );
+
+  const codeMirrorHighlightTheme = useMemo(
+    () =>
+      EditorView.theme(
+        {
+          '.cm-activeLine': {
+            backgroundColor: 'rgba(37, 99, 235, 0.32) !important',
+            boxShadow: 'inset 2px 0 0 rgba(96, 165, 250, 0.3)',
+          },
+          '.cm-activeLineGutter': {
+            backgroundColor: 'rgba(37, 99, 235, 0.35) !important',
+            color: '#bfcde0 !important',
+          },
+          '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection':
+            {
+              backgroundColor: 'rgba(250, 204, 21, 0.38) !important',
+            },
+        },
+        { dark: true }
+      ),
+    []
+  );
+
+  const codeMirrorAllExtensions = useMemo(
+    () => [...codeMirrorExtensions, codeMirrorHighlightTheme],
+    [codeMirrorExtensions, codeMirrorHighlightTheme]
+  );
 
   const formulaTokens = [
     '<=',
@@ -293,6 +340,25 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
                   : '선택 추가(groupby)'}
               </button>
             </div>
+
+            {mode === 'page' && onAddSelectedToDialog && (
+              <div className="flex flex-wrap justify-end gap-1">
+                <button
+                  type="button"
+                  className="px-2 py-0.5 rounded bg-cyan-800 hover:bg-cyan-700 text-[11px]"
+                  onClick={() => onAddSelectedToDialog('dialoges')}
+                >
+                  선택 → 다이얼로그
+                </button>
+                <button
+                  type="button"
+                  className="px-2 py-0.5 rounded bg-violet-800 hover:bg-violet-700 text-[11px]"
+                  onClick={() => onAddSelectedToDialog('qr_dialoges')}
+                >
+                  선택 → QR 다이얼로그
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-1">
@@ -343,14 +409,9 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
               <CodeMirror
                 value={text}
                 height="100%"
-                extensions={[json()]}
+                extensions={codeMirrorAllExtensions}
                 theme="dark"
-                basicSetup={{
-                  lineNumbers: true,
-                  foldGutter: true,
-                  autocompletion: true,
-                  bracketMatching: true,
-                }}
+                basicSetup={codeMirrorBasicSetup}
                 style={{
                   height: '100%',
                   fontSize: '12px',

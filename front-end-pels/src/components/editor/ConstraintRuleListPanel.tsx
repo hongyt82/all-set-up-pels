@@ -25,10 +25,8 @@ export const ConstraintRuleListPanel: React.FC<
   onSelectRule,
   onClose,
 }) => {
-  if (!constraintDoc?.pages?.length) return null;
-
   // page가 number/string 혼재해도 매칭되도록
-  const pageRule = constraintDoc.pages.find(
+  const pageRule = constraintDoc?.pages?.find(
     (p: any) => Number(p.constraintPageNo) === Number(constraintPageNo)
   );
 
@@ -80,19 +78,18 @@ export const ConstraintRuleListPanel: React.FC<
         </button>
       </div>
 
-      {/* 맨 위: 이 페이지 전체 JSON 편집 (components 없어도 dialoges/qr_dialoges 때문에 pageRule은 존재할 수 있음) */}
-      {pageRule && (
-        <button
-          type="button"
-          onClick={() =>
-            onSelectRule({
-              page: displayPage,
-              constraintPageNo,
-              ruleId: '__PAGE_ALL__',
-              ids: allGroupIds,
-            })
-          }
-          className="
+      {/* 컴포넌트 Rule 유무와 관계없이 페이지 전체 JSON을 편집한다. */}
+      <button
+        type="button"
+        onClick={() =>
+          onSelectRule({
+            page: displayPage,
+            constraintPageNo,
+            ruleId: '__PAGE_ALL__',
+            ids: allGroupIds,
+          })
+        }
+        className="
             w-full
             text-left
             text-[11px]
@@ -105,18 +102,17 @@ export const ConstraintRuleListPanel: React.FC<
             gap-0.5
             mb-1
           "
-        >
-          <div className="flex items-center justify-between">
-            <span className="font-semibold">이 페이지 전체 JSON</span>
-            <span className="text-[10px] text-emerald-100">
-              rules: {rules.length}
-            </span>
-          </div>
-          <div className="text-[10px] text-emerald-100/80">
-            page {constraintPageNo} 의 전체 JSON
-          </div>
-        </button>
-      )}
+      >
+        <div className="flex items-center justify-between">
+          <span className="font-semibold">이 페이지 전체 JSON</span>
+          <span className="text-[10px] text-emerald-100">
+            rules: {rules.length}
+          </span>
+        </div>
+        <div className="text-[10px] text-emerald-100/80">
+          page {constraintPageNo} 의 전체 JSON
+        </div>
+      </button>
 
       {/* 개별 rule 목록 */}
       {rules.length === 0 ? (
