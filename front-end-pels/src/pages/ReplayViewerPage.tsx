@@ -273,6 +273,11 @@ function mapAttachmentEventName(eventType: number) {
   if (eventType === 6) return 'changeUrlAttachment';
   if (eventType === 7) return 'changeLayoutAttachment';
   if (eventType === 8) return 'removeAttachment';
+  // 입회점도 AttachmentPPCEventInfo의 이벤트명을 재사용한다.
+  if (eventType === 9) return 'addAttachment';
+  if (eventType === 10) return 'changeLayoutAttachment';
+  if (eventType === 11) return 'removeAttachment';
+  if (eventType === 12) return 'changeValueAttachment';
   return null;
 }
 
@@ -294,6 +299,14 @@ function getReplayEventLabel(eventType: number) {
       return '사진 크기 변경';
     case 8:
       return '사진 삭제';
+    case 9:
+      return '입회점 추가';
+    case 10:
+      return '입회점 이동';
+    case 11:
+      return '입회점 삭제';
+    case 12:
+      return '입회점 내용 수정';
     default:
       return '알 수 없는 이벤트';
   }
@@ -364,7 +377,11 @@ function buildBasePagesFromPdf(
       height: Number(matched?.height) || fallbackHeight,
       isChange: 'N',
       components: Array.isArray(matched?.components) ? matched.components : [],
-      attachments: [],
+      // 저장 JSON의 기존 첨부(사진·입회점)를 리플레이 시작 상태로 유지한다.
+      // 이벤트로 추가된 첨부만 사용하면 최초 JSON에 있던 auditorbox가 사라진다.
+      attachments: Array.isArray(matched?.attachments)
+        ? matched.attachments
+        : [],
     };
   });
 }
@@ -530,7 +547,24 @@ export function ReplayViewerPage() {
 
       nextLogicalPages.forEach(page => {
         const pageKey = String(page.pageKey);
-        activeAttachmentsByPageKey.set(pageKey, new Map<string, any>());
+        const initialAttachments: ReplayAttachmentItem[] = Array.isArray(
+          page.attachments
+        )
+          ? page.attachments
+          : [];
+
+        // 페이지 JSON에 처음부터 저장된 attachments도 리플레이의 기준 상태에 포함한다.
+        activeAttachmentsByPageKey.set(
+          pageKey,
+          new Map(
+            initialAttachments
+              .filter((attachment: ReplayAttachmentItem) => attachment?.id != null)
+              .map((attachment: ReplayAttachmentItem) => [
+                String(attachment.id),
+                attachment,
+              ])
+          )
+        );
       });
 
       const ensureAttachmentPageByKey = (pageKey: string) => {
@@ -709,6 +743,23 @@ export function ReplayViewerPage() {
           continue;
         }
 
+        if (eventName === 'changeValueAttachment' && attachment?.id) {
+          const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
+          if (!targetPage) continue;
+
+          const pageKey = String(targetPage.pageKey);
+          const pageMap = ensureAttachmentPageByKey(pageKey);
+          const prev = pageMap.get(attachment.id);
+
+          pageMap.set(attachment.id, {
+            ...prev,
+            ...attachment,
+            type: 'auditorbox',
+            text: attachment.text ?? prev?.text ?? '',
+          });
+          continue;
+        }
+
         if (eventName === 'removeAttachment' && attachment?.id) {
           const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
           if (!targetPage) continue;
@@ -883,13 +934,13 @@ export function ReplayViewerPage() {
         const nextEvents: ReplayEventItem[] = rawEventRows
           .filter(isRecord)
           .map((row: any) => {
+            const eventType = Number(row.EVENT_TYP_SQNO);
             const nestedStroke = row.STROKE ?? null;
             // const nestedImage = row.IMAGE ?? null;
 
             const mappedStroke =
               nestedStroke ??
-              (Number(row.EVENT_TYP_SQNO) === 3 ||
-              Number(row.EVENT_TYP_SQNO) === 4
+              (eventType === 3 || eventType === 4
                 ? {
                     X_CRDNT: row.STRK_X_CRDNT ?? null,
                     Y_CRDNT: row.STRK_Y_CRDNT ?? null,
@@ -898,51 +949,64 @@ export function ReplayViewerPage() {
                   }
                 : null);
 
+            const isImageEvent = eventType >= 5 && eventType <= 8;
+            const isInspPointEvent = eventType >= 9 && eventType <= 12;
+            const attachmentSource = isInspPointEvent
+              ? row.INSP_POINT ?? null
+              : row.IMAGE ?? null;
+
             const mappedImage =
-              Number(row.EVENT_TYP_SQNO) >= 5 && Number(row.EVENT_TYP_SQNO) <= 8
+              isImageEvent || isInspPointEvent
                 ? {
                     id: String(
-                      row.IMG_ID ?? row.IMAGE_SEQ ?? row.IMAGE?.id ?? ''
+                      isInspPointEvent
+                        ? row.INSP_POINT_SEQ ?? attachmentSource?.id ?? ''
+                        : row.IMG_ID ?? row.IMAGE_SEQ ?? attachmentSource?.id ?? ''
                     ),
-                    type: row.IMAGE?.type ?? 'camera',
+                    type: isInspPointEvent
+                      ? 'auditorbox'
+                      : attachmentSource?.type ?? 'camera',
+                    text: isInspPointEvent
+                      ? attachmentSource?.CMP_JSON_DCR ?? row.CMP_JSON_DCR ?? null
+                      : attachmentSource?.text ?? null,
 
                     x:
-                      row.IMAGE?.x ??
-                      row.IMAGE?.posX ??
-                      row.IMAGE?.X_CRDNT ??
+                      attachmentSource?.x ??
+                      attachmentSource?.posX ??
+                      attachmentSource?.X_CRDNT ??
                       row.IMG_X_CRDNT ??
                       0,
 
                     y:
-                      row.IMAGE?.y ??
-                      row.IMAGE?.posY ??
-                      row.IMAGE?.Y_CRDNT ??
+                      attachmentSource?.y ??
+                      attachmentSource?.posY ??
+                      attachmentSource?.Y_CRDNT ??
                       row.IMG_Y_CRDNT ??
                       0,
 
                     width:
-                      row.IMAGE?.width ??
-                      row.IMAGE?.WDTH_NUMV ??
+                      attachmentSource?.width ??
+                      attachmentSource?.WDTH_NUMV ??
                       row.WDTH_NUMV ??
                       0,
 
                     height:
-                      row.IMAGE?.height ??
-                      row.IMAGE?.HDTH_NUMV ??
+                      attachmentSource?.height ??
+                      attachmentSource?.HDTH_NUMV ??
                       row.HDTH_NUMV ??
                       0,
 
                     fileUrl:
-                      row.IMAGE?.fileUrl ??
-                      row.IMAGE?.url ??
-                      row.IMAGE?.URL_INFO ??
+                      attachmentSource?.fileUrl ??
+                      attachmentSource?.url ??
+                      attachmentSource?.URL_INFO ??
                       row.URL_INFO ??
                       null,
 
                     url:
-                      row.IMAGE?.url ??
-                      row.IMAGE?.fileUrl ??
-                      row.IMAGE?.URL_INFO ??
+                      attachmentSource?.url ??
+                      attachmentSource?.fileUrl ??
+                      attachmentSource?.URL_INFO ??
                       row.URL_INFO ??
                       null,
                   }
