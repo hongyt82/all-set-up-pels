@@ -202,7 +202,7 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
     let s = JSON.stringify(obj, null, 2);
 
     s = s.replace(
-      /\{\s*[\r\n]+\s*"id"\s*:\s*"([^"]+)"\s*[\r\n]+\s*\}/g,
+      /\{\s*[\r\n]+\s*"id"\s*:\s*"([^"]+)"\s*[\r\n]+\s*}/g,
       '{ "id": "$1" }'
     );
 
