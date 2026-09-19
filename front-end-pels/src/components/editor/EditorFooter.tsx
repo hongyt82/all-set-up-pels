@@ -28,8 +28,25 @@ export function EditorFooter({
 
   const isDisabled = totalPages === 0;
 
+  const handlePageWheel = (event: React.WheelEvent<HTMLElement>) => {
+    if (isDisabled || event.deltaY === 0) return;
+
+    event.preventDefault();
+
+    if (event.deltaY < 0) {
+      onPrevPage?.();
+      return;
+    }
+
+    onNextPage?.();
+  };
+
   return (
-    <footer className="editor-footer h-[32px] border-t border-gray-600 flex items-center justify-between shadow-sm flex-shrink-0 overflow-hidden px-2 bg-gray-800 min-w-[800px]">
+    <footer
+      className="editor-footer h-[32px] border-t border-gray-600 flex items-center justify-between shadow-sm flex-shrink-0 overflow-hidden px-2 bg-gray-800 min-w-[800px]"
+      onWheel={handlePageWheel}
+      title="마우스 휠로 페이지 이동"
+    >
       {/* 좌측: 페이지 네비게이션 */}
       <div className="flex items-center space-x-2 flex-shrink-0 min-w-[160px]">
         <button
