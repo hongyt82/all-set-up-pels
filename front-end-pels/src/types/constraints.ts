@@ -52,7 +52,7 @@ export interface ConstraintPageRule {
   dialoges?: {
     sectionId?: string;
     title?: string;
-    columnes: {
+    columns: {
       sectionId?: string;
       title?: string;
       controls: {
@@ -71,7 +71,7 @@ export interface ConstraintPageRule {
     title: string;
     qr: string;
     targetPdfPageNo: number; // 모바일 연동 규격상 필드명 유지
-    columnes: {
+    columns: {
       sectionId?: string;
       title?: string;
       controls: {

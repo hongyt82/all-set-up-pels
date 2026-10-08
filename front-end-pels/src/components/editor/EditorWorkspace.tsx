@@ -1436,9 +1436,9 @@ export const EditorWorkspace = forwardRef<
         const hasComponents =
           Array.isArray(p.components) && p.components.length > 0;
 
-        const hasDialoges = Array.isArray(p.dialoges) && p.dialoges.length > 0;
+        const hasDialog = Array.isArray(p.dialoges) && p.dialoges.length > 0;
 
-        const hasQrDialoges =
+        const hasQrDialog =
           Array.isArray(p.qr_dialoges) && p.qr_dialoges.length > 0;
 
         const hasSections = Array.isArray(p.sections) && p.sections.length > 0;
@@ -1451,8 +1451,8 @@ export const EditorWorkspace = forwardRef<
 
         return (
           hasComponents ||
-          hasDialoges ||
-          hasQrDialoges ||
+          hasDialog ||
+          hasQrDialog ||
           hasSections ||
           hasMoveToPage ||
           hasFormDrawing

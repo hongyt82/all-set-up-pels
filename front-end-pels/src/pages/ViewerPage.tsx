@@ -136,11 +136,11 @@ export function ViewerPage() {
     null
   );
 
-  // ===== dialog / qr_dialoges 상태 =====
+  // ===== dialog / qr_dialog 상태 =====
   type ActiveDialog = {
     kind: 'group' | 'qr';
     page: number; // logical page
-    dialoges: any[]; // 시간별 dialog 리스트 (항상 배열)
+    dialog: any[]; // 시간별 dialog 리스트 (항상 배열)
     meta?: any; // qr 객체 등 원본(선택)
   };
 
@@ -179,13 +179,13 @@ export function ViewerPage() {
       p => Number(p.constraintPageNo) === Number(constraintPageNo)
     );
 
-    const dialoges = rulePage?.dialoges;
-    if (!dialoges || dialoges.length === 0) return;
+    const dialog = rulePage?.dialoges;
+    if (!dialog || dialog.length === 0) return;
 
     setActiveDialog({
       kind: 'group',
       page: logicalPage,
-      dialoges,
+      dialog,
     });
     setSelectedDialogIdx(0);
     setDialogTag('DialogGroupInPdfPage');
@@ -220,12 +220,12 @@ export function ViewerPage() {
     if (!targetLogicalPage) return;
 
     const first = matches[0];
-    const dialoges = first.dialoges ?? first.dialogs ?? matches;
+    const dialog = first.dialoges ?? first.dialogs ?? matches;
 
     setActiveDialog({
       kind: 'qr',
       page: targetLogicalPage,
-      dialoges,
+      dialog,
       meta: first,
     });
     setSelectedDialogIdx(0);
@@ -254,12 +254,12 @@ export function ViewerPage() {
       ? getLogicalPageByConstraintPageNo(targetPdfPageNo)
       : logicalPage;
 
-    const dialoges = first.dialoges ?? first.dialogs ?? qrs;
+    const dialog = first.dialoges ?? first.dialogs ?? qrs;
 
     setActiveDialog({
       kind: 'qr',
       page: targetLogicalPage,
-      dialoges,
+      dialog,
       meta: first,
     });
     setSelectedDialogIdx(0);
@@ -1478,13 +1478,13 @@ export function ViewerPage() {
             <div className="p-3 border-b flex justify-between items-center">
               <div className="font-semibold flex gap-2 items-center">
                 시간:
-                {(activeDialog.dialoges?.length ?? 0) > 1 ? (
+                {(activeDialog.dialog?.length ?? 0) > 1 ? (
                   <select
                     value={selectedDialogIdx}
                     onChange={e => setSelectedDialogIdx(Number(e.target.value))}
                     className="border px-2 py-1 text-sm"
                   >
-                    {activeDialog.dialoges.map((dlg: any, idx: number) => (
+                    {activeDialog.dialog.map((dlg: any, idx: number) => (
                       <option key={idx} value={idx}>
                         {dlg.title ?? `#${idx + 1}`}
                       </option>
@@ -1492,7 +1492,7 @@ export function ViewerPage() {
                   </select>
                 ) : (
                   <span className="text-sm text-slate-600">
-                    {activeDialog.dialoges?.[0]?.title ?? ''}
+                    {activeDialog.dialog?.[0]?.title ?? ''}
                   </span>
                 )}
               </div>
@@ -1511,12 +1511,12 @@ export function ViewerPage() {
 
             <div className="p-4 space-y-3">
               {(() => {
-                const dlg = activeDialog.dialoges?.[selectedDialogIdx];
+                const dlg = activeDialog.dialog?.[selectedDialogIdx];
                 if (!dlg) return null;
 
                 return (
                   <div>
-                    {dlg.columnes?.map((col: any, ci: number) => (
+                    {dlg.columns?.map((col: any, ci: number) => (
                       <div key={ci} className="mb-3">
                         <div className="text-sm font-medium mb-1">
                           {col.title}

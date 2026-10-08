@@ -63,9 +63,9 @@ function hasRuleData(ruleJson: any) {
       const hasComponents =
         Array.isArray(p.components) && p.components.length > 0;
 
-      const hasDialoges = Array.isArray(p.dialoges) && p.dialoges.length > 0;
+      const hasDialog = Array.isArray(p.dialoges) && p.dialoges.length > 0;
 
-      const hasQrDialoges =
+      const hasQrDialog =
         Array.isArray(p.qr_dialoges) && p.qr_dialoges.length > 0;
 
       const hasSections = Array.isArray(p.sections) && p.sections.length > 0;
@@ -78,8 +78,8 @@ function hasRuleData(ruleJson: any) {
 
       return (
         hasComponents ||
-        hasDialoges ||
-        hasQrDialoges ||
+        hasDialog ||
+        hasQrDialog ||
         hasSections ||
         hasMoveToPage ||
         hasFormDrawing
@@ -217,15 +217,15 @@ function cleanupConstraintRulesByDeletedIds(
     return controls.filter(ctrl => !deletedSet.has(String(ctrl.id)));
   };
 
-  const cleanupDialoges = (dialoges: any[] | undefined): any[] | undefined => {
-    if (!Array.isArray(dialoges)) return dialoges;
+  const cleanupDialog = (dialog: any[] | undefined): any[] | undefined => {
+    if (!Array.isArray(dialog)) return dialog;
 
-    return dialoges
+    return dialog
       .map(dialog => ({
         ...dialog,
         controls: cleanupControls(dialog.controls),
-        columnes: Array.isArray(dialog.columnes)
-          ? dialog.columnes
+        columns: Array.isArray(dialog.columns)
+          ? dialog.columns
               .map((col: any) => ({
                 ...col,
                 controls: cleanupControls(col.controls),
@@ -233,14 +233,14 @@ function cleanupConstraintRulesByDeletedIds(
               .filter((col: any) => {
                 return !Array.isArray(col.controls) || col.controls.length > 0;
               })
-          : dialog.columnes,
+          : dialog.columns,
         tabs: Array.isArray(dialog.tabs)
           ? dialog.tabs
               .map((tab: any) => ({
                 ...tab,
                 controls: cleanupControls(tab.controls),
-                columnes: Array.isArray(tab.columnes)
-                  ? tab.columnes
+                columns: Array.isArray(tab.columns)
+                  ? tab.columns
                       .map((col: any) => ({
                         ...col,
                         controls: cleanupControls(col.controls),
@@ -251,26 +251,26 @@ function cleanupConstraintRulesByDeletedIds(
                           col.controls.length > 0
                         );
                       })
-                  : tab.columnes,
+                  : tab.columns,
               }))
               .filter((tab: any) => {
                 const hasControls =
                   Array.isArray(tab.controls) && tab.controls.length > 0;
-                const hasColumnes =
-                  Array.isArray(tab.columnes) && tab.columnes.length > 0;
+                const hasColumns =
+                  Array.isArray(tab.columns) && tab.columns.length > 0;
 
-                return hasControls || hasColumnes;
+                return hasControls || hasColumns;
               })
           : dialog.tabs,
       }))
       .filter(dialog => {
         const hasControls =
           Array.isArray(dialog.controls) && dialog.controls.length > 0;
-        const hasColumnes =
-          Array.isArray(dialog.columnes) && dialog.columnes.length > 0;
+        const hasColumns =
+          Array.isArray(dialog.columns) && dialog.columns.length > 0;
         const hasTabs = Array.isArray(dialog.tabs) && dialog.tabs.length > 0;
 
-        return hasControls || hasColumnes || hasTabs;
+        return hasControls || hasColumns || hasTabs;
       });
   };
 
@@ -397,8 +397,8 @@ function cleanupConstraintRulesByDeletedIds(
             return hasSomething;
           }),
 
-        dialoges: cleanupDialoges(page.dialoges),
-        qr_dialoges: cleanupDialoges(page.qr_dialoges),
+        dialoges: cleanupDialog(page.dialoges),
+        qr_dialoges: cleanupDialog(page.qr_dialoges),
         sections: cleanupSections(page.sections),
         movetopage: Array.isArray(page.movetopage)
           ? page.movetopage.filter(
@@ -425,10 +425,10 @@ function cleanupConstraintRulesByDeletedIds(
       const hasComponents =
         Array.isArray(page.components) && page.components.length > 0;
 
-      const hasDialoges =
+      const hasDialog =
         Array.isArray(page.dialoges) && page.dialoges.length > 0;
 
-      const hasQrDialoges =
+      const hasQrDialog =
         Array.isArray(page.qr_dialoges) && page.qr_dialoges.length > 0;
 
       const hasSections =
@@ -442,8 +442,8 @@ function cleanupConstraintRulesByDeletedIds(
 
       return (
         hasComponents ||
-        hasDialoges ||
-        hasQrDialoges ||
+        hasDialog ||
+        hasQrDialog ||
         hasSections ||
         hasMoveToPage ||
         hasFormDrawing
@@ -503,8 +503,8 @@ export function EditorPage() {
         components: Array.isArray(srcPageRule.components)
           ? srcPageRule.components.map(rule => remapComponentRule(rule, idMap))
           : [],
-        dialoges: remapDialoges(srcPageRule.dialoges, idMap),
-        qr_dialoges: remapDialoges(srcPageRule.qr_dialoges, idMap),
+        dialoges: remapDialog(srcPageRule.dialoges, idMap),
+        qr_dialoges: remapDialog(srcPageRule.qr_dialoges, idMap),
       };
 
       const idx = pages.findIndex(
@@ -557,19 +557,19 @@ export function EditorPage() {
         }))
       : undefined;
 
-  const remapDialoges = (
-    dialoges: any[] | undefined,
+  const remapDialog = (
+    dialog: any[] | undefined,
     idMap: Record<string, string>
   ): any[] | undefined =>
-    Array.isArray(dialoges)
-      ? dialoges.map(dialog => ({
+    Array.isArray(dialog)
+      ? dialog.map(dialog => ({
           ...dialog,
-          columnes: Array.isArray(dialog.columnes)
-            ? dialog.columnes.map((col: any) => ({
+          columns: Array.isArray(dialog.columns)
+            ? dialog.columns.map((col: any) => ({
                 ...col,
                 controls: remapControls(col.controls, idMap),
               }))
-            : dialog.columnes,
+            : dialog.columns,
         }))
       : undefined;
 
@@ -767,8 +767,8 @@ export function EditorPage() {
                 remapComponentRule(rule, idMap)
               )
             : [],
-          dialoges: remapDialoges(srcPageRule.dialoges, idMap),
-          qr_dialoges: remapDialoges(srcPageRule.qr_dialoges, idMap),
+          dialoges: remapDialog(srcPageRule.dialoges, idMap),
+          qr_dialoges: remapDialog(srcPageRule.qr_dialoges, idMap),
         };
 
         const idx = pages.findIndex(
@@ -1060,10 +1060,10 @@ export function EditorPage() {
             const hasFormDrawing =
               Array.isArray(p.formdrawing) && p.formdrawing.length > 0;
 
-            const hasDialoges =
+            const hasDialog =
               Array.isArray(p.dialoges) && p.dialoges.length > 0;
 
-            const hasQrDialoges =
+            const hasQrDialog =
               Array.isArray(p.qr_dialoges) && p.qr_dialoges.length > 0;
 
             const hasSections =
@@ -1073,8 +1073,8 @@ export function EditorPage() {
               hasComponentRule ||
               hasMoveToPage ||
               hasFormDrawing ||
-              hasDialoges ||
-              hasQrDialoges ||
+              hasDialog ||
+              hasQrDialog ||
               hasSections
             );
           });
@@ -2140,7 +2140,7 @@ export function EditorPage() {
               const existingIds = new Set<string>();
 
               for (const dialog of pageJson[target] ?? []) {
-                for (const column of dialog.columnes ?? []) {
+                for (const column of dialog.columns ?? []) {
                   for (const control of column.controls ?? []) {
                     if (control?.id) existingIds.add(String(control.id));
                   }
@@ -2167,32 +2167,32 @@ export function EditorPage() {
               };
 
               if (target === 'qr_dialoges') {
-                const qrDialoges = [...(pageJson.qr_dialoges ?? [])];
-                const lastQrDialog = qrDialoges.at(-1);
+                const qrDialog = [...(pageJson.qr_dialoges ?? [])];
+                const lastQrDialog = qrDialog.at(-1);
 
                 if (lastQrDialog) {
                   // 이미 만든 QR 다이얼로그에는 컬럼만 이어서 추가한다.
-                  lastQrDialog.columnes = [
-                    ...(lastQrDialog.columnes ?? []),
+                  lastQrDialog.columns = [
+                    ...(lastQrDialog.columns ?? []),
                     column,
                   ];
                 } else {
-                  qrDialoges.push({
+                  qrDialog.push({
                     qr: '',
                     title: '',
                     targetPdfPageNo: String(
                       pageJson.constraintPageNo ??
                         constraintSelection.constraintPageNo
                     ),
-                    columnes: [column],
+                    columns: [column],
                   });
                 }
 
-                pageJson.qr_dialoges = qrDialoges;
+                pageJson.qr_dialoges = qrDialog;
               } else {
                 pageJson.dialoges = [
                   ...(pageJson.dialoges ?? []),
-                  { columnes: [column] },
+                  { columns: [column] },
                 ];
               }
 
@@ -2383,11 +2383,30 @@ export function EditorPage() {
 
             if (ruleId === '__PAGE_ALL__') {
               // 컴포넌트 Rule이 없어도 dialoges/qr_dialoges를 입력할 수 있도록
-              // 현재 페이지의 기본 JSON을 만들어 편집 창에 표시한다.
-              const pageJson = pageRule ?? {
+              // 현재 에디터 오버레이를 기준으로 페이지 JSON을 만들어 표시한다.
+              // 저장 전 페이지 이동/도면조회도 movetopage/formdrawing에 즉시 반영된다.
+              let pageJson = pageRule ?? {
                 constraintPageNo,
                 components: [],
               };
+
+              try {
+                const liveRuleJson = wsRef.current?.exportRuleJsonString?.();
+                const liveRuleDoc = liveRuleJson
+                  ? JSON.parse(liveRuleJson)
+                  : null;
+                const livePageRule = liveRuleDoc?.pages?.find(
+                  (p: any) =>
+                    Number(p.constraintPageNo) === Number(constraintPageNo)
+                );
+
+                if (livePageRule) pageJson = livePageRule;
+              } catch (error) {
+                console.warn(
+                  '[EditorPage] 페이지 전체 Rule JSON 생성 실패:',
+                  error
+                );
+              }
 
               setConstraintHelperText('');
               setConstraintSelection({
