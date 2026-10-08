@@ -3,7 +3,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Rnd } from 'react-rnd';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
-import { search } from '@codemirror/search';
+import { getSearchQuery, search } from '@codemirror/search';
+import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 
 interface ConstraintSelection {
@@ -70,7 +71,23 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
 
   // 상위 상태 변경 때마다 확장을 새로 만들지 않아 Ctrl+F 검색창 상태를 유지한다.
   const codeMirrorExtensions = useMemo(
-    () => [json(), search({ top: false })],
+    () => [
+      json(),
+      search({ top: false }),
+      EditorState.phrases.of({
+        Find: '찾기',
+        Replace: '바꾸기',
+        next: '다음',
+        previous: '이전',
+        all: '전체',
+        'match case': '대소문자',
+        regexp: '정규식',
+        'by word': '단어 단위',
+        replace: '바꾸기',
+        'replace all': '모두 바꾸기',
+        close: '닫기',
+      }),
+    ],
     []
   );
 
@@ -100,15 +117,66 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
             {
               backgroundColor: 'rgba(250, 204, 21, 0.38) !important',
             },
+          '.cm-panels': {
+            fontSize: '11px',
+          },
+          '.cm-search': {
+            padding: '4px 6px',
+            lineHeight: '1',
+          },
+          '.cm-search .cm-textfield': {
+            minHeight: '20px',
+            padding: '2px 4px',
+            fontSize: '11px',
+          },
+          '.cm-search .cm-button': {
+            minHeight: '20px',
+            padding: '2px 6px',
+            fontSize: '11px',
+          },
+          '.cm-search label': {
+            fontSize: '11px',
+            whiteSpace: 'nowrap',
+          },
         },
         { dark: true }
       ),
     []
   );
 
+  const replaceAllNoticeExtension = useMemo(
+    () =>
+      EditorView.updateListener.of(update => {
+        update.transactions.forEach(transaction => {
+          if (!transaction.isUserEvent('input.replace.all')) return;
+
+          const query = getSearchQuery(transaction.startState);
+          const cursor = query.getCursor(transaction.startState);
+          let changedCount = 0;
+
+          for (let match = cursor.next(); !match.done; match = cursor.next()) {
+            changedCount += 1;
+          }
+
+          window.setTimeout(() => {
+            alert(`전체 바꾸기가 완료되었습니다.\n${changedCount}개 항목을 변경했습니다.`);
+          }, 0);
+        });
+      }),
+    []
+  );
+
   const codeMirrorAllExtensions = useMemo(
-    () => [...codeMirrorExtensions, codeMirrorHighlightTheme],
-    [codeMirrorExtensions, codeMirrorHighlightTheme]
+    () => [
+      ...codeMirrorExtensions,
+      codeMirrorHighlightTheme,
+      replaceAllNoticeExtension,
+    ],
+    [
+      codeMirrorExtensions,
+      codeMirrorHighlightTheme,
+      replaceAllNoticeExtension,
+    ]
   );
 
   const formulaTokens = [
@@ -136,6 +204,24 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
     setJsonError(nextJsonError);
     setCanSave(!nextJsonError);
   }, [text]);
+
+  // Rule 편집창이 열려 있을 때 Ctrl/⌘ + S는 상단 저장 버튼과 동일하게 동작한다.
+  useEffect(() => {
+    const handleSaveShortcut = (event: KeyboardEvent) => {
+      const isSaveShortcut =
+        (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's';
+
+      if (!isSaveShortcut) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (canSave) onSave();
+    };
+
+    window.addEventListener('keydown', handleSaveShortcut);
+    return () => window.removeEventListener('keydown', handleSaveShortcut);
+  }, [canSave, onSave]);
 
   const insertAtCursor = (insertText: string) => {
     const view = editorRef.current?.view;
@@ -312,7 +398,7 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
               <span className="text-slate-300 min-w-[62px] mt-[2px]">
                 선택된 ID
               </span>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex-1 min-w-0 max-h-28 overflow-y-auto pr-1 flex flex-wrap content-start gap-1">
                 {ids.map(id => (
                   <span
                     key={id}

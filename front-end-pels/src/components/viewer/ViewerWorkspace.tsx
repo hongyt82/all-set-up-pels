@@ -803,6 +803,16 @@ export const ViewerWorkspace = forwardRef<
     }
   };
 
+  // JavaScript Number 연산에서 발생하는 부동소수점 오차(예: 70.6 - 40)를
+  // 화면과 저장값에 그대로 노출하지 않도록 계산 결과만 정리한다.
+  const formatCalculationValue = (value: unknown): string => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return value == null ? '' : String(value);
+    }
+
+    return String(Number(value.toFixed(12)));
+  };
+
   // ---------------------------------------------------------------------------
   // 상위에서 내려준 overlaysByPage → 현재 페이지 overlays 로 반영
   // ---------------------------------------------------------------------------
@@ -1263,7 +1273,11 @@ export const ViewerWorkspace = forwardRef<
     working: OverlayItem[],
     page: number,
     calc: any
-  ): Array<{ targetId: string; value: string }> => {
+  ): Array<{
+    targetId: string;
+    value: string;
+    constraintValue?: string;
+  }> => {
     const ids: string[] = calc.sourceIds ?? [calc.startId, calc.endId];
     const targetId = calc.targetId ? String(calc.targetId) : '';
     if (ids.length < 2 || !ids[0] || !ids[1] || !targetId) return [];
@@ -1291,7 +1305,15 @@ export const ViewerWorkspace = forwardRef<
 
     const hour = String(Math.floor(difference / 60)).padStart(2, '0');
     const minute = String(difference % 60).padStart(2, '0');
-    return [{ targetId, value: `${hour}:${minute}` }];
+    return [
+      {
+        targetId,
+        // 화면과 저장값은 기존처럼 HH:mm으로 유지한다.
+        value: `${hour}:${minute}`,
+        // Rule 판정은 Android와 동일하게 총 분값을 사용한다.
+        constraintValue: String(difference),
+      },
+    ];
   };
 
   const applyConstraintsCascade = (startUid: string, startRawValue: string) => {
@@ -1344,7 +1366,11 @@ export const ViewerWorkspace = forwardRef<
 
           if (Array.isArray(calculations)) {
             calculations.forEach((calc: any) => {
-              const results: Array<{ targetId: string; value: string }> = [];
+              const results: Array<{
+                targetId: string;
+                value: string;
+                constraintValue?: string;
+              }> = [];
 
               if (calc.emptyWhen) {
                 const isEmpty = evaluateRuleExpression(calc.emptyWhen, context);
@@ -1418,7 +1444,7 @@ export const ViewerWorkspace = forwardRef<
                 const value = evaluateRuleExpression(calc.expression, context);
                 results.push({
                   targetId: String(calc.targetId),
-                  value: value == null ? '' : String(value),
+                  value: formatCalculationValue(value),
                 });
               }
 
@@ -1431,7 +1457,7 @@ export const ViewerWorkspace = forwardRef<
                 );
 
                 if (calc.chain) {
-                  enqueueTarget(target, r.value);
+                  enqueueTarget(target, r.constraintValue ?? r.value);
                 }
               });
             });
@@ -1812,9 +1838,7 @@ export const ViewerWorkspace = forwardRef<
 
   const toMinuteSecondsPickerValue = (value?: string) => {
     const displayValue = formatViewerMinuteSeconds(value);
-    return /^\d{2}:\d{2}$/.test(displayValue)
-      ? `00:${displayValue}`
-      : '';
+    return /^\d{2}:\d{2}$/.test(displayValue) ? `00:${displayValue}` : '';
   };
 
   const fromMinuteSecondsPickerValue = (value: string) => {
@@ -2388,11 +2412,7 @@ export const ViewerWorkspace = forwardRef<
             displayValue: formatViewerMinuteSeconds(ov.value),
             icon: '⏱️',
             onChange: value =>
-              setDate(
-                ov.uid,
-                fromMinuteSecondsPickerValue(value),
-                option
-              ),
+              setDate(ov.uid, fromMinuteSecondsPickerValue(value), option),
           });
         }
 

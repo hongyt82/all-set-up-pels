@@ -174,6 +174,32 @@ function cleanupConstraintRulesByDeletedIds(
   const ids = Array.from(new Set(deletedIds.filter(Boolean).map(String)));
   const deletedSet = new Set(ids);
 
+  // movetopage/formdrawing은 components와 별도 배열로 저장된다.
+  // Rule을 다시 불러온 뒤에는 복원용 ID가 "타입_제약페이지_순번" 형식이므로,
+  // 해당 순번을 함께 제거해야 복원 effect가 삭제한 영역을 되살리지 않는다.
+  const getDeletedRuleOnlyIndexes = (type: 'movetopage' | 'formdrawing') => {
+    const indexesByPage = new Map<number, Set<number>>();
+    const pattern = new RegExp(`^${type}_(\\d+)_(\\d+)$`);
+
+    ids.forEach(id => {
+      const match = pattern.exec(id);
+      if (!match) return;
+
+      const constraintPageNo = Number(match[1]);
+      const index = Number(match[2]);
+      if (!Number.isFinite(constraintPageNo) || !Number.isFinite(index)) return;
+
+      const indexes = indexesByPage.get(constraintPageNo) ?? new Set<number>();
+      indexes.add(index);
+      indexesByPage.set(constraintPageNo, indexes);
+    });
+
+    return indexesByPage;
+  };
+
+  const deletedMoveToPageIndexes = getDeletedRuleOnlyIndexes('movetopage');
+  const deletedFormDrawingIndexes = getDeletedRuleOnlyIndexes('formdrawing');
+
   const cleanupTreeItems = (items: any[] | undefined): any[] | undefined => {
     if (!Array.isArray(items)) return items;
 
@@ -374,6 +400,22 @@ function cleanupConstraintRulesByDeletedIds(
         dialoges: cleanupDialoges(page.dialoges),
         qr_dialoges: cleanupDialoges(page.qr_dialoges),
         sections: cleanupSections(page.sections),
+        movetopage: Array.isArray(page.movetopage)
+          ? page.movetopage.filter(
+              (_: any, index: number) =>
+                !deletedMoveToPageIndexes
+                  .get(Number(page.constraintPageNo))
+                  ?.has(index + 1)
+            )
+          : page.movetopage,
+        formdrawing: Array.isArray(page.formdrawing)
+          ? page.formdrawing.filter(
+              (_: any, index: number) =>
+                !deletedFormDrawingIndexes
+                  .get(Number(page.constraintPageNo))
+                  ?.has(index + 1)
+            )
+          : page.formdrawing,
       };
 
       return nextPage;
