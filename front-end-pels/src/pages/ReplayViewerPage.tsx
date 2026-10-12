@@ -348,6 +348,45 @@ function normalizeAttachment(
   };
 }
 
+/**
+ * 사진은 attachment.id, 입회점은 Android가 모든 이력(9~12)에 공통으로 전송하는
+ * inspPointSeq를 식별자로 사용한다. 초기 JSON의 id와 이벤트의 INSP_POINT_SEQ가
+ * 다를 수 있으므로 auditorbox를 id로 비교하면 삭제 이벤트가 초기 항목에 적용되지 않는다.
+ */
+function getReplayAttachmentKey(attachment: any): string | null {
+  if (!attachment) return null;
+
+  if (String(attachment.type ?? '').toLowerCase() === 'auditorbox') {
+    const directSequence =
+      attachment.inspPointSeq ??
+      attachment.INSP_POINT_SEQ ??
+      attachment.insp_point_seq;
+
+    if (directSequence != null && String(directSequence).trim() !== '') {
+      return `auditorbox:${String(directSequence)}`;
+    }
+
+    const snapshot = attachment.text ?? attachment.CMP_JSON_DCR;
+    if (typeof snapshot === 'string' && snapshot.trim() !== '') {
+      try {
+        const parsed = JSON.parse(snapshot);
+        const sequence =
+          parsed?.inspPointSeq ??
+          parsed?.INSP_POINT_SEQ ??
+          parsed?.insp_point_seq;
+        if (sequence != null && String(sequence).trim() !== '') {
+          return `auditorbox:${String(sequence)}`;
+        }
+      } catch {
+        // 손상된 스냅샷은 기존 attachment.id로 처리한다.
+      }
+    }
+  }
+
+  if (attachment.id == null || String(attachment.id).trim() === '') return null;
+  return String(attachment.id);
+}
+
 function buildBasePagesFromPdf(
   pdfPageCount: number,
   parsedPages: any[] = []
@@ -558,11 +597,11 @@ export function ReplayViewerPage() {
           pageKey,
           new Map(
             initialAttachments
-              .filter((attachment: ReplayAttachmentItem) => attachment?.id != null)
               .map((attachment: ReplayAttachmentItem) => [
-                String(attachment.id),
+                getReplayAttachmentKey(attachment),
                 attachment,
-              ])
+              ] as const)
+              .filter(([key]) => key != null) as Array<[string, ReplayAttachmentItem]>
           )
         );
       });
@@ -688,26 +727,28 @@ export function ReplayViewerPage() {
           continue;
         }
 
-        if (eventName === 'addAttachment' && attachment?.id) {
+        const attachmentKey = getReplayAttachmentKey(attachment);
+
+        if (eventName === 'addAttachment' && attachment && attachmentKey) {
           const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
           if (!targetPage) continue;
 
           const pageKey = String(targetPage.pageKey);
           const pageMap = ensureAttachmentPageByKey(pageKey);
-          pageMap.set(attachment.id, attachment);
+          pageMap.set(attachmentKey, attachment);
           continue;
         }
 
-        if (eventName === 'changeLayoutAttachment' && attachment?.id) {
+        if (eventName === 'changeLayoutAttachment' && attachment && attachmentKey) {
           const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
           if (!targetPage) continue;
 
           const pageKey = String(targetPage.pageKey);
           const pageMap = ensureAttachmentPageByKey(pageKey);
-          const prev = pageMap.get(attachment.id);
+          const prev = pageMap.get(attachmentKey);
 
           if (prev) {
-            pageMap.set(attachment.id, {
+            pageMap.set(attachmentKey, {
               ...prev,
               x: attachment.x ?? prev.x,
               y: attachment.y ?? prev.y,
@@ -715,43 +756,43 @@ export function ReplayViewerPage() {
               height: attachment.height ?? prev.height,
             });
           } else {
-            pageMap.set(attachment.id, attachment);
+            pageMap.set(attachmentKey, attachment);
           }
 
           continue;
         }
 
-        if (eventName === 'changeUrlAttachment' && attachment?.id) {
+        if (eventName === 'changeUrlAttachment' && attachment && attachmentKey) {
           const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
           if (!targetPage) continue;
 
           const pageKey = String(targetPage.pageKey);
           const pageMap = ensureAttachmentPageByKey(pageKey);
-          const prev = pageMap.get(attachment.id);
+          const prev = pageMap.get(attachmentKey);
 
           if (prev) {
-            pageMap.set(attachment.id, {
+            pageMap.set(attachmentKey, {
               ...prev,
               fileUrl: attachment.fileUrl ?? prev.fileUrl,
               url: attachment.url ?? prev.url,
               imagePath: attachment.imagePath ?? prev.imagePath,
             });
           } else {
-            pageMap.set(attachment.id, attachment);
+            pageMap.set(attachmentKey, attachment);
           }
 
           continue;
         }
 
-        if (eventName === 'changeValueAttachment' && attachment?.id) {
+        if (eventName === 'changeValueAttachment' && attachment && attachmentKey) {
           const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
           if (!targetPage) continue;
 
           const pageKey = String(targetPage.pageKey);
           const pageMap = ensureAttachmentPageByKey(pageKey);
-          const prev = pageMap.get(attachment.id);
+          const prev = pageMap.get(attachmentKey);
 
-          pageMap.set(attachment.id, {
+          pageMap.set(attachmentKey, {
             ...prev,
             ...attachment,
             type: 'auditorbox',
@@ -760,13 +801,13 @@ export function ReplayViewerPage() {
           continue;
         }
 
-        if (eventName === 'removeAttachment' && attachment?.id) {
+        if (eventName === 'removeAttachment' && attachment && attachmentKey) {
           const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
           if (!targetPage) continue;
 
           const pageKey = String(targetPage.pageKey);
           const pageMap = ensureAttachmentPageByKey(pageKey);
-          pageMap.delete(attachment.id);
+          pageMap.delete(attachmentKey);
           continue;
         }
       }
@@ -960,7 +1001,11 @@ export function ReplayViewerPage() {
                 ? {
                     id: String(
                       isInspPointEvent
-                        ? row.INSP_POINT_SEQ ?? attachmentSource?.id ?? ''
+                        ? row.INSP_POINT_SEQ ??
+                          attachmentSource?.INSP_POINT_SEQ ??
+                          attachmentSource?.inspPointSeq ??
+                          attachmentSource?.id ??
+                          ''
                         : row.IMG_ID ?? row.IMAGE_SEQ ?? attachmentSource?.id ?? ''
                     ),
                     type: isInspPointEvent
@@ -969,6 +1014,12 @@ export function ReplayViewerPage() {
                     text: isInspPointEvent
                       ? attachmentSource?.CMP_JSON_DCR ?? row.CMP_JSON_DCR ?? null
                       : attachmentSource?.text ?? null,
+                    inspPointSeq: isInspPointEvent
+                      ? row.INSP_POINT_SEQ ??
+                        attachmentSource?.INSP_POINT_SEQ ??
+                        attachmentSource?.inspPointSeq ??
+                        null
+                      : null,
 
                     x:
                       attachmentSource?.x ??
