@@ -63,10 +63,10 @@ function hasRuleData(ruleJson: any) {
       const hasComponents =
         Array.isArray(p.components) && p.components.length > 0;
 
-      const hasDialog = Array.isArray(p.dialoges) && p.dialoges.length > 0;
+      const hasDialog = Array.isArray(p.dialog) && p.dialog.length > 0;
 
       const hasQrDialog =
-        Array.isArray(p.qr_dialoges) && p.qr_dialoges.length > 0;
+        Array.isArray(p.qr_dialog) && p.qr_dialog.length > 0;
 
       const hasSections = Array.isArray(p.sections) && p.sections.length > 0;
 
@@ -90,6 +90,87 @@ function hasRuleData(ruleJson: any) {
     Array.isArray(ruleJson?.treelist) && ruleJson.treelist.length > 0;
 
   return hasPageRule || hasTreeList;
+}
+
+function moveRulesWithComponents(constraintDoc: any, moves: any[]) {
+  if (!constraintDoc || !Array.isArray(constraintDoc.pages) || !moves.length) {
+    return constraintDoc;
+  }
+
+  const pages = constraintDoc.pages.map((page: any) => ({
+    ...page,
+    components: [...(page.components ?? [])],
+    dialog: page.dialog ? [...page.dialog] : page.dialog,
+    qr_dialog: page.qr_dialog ? [...page.qr_dialog] : page.qr_dialog,
+  }));
+
+  const grouped = new Map<string, any[]>();
+  moves
+    .filter(
+      move => move.type !== 'movetopage' && move.type !== 'formdrawing'
+    )
+    .forEach(move => {
+      if (move.fromConstraintPageNo === move.toConstraintPageNo) return;
+      const key = `${move.fromConstraintPageNo}:${move.toConstraintPageNo}`;
+      grouped.set(key, [...(grouped.get(key) ?? []), move]);
+    });
+
+  grouped.forEach(group => {
+    const { fromConstraintPageNo, toConstraintPageNo } = group[0];
+    const movedIds = new Set(group.map(move => String(move.id)));
+    const sourceIndex = pages.findIndex(
+      (page: any) =>
+        Number(page.constraintPageNo) === Number(fromConstraintPageNo)
+    );
+    if (sourceIndex < 0) return;
+
+    let targetIndex = pages.findIndex(
+      (page: any) =>
+        Number(page.constraintPageNo) === Number(toConstraintPageNo)
+    );
+    if (targetIndex < 0) {
+      pages.push({ constraintPageNo: toConstraintPageNo, components: [] });
+      targetIndex = pages.length - 1;
+    }
+
+    const source = pages[sourceIndex];
+    const target = pages[targetIndex];
+    const movingRules = (source.components ?? []).filter((rule: any) =>
+      movedIds.has(String(rule.id))
+    );
+
+    source.components = (source.components ?? []).filter(
+      (rule: any) => !movedIds.has(String(rule.id))
+    );
+    target.components = [
+      ...(target.components ?? []).filter(
+        (rule: any) => !movedIds.has(String(rule.id))
+      ),
+      ...movingRules,
+    ];
+
+    const moveDialogs = (field: 'dialog' | 'qr_dialog') => {
+      const list = Array.isArray(source[field]) ? source[field] : [];
+      const moving = list.filter((dialog: any) => {
+        const controlIds = (dialog.columns ?? []).flatMap((column: any) =>
+          (column.controls ?? []).map((control: any) => String(control.id))
+        );
+        return (
+          controlIds.length > 0 &&
+          controlIds.every((id: string) => movedIds.has(id))
+        );
+      });
+
+      if (moving.length === 0) return;
+      source[field] = list.filter((dialog: any) => !moving.includes(dialog));
+      target[field] = [...(target[field] ?? []), ...moving];
+    };
+
+    moveDialogs('dialog');
+    moveDialogs('qr_dialog');
+  });
+
+  return { ...constraintDoc, pages };
 }
 
 function escapeRegExp(value: string) {
@@ -297,7 +378,7 @@ function cleanupConstraintRulesByDeletedIds(
   const nextPages = (constraintDoc.pages ?? [])
     .map((page: any) => {
       // 현재 페이지 초기화면 해당 page rule 자체 제거
-      // components 외 dialoges, qr_dialoges, sections, movetopage까지 같이 제거
+      // components 외 dialog, qr_dialog, sections, movetopage까지 같이 제거
       if (isTargetClearPage(page)) {
         return null;
       }
@@ -397,8 +478,8 @@ function cleanupConstraintRulesByDeletedIds(
             return hasSomething;
           }),
 
-        dialoges: cleanupDialog(page.dialoges),
-        qr_dialoges: cleanupDialog(page.qr_dialoges),
+        dialog: cleanupDialog(page.dialog),
+        qr_dialog: cleanupDialog(page.qr_dialog),
         sections: cleanupSections(page.sections),
         movetopage: Array.isArray(page.movetopage)
           ? page.movetopage.filter(
@@ -426,10 +507,10 @@ function cleanupConstraintRulesByDeletedIds(
         Array.isArray(page.components) && page.components.length > 0;
 
       const hasDialog =
-        Array.isArray(page.dialoges) && page.dialoges.length > 0;
+        Array.isArray(page.dialog) && page.dialog.length > 0;
 
       const hasQrDialog =
-        Array.isArray(page.qr_dialoges) && page.qr_dialoges.length > 0;
+        Array.isArray(page.qr_dialog) && page.qr_dialog.length > 0;
 
       const hasSections =
         Array.isArray(page.sections) && page.sections.length > 0;
@@ -503,8 +584,8 @@ export function EditorPage() {
         components: Array.isArray(srcPageRule.components)
           ? srcPageRule.components.map(rule => remapComponentRule(rule, idMap))
           : [],
-        dialoges: remapDialog(srcPageRule.dialoges, idMap),
-        qr_dialoges: remapDialog(srcPageRule.qr_dialoges, idMap),
+        dialog: remapDialog(srcPageRule.dialog, idMap),
+        qr_dialog: remapDialog(srcPageRule.qr_dialog, idMap),
       };
 
       const idx = pages.findIndex(
@@ -661,6 +742,12 @@ export function EditorPage() {
   } | null>(null);
 
   const wsRef = useRef<EditorWorkspaceHandle | null>(null);
+  // DB 수신 시 PDF 로드가 끝난 뒤에만 오버레이를 복원한다.
+  // 고정 시간 지연으로 복원하면 PDF가 페이지 상태를 만드는 중 JSON이 다시 pages를 교체할 수 있다.
+  const [pendingOverlayJson, setPendingOverlayJson] = useState<string | null>(
+    null
+  );
+  const isRestoringPendingOverlayRef = useRef(false);
 
   // Header / Footer / Center 높이 측정용
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -767,8 +854,8 @@ export function EditorPage() {
                 remapComponentRule(rule, idMap)
               )
             : [],
-          dialoges: remapDialog(srcPageRule.dialoges, idMap),
-          qr_dialoges: remapDialog(srcPageRule.qr_dialoges, idMap),
+          dialog: remapDialog(srcPageRule.dialog, idMap),
+          qr_dialog: remapDialog(srcPageRule.qr_dialog, idMap),
         };
 
         const idx = pages.findIndex(
@@ -874,15 +961,9 @@ export function EditorPage() {
         setConstraintDoc(decodeRuleExpressions(parsedConsDoc));
       }
 
-      // Overlay (PDF 이후)
+      // Overlay는 PDF 페이지가 준비된 뒤 별도 effect에서 복원한다.
       if (FRM_OVER_JSON) {
-        const overlayFile = new File([FRM_OVER_JSON], 'overlay.json', {
-          type: 'application/json',
-        });
-
-        setTimeout(() => {
-          wsRef.current?.restoreFromJson(overlayFile);
-        }, 300);
+        setPendingOverlayJson(FRM_OVER_JSON);
       }
     };
 
@@ -890,6 +971,27 @@ export function EditorPage() {
       console.error('[Editor][DB] load failed', err);
     });
   }, [FRM_UNQ_KY_VAL, pageInfo.total, sourceMode, setConstraintDoc]);
+
+  useEffect(() => {
+    if (
+      !pendingOverlayJson ||
+      pageInfo.total <= 0 ||
+      isRestoringPendingOverlayRef.current ||
+      !wsRef.current
+    ) {
+      return;
+    }
+
+    isRestoringPendingOverlayRef.current = true;
+    const overlayFile = new File([pendingOverlayJson], 'overlay.json', {
+      type: 'application/json',
+    });
+
+    void wsRef.current.restoreFromJson(overlayFile).finally(() => {
+      isRestoringPendingOverlayRef.current = false;
+      setPendingOverlayJson(null);
+    });
+  }, [pendingOverlayJson, pageInfo.total]);
 
   // ===== 스케일 계산 (V1 방식 + 줌 반영) =====
   const recalcScale = useCallback(() => {
@@ -1061,10 +1163,10 @@ export function EditorPage() {
               Array.isArray(p.formdrawing) && p.formdrawing.length > 0;
 
             const hasDialog =
-              Array.isArray(p.dialoges) && p.dialoges.length > 0;
+              Array.isArray(p.dialog) && p.dialog.length > 0;
 
             const hasQrDialog =
-              Array.isArray(p.qr_dialoges) && p.qr_dialoges.length > 0;
+              Array.isArray(p.qr_dialog) && p.qr_dialog.length > 0;
 
             const hasSections =
               Array.isArray(p.sections) && p.sections.length > 0;
@@ -1868,6 +1970,9 @@ export function EditorPage() {
                 constraints={constraintDoc}
                 onCopyPageResult={handleCopyPageResult}
                 onDeleteOverlayIds={handleDeletedOverlayIds}
+                onOverlayPageMoves={moves => {
+                  setConstraintDoc(prev => moveRulesWithComponents(prev, moves));
+                }}
                 onDoubleClickOverlayId={id => {
                   if (!constraintSelection) return;
 
@@ -2166,8 +2271,8 @@ export function EditorPage() {
                 controls,
               };
 
-              if (target === 'qr_dialoges') {
-                const qrDialog = [...(pageJson.qr_dialoges ?? [])];
+              if (target === 'qr_dialog') {
+                const qrDialog = [...(pageJson.qr_dialog ?? [])];
                 const lastQrDialog = qrDialog.at(-1);
 
                 if (lastQrDialog) {
@@ -2188,10 +2293,10 @@ export function EditorPage() {
                   });
                 }
 
-                pageJson.qr_dialoges = qrDialog;
+                pageJson.qr_dialog = qrDialog;
               } else {
-                pageJson.dialoges = [
-                  ...(pageJson.dialoges ?? []),
+                pageJson.dialog = [
+                  ...(pageJson.dialog ?? []),
                   { columns: [column] },
                 ];
               }
@@ -2382,7 +2487,7 @@ export function EditorPage() {
             );
 
             if (ruleId === '__PAGE_ALL__') {
-              // 컴포넌트 Rule이 없어도 dialoges/qr_dialoges를 입력할 수 있도록
+              // 컴포넌트 Rule이 없어도 dialog/qr_dialog를 입력할 수 있도록
               // 현재 에디터 오버레이를 기준으로 페이지 JSON을 만들어 표시한다.
               // 저장 전 페이지 이동/도면조회도 movetopage/formdrawing에 즉시 반영된다.
               let pageJson = pageRule ?? {

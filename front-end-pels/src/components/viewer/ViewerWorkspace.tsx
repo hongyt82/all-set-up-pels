@@ -17,7 +17,7 @@ import type { ConstraintDoc } from '../../types/constraints';
 import {
   evaluateConstraintRule,
   evaluateRuleExpression,
-  findComponentRules,
+  findComponentRulesAnywhere,
   highlightOverlayStatus,
   applyOverlayRuleStyle,
   getCheckboxGroupIdsFull,
@@ -59,6 +59,7 @@ export interface ViewerWorkspaceProps {
   }) => void;
 
   onOverlaysChange?: (page: number, items: OverlayItem[]) => void;
+  onOverlaysByPageChange?: (items: Record<number, OverlayItem[]>) => void;
 
   onDialogInfoChange?: (info: {
     hasDialog: boolean;
@@ -182,6 +183,10 @@ export const ViewerWorkspace = forwardRef<
   // 현재 페이지용 overlay state
   const [overlays, setOverlays] = useState<OverlayItem[]>([]);
   const pendingSyncRef = useRef<OverlayItem[] | null>(null);
+  const overlaysByPageRef = useRef<Record<number, OverlayItem[]>>({});
+  const pendingAllPagesSyncRef = useRef<Record<number, OverlayItem[]> | null>(
+    null
+  );
 
   // treelist id → overlay id[] 매핑
   const treelistToOverlayIdsRef = useRef<Map<string, string[]>>(new Map());
@@ -664,8 +669,8 @@ export const ViewerWorkspace = forwardRef<
     );
 
     props.onDialogInfoChange?.({
-      hasDialog: !!pageInfo?.dialoges?.length,
-      hasQrDialog: !!pageInfo?.qr_dialoges?.length,
+      hasDialog: !!pageInfo?.dialog?.length,
+      hasQrDialog: !!pageInfo?.qr_dialog?.length,
     });
   }, [currentPage, constraintDoc, logicalPages, props.onDialogInfoChange]);
 
@@ -743,14 +748,12 @@ export const ViewerWorkspace = forwardRef<
 
   const buildConstraintContextFromList = (
     items: OverlayItem[],
-    page: number,
     currentId: string,
     rawValue: any
   ) => {
-    const pageItems = items.filter(o => o.page === page);
     const context: Record<string, any> = {};
 
-    pageItems.forEach(item => {
+    items.forEach(item => {
       const raw =
         String(item.id) === String(currentId) ? rawValue : (item.value ?? '');
 
@@ -818,9 +821,18 @@ export const ViewerWorkspace = forwardRef<
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!overlaysByPage) return;
+    overlaysByPageRef.current = overlaysByPage;
     const list = overlaysByPage[currentPage] ?? [];
     setOverlays(list.map(o => ({ ...o })));
   }, [overlaysByPage, currentPage]);
+
+  useEffect(() => {
+    const next = pendingAllPagesSyncRef.current;
+    if (!next) return;
+
+    pendingAllPagesSyncRef.current = null;
+    props.onOverlaysByPageChange?.(next);
+  }, [overlays, props]);
 
   // ---------------------------------------------------------------------------
   // 내부 state 변경 → 상위 onOverlaysChange 로 sync
@@ -906,7 +918,9 @@ export const ViewerWorkspace = forwardRef<
     id: string
   ) => {
     return (
-      working.find(o => o.page === page && String(o.id) === String(id)) ?? null
+      working.find(o => o.page === page && String(o.id) === String(id)) ??
+      working.find(o => String(o.id) === String(id)) ??
+      null
     );
   };
 
@@ -1091,7 +1105,6 @@ export const ViewerWorkspace = forwardRef<
 
   const runOffsetByModulo = (
     working: OverlayItem[],
-    page: number,
     sourceId: string,
     rawValue: string,
     calc: any
@@ -1122,7 +1135,6 @@ export const ViewerWorkspace = forwardRef<
 
     const context = buildConstraintContextFromList(
       working,
-      page,
       sourceId,
       rawValue
     );
@@ -1320,7 +1332,13 @@ export const ViewerWorkspace = forwardRef<
     if (!constraintDoc) return;
 
     setOverlays(prev => {
-      const working = prev.map(o => ({ ...o }));
+      const byPage = {
+        ...overlaysByPageRef.current,
+        [currentPage]: prev,
+      };
+      const working = Object.values(byPage)
+        .flat()
+        .map(o => ({ ...o }));
       const queue: Array<{ uid: string; rawValue: string }> = [
         { uid: startUid, rawValue: startRawValue },
       ];
@@ -1344,20 +1362,12 @@ export const ViewerWorkspace = forwardRef<
         const ov = findOverlayByUid(uid);
         if (!ov) continue;
 
-        const constraintPageNo = getConstraintPageNoByOverlay(ov);
-        if (!constraintPageNo) continue;
-
-        const rules = findComponentRules(
-          constraintDoc,
-          constraintPageNo,
-          ov.id
-        );
+        const rules = findComponentRulesAnywhere(constraintDoc, ov.id);
         if (rules.length === 0) continue;
 
         for (const rule of rules) {
           const context = buildConstraintContextFromList(
             working,
-            ov.page,
             ov.id,
             rawValue
           );
@@ -1411,7 +1421,6 @@ export const ViewerWorkspace = forwardRef<
               } else if (calc.type === 'offsetByModulo') {
                 const r = runOffsetByModulo(
                   working,
-                  ov.page,
                   ov.id,
                   rawValue,
                   calc
@@ -1548,8 +1557,18 @@ export const ViewerWorkspace = forwardRef<
         }
       }
 
-      pendingSyncRef.current = working;
-      return working;
+      const nextByPage = working.reduce<Record<number, OverlayItem[]>>(
+        (result, item) => {
+          (result[item.page] ??= []).push(item);
+          return result;
+        },
+        {}
+      );
+
+      overlaysByPageRef.current = nextByPage;
+      pendingAllPagesSyncRef.current = nextByPage;
+      pendingSyncRef.current = nextByPage[currentPage] ?? [];
+      return nextByPage[currentPage] ?? [];
     });
   };
 
@@ -2073,6 +2092,10 @@ export const ViewerWorkspace = forwardRef<
     margin: 0,
     fontSize: 12,
     boxSizing: 'border-box',
+    position: 'absolute',
+    inset: 0,
+    display: 'block',
+    lineHeight: 'normal',
     outline: 'none',
     textAlign: 'left',
   };
@@ -2080,6 +2103,11 @@ export const ViewerWorkspace = forwardRef<
   const viewerOpaqueInputCenterStyle: React.CSSProperties = {
     ...viewerOpaqueInputLeftStyle,
     textAlign: 'center',
+  };
+
+  const viewerTransparentTextInputStyle: React.CSSProperties = {
+    ...viewerOpaqueInputLeftStyle,
+      background: 'rgba(255, 255, 255, 0.4)',
   };
 
   const viewerOpaqueButtonStyle: React.CSSProperties = {
@@ -2209,7 +2237,7 @@ export const ViewerWorkspace = forwardRef<
                 e.preventDefault();
               }
             }}
-            style={viewerOpaqueInputLeftStyle}
+            style={viewerTransparentTextInputStyle}
           />
         );
 
@@ -2236,7 +2264,7 @@ export const ViewerWorkspace = forwardRef<
             onChange={e => setText(ov.uid, e.currentTarget.value)}
             rows={3}
             style={{
-              ...viewerOpaqueInputLeftStyle,
+              ...viewerTransparentTextInputStyle,
               resize: 'none',
             }}
           />

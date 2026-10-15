@@ -286,6 +286,20 @@ export async function exportFilledPdf(params: {
         case 'textbox_multiline':
         case 'textbox_name':
         case 'textbox_verifier': {
+          // 뷰어에서는 원본 PDF 바탕이 보이도록 투명하게 표시하지만,
+          // 저장 PDF의 단일/멀티라인 텍스트 영역은 원본 내용을 가린다.
+          if (c.type === 'textbox' || c.type === 'textbox_multiline') {
+            // 원본 PDF의 표 테두리까지 가리지 않도록 입력 영역보다 안쪽에 그린다.
+            const inset = 1.5;
+            page.drawRectangle({
+              x: x + inset,
+              y: y + inset,
+              width: Math.max(0, w - inset * 2),
+              height: Math.max(0, h - inset * 2),
+              color: rgb(1, 1, 1),
+            });
+          }
+
           const txt = String(c.value ?? '');
           if (!txt) break;
 

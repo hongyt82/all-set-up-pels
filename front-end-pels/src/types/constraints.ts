@@ -49,7 +49,7 @@ export interface ConstraintPageRule {
   formdrawing?: FormDrawingRuleArea[];
   sections?: any[];
 
-  dialoges?: {
+  dialog?: {
     sectionId?: string;
     title?: string;
     columns: {
@@ -66,7 +66,7 @@ export interface ConstraintPageRule {
     }[];
   }[];
 
-  qr_dialoges?: {
+  qr_dialog?: {
     sectionId?: string;
     title: string;
     qr: string;

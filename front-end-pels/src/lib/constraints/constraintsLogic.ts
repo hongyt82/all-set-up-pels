@@ -189,6 +189,24 @@ export function findComponentRules(
   return [...exactRules, ...wildcardRules];
 }
 
+/** 문서 전체에서 컴포넌트 ID에 연결된 Rule을 찾는다. */
+export function findComponentRulesAnywhere(
+  constraintDoc: ConstraintDoc | null | undefined,
+  id: string
+): any[] {
+  if (!constraintDoc?.pages) return [];
+
+  return constraintDoc.pages.flatMap(page => {
+    const components = page.components ?? [];
+    return components.filter(
+      component =>
+        String(component.id) === String(id) ||
+        (String(component.id) !== String(id) &&
+          isRuleIdMatched(String(component.id), String(id)))
+    );
+  });
+}
+
 function cssColor(value?: string): string | undefined {
   if (!value) return undefined;
 

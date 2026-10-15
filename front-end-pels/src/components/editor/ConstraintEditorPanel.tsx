@@ -22,7 +22,7 @@ interface ConstraintEditorPanelProps {
   onRevert: () => void;
   onSave: () => void;
   onAppendSelectedIds: () => void;
-  onAddSelectedToDialog?: (target: 'dialoges' | 'qr_dialoges') => void;
+  onAddSelectedToDialog?: (target: 'dialog' | 'qr_dialog') => void;
   onDelete?: () => void;
   helperText?: string;
   onChangeHelperText?: (value: string) => void;
@@ -432,14 +432,14 @@ export const ConstraintEditorPanel: React.FC<ConstraintEditorPanelProps> = ({
                 <button
                   type="button"
                   className="px-2 py-0.5 rounded bg-cyan-800 hover:bg-cyan-700 text-[11px]"
-                  onClick={() => onAddSelectedToDialog('dialoges')}
+                  onClick={() => onAddSelectedToDialog('dialog')}
                 >
                   선택 → 다이얼로그
                 </button>
                 <button
                   type="button"
                   className="px-2 py-0.5 rounded bg-violet-800 hover:bg-violet-700 text-[11px]"
-                  onClick={() => onAddSelectedToDialog('qr_dialoges')}
+                  onClick={() => onAddSelectedToDialog('qr_dialog')}
                 >
                   선택 → QR 다이얼로그
                 </button>

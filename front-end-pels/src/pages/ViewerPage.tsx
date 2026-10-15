@@ -179,7 +179,7 @@ export function ViewerPage() {
       p => Number(p.constraintPageNo) === Number(constraintPageNo)
     );
 
-    const dialog = rulePage?.dialoges;
+    const dialog = rulePage?.dialog;
     if (!dialog || dialog.length === 0) return;
 
     setActiveDialog({
@@ -199,7 +199,7 @@ export function ViewerPage() {
     let targetPdfPageNo: number | null = null;
 
     for (const pg of constraintDoc.pages) {
-      const list = pg.qr_dialoges ?? [];
+      const list = pg.qr_dialog ?? [];
 
       for (const qr of list) {
         if (qr.qr === barcode) {
@@ -220,7 +220,7 @@ export function ViewerPage() {
     if (!targetLogicalPage) return;
 
     const first = matches[0];
-    const dialog = first.dialoges ?? first.dialogs ?? matches;
+    const dialog = first.dialog ?? matches;
 
     setActiveDialog({
       kind: 'qr',
@@ -244,7 +244,7 @@ export function ViewerPage() {
       p => Number(p.constraintPageNo) === Number(constraintPageNo)
     );
 
-    const qrs: any[] = rulePage?.qr_dialoges ?? [];
+    const qrs: any[] = rulePage?.qr_dialog ?? [];
     if (qrs.length === 0) return;
 
     const first = qrs[0];
@@ -254,7 +254,7 @@ export function ViewerPage() {
       ? getLogicalPageByConstraintPageNo(targetPdfPageNo)
       : logicalPage;
 
-    const dialog = first.dialoges ?? first.dialogs ?? qrs;
+    const dialog = first.dialog ?? first.dialogs ?? qrs;
 
     setActiveDialog({
       kind: 'qr',
@@ -931,8 +931,8 @@ export function ViewerPage() {
       p => Number(p.constraintPageNo) === Number(constraintPageNo)
     );
 
-    setHasDialogInPage(!!rulePage?.dialoges?.length);
-    setHasQrInPage(!!rulePage?.qr_dialoges?.length);
+    setHasDialogInPage(!!rulePage?.dialog?.length);
+    setHasQrInPage(!!rulePage?.qr_dialog?.length);
   }, [pageInfo.currentPage, constraintDoc, getConstraintPageNoByLogicalPage]);
 
   // ==========================
@@ -1450,6 +1450,7 @@ export function ViewerPage() {
                     [page]: items,
                   }))
                 }
+                onOverlaysByPageChange={items => setOverlaysByPage(items)}
                 constraints={constraintDoc}
                 onQrDetected={showQrCodeInCurrentPage}
                 onDialogInfoChange={({ hasDialog, hasQrDialog }) => {

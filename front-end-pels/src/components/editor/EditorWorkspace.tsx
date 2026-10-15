@@ -329,6 +329,16 @@ export interface EditorWorkspaceProps {
     toConstraintPageNo: number;
     idMap: Record<string, string>;
   }) => void;
+
+  // Ctrl + 방향키 이동으로 페이지 경계를 넘긴 컴포넌트의 Rule 소속 동기화
+  onOverlayPageMoves?: (
+    moves: Array<{
+      id: string;
+      type: OverlayType;
+      fromConstraintPageNo: number;
+      toConstraintPageNo: number;
+    }>
+  ) => void;
 }
 
 export interface EditorWorkspaceHandle {
@@ -425,10 +435,10 @@ export interface EditorWorkspaceHandle {
 // EditorWorkspace
 // ============================================================================
 
-export const EditorWorkspace = forwardRef<
-  EditorWorkspaceHandle,
-  EditorWorkspaceProps
->((props, ref) => {
+export const EditorWorkspace = forwardRef(function EditorWorkspace(
+  props: EditorWorkspaceProps,
+  ref: React.ForwardedRef<EditorWorkspaceHandle>,
+) {
   const {
     constraints,
     onPageInfoChange,
@@ -494,6 +504,14 @@ export const EditorWorkspace = forwardRef<
   const undoStack = useRef<OverlayItem[][]>([]);
   const redoStack = useRef<OverlayItem[][]>([]);
   const dragUndoSnapshotRef = useRef<OverlayItem[] | null>(null);
+  const pendingOverlayPageMovesRef = useRef<
+    Array<{
+      id: string;
+      type: OverlayType;
+      fromConstraintPageNo: number;
+      toConstraintPageNo: number;
+    }>
+  >([]);
   const MAX_HISTORY = 100;
 
   // ===== Selection / 마퀴 / 그룹 드래그 =====
@@ -534,6 +552,14 @@ export const EditorWorkspace = forwardRef<
   useEffect(() => {
     props.onPdfLoadedChange?.(!!pdfDoc);
   }, [pdfDoc]);
+
+  useEffect(() => {
+    const moves = pendingOverlayPageMovesRef.current;
+    if (moves.length === 0) return;
+
+    pendingOverlayPageMovesRef.current = [];
+    props.onOverlayPageMoves?.(moves);
+  }, [overlays, props]);
 
   useEffect(() => {
     if (!docId) return;
@@ -1041,8 +1067,8 @@ export const EditorWorkspace = forwardRef<
     height: number
   ) => {
     pushUndoSnapshot();
-    setOverlays(prev =>
-      prev.map(o => {
+    setOverlays(prev => {
+      const next = prev.map(o => {
         if (o.uid !== uid) return o;
         const { w: PW, h: PH } = getPageSize(o.pageId);
 
@@ -1061,8 +1087,9 @@ export const EditorWorkspace = forwardRef<
           wPct: finalW,
           hPct: finalH,
         };
-      })
-    );
+      });
+      return next;
+    });
   };
 
   const applyPos = (uid: string, left: number, top: number) => {
@@ -1409,8 +1436,8 @@ export const EditorWorkspace = forwardRef<
       const nextPage: any = {
         constraintPageNo,
         components: [],
-        dialoges: [],
-        qr_dialoges: [],
+        dialog: [],
+        qr_dialog: [],
         sections: [],
       };
 
@@ -1436,10 +1463,10 @@ export const EditorWorkspace = forwardRef<
         const hasComponents =
           Array.isArray(p.components) && p.components.length > 0;
 
-        const hasDialog = Array.isArray(p.dialoges) && p.dialoges.length > 0;
+        const hasDialog = Array.isArray(p.dialog) && p.dialog.length > 0;
 
         const hasQrDialog =
-          Array.isArray(p.qr_dialoges) && p.qr_dialoges.length > 0;
+          Array.isArray(p.qr_dialog) && p.qr_dialog.length > 0;
 
         const hasSections = Array.isArray(p.sections) && p.sections.length > 0;
 
@@ -1599,6 +1626,39 @@ export const EditorWorkspace = forwardRef<
         width: pg.width || FIXED_W,
         height: pg.height || FIXED_H,
       }));
+
+      // 새 PDF가 기존 템플릿보다 페이지가 많아진 경우, JSON에 없는 실제
+      // PDF 페이지도 빈 템플릿 페이지로 유지한다. 기존 페이지의 컴포넌트와
+      // Rule 연결(constraintPageNo)은 건드리지 않는다.
+      const pdfPageCount = pdfDoc?.numPages ?? 0;
+      const mappedPdfPages = new Set(
+        newPages
+          .map(page => Number(page.pdfPageNo))
+          .filter(pageNo => Number.isFinite(pageNo) && pageNo > 0)
+      );
+      let nextLogicalPageIndex = Math.max(
+        0,
+        ...newPages.map(page => Number(page.logicalPageIndex) || 0)
+      );
+      let nextConstraintPageNo = Math.max(
+        0,
+        ...newPages.map(page => Number(page.constraintPageNo) || 0)
+      );
+
+      for (let pdfPageNo = 1; pdfPageNo <= pdfPageCount; pdfPageNo += 1) {
+        if (mappedPdfPages.has(pdfPageNo)) continue;
+
+        nextLogicalPageIndex += 1;
+        nextConstraintPageNo += 1;
+        newPages.push({
+          pageId: safeUUID(),
+          logicalPageIndex: nextLogicalPageIndex,
+          pdfPageNo,
+          constraintPageNo: nextConstraintPageNo,
+          width: FIXED_W,
+          height: FIXED_H,
+        });
+      }
 
       setPages(newPages);
 
@@ -1794,8 +1854,15 @@ export const EditorWorkspace = forwardRef<
 
     // const totalPages = getTotalPagesInternal();
 
-    setOverlays(prev =>
-      prev.map(o => {
+    setOverlays(prev => {
+      const moved: Array<{
+        id: string;
+        type: OverlayType;
+        fromConstraintPageNo: number;
+        toConstraintPageNo: number;
+      }> = [];
+
+      const next = prev.map(o => {
         const curIdx = pages.findIndex(p => p.pageId === currentPageId);
         const ovIdx = pages.findIndex(p => p.pageId === o.pageId);
 
@@ -1827,14 +1894,32 @@ export const EditorWorkspace = forwardRef<
         const maxY = 1 - o.hPct;
         y = Math.max(0, Math.min(maxY, y));
 
+        const nextPageId = pages[pageIdx].pageId;
+        if (nextPageId !== o.pageId) {
+          const fromPage = pages.find(p => p.pageId === o.pageId);
+          const toPage = pages[pageIdx];
+
+          if (fromPage && toPage) {
+            moved.push({
+              id: String(o.id),
+              type: o.type,
+              fromConstraintPageNo: fromPage.constraintPageNo,
+              toConstraintPageNo: toPage.constraintPageNo,
+            });
+          }
+        }
+
         return {
           ...o,
-          pageId: pages[pageIdx].pageId,
+          pageId: nextPageId,
           xPct: x,
           yPct: y,
         };
-      })
-    );
+      });
+
+      pendingOverlayPageMovesRef.current = moved;
+      return next;
+    });
   };
 
   // ===== 글리프 기반 체크박스 자동 감지 =====
