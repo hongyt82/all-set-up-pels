@@ -1917,7 +1917,14 @@ export const EditorWorkspace = forwardRef(function EditorWorkspace(
         };
       });
 
-      pendingOverlayPageMovesRef.current = moved;
+      // Ctrl 드래그는 pointermove마다 연속 실행된다. 페이지를 넘긴 직후의
+      // 이동 정보를 다음 호출의 빈 배열로 덮어쓰지 않도록 누적한다.
+      if (moved.length > 0) {
+        pendingOverlayPageMovesRef.current = [
+          ...pendingOverlayPageMovesRef.current,
+          ...moved,
+        ];
+      }
       return next;
     });
   };

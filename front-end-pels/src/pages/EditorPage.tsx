@@ -97,6 +97,29 @@ function moveRulesWithComponents(constraintDoc: any, moves: any[]) {
     return constraintDoc;
   }
 
+  const getDialogControlIds = (dialog: any): string[] => {
+    const ids = new Set<string>();
+    const addControls = (controls: any) => {
+      if (!Array.isArray(controls)) return;
+      controls.forEach(control => {
+        if (control?.id != null) ids.add(String(control.id));
+      });
+    };
+    const addColumns = (columns: any) => {
+      if (!Array.isArray(columns)) return;
+      columns.forEach(column => addControls(column?.controls));
+    };
+
+    addControls(dialog?.controls);
+    addColumns(dialog?.columns);
+    (dialog?.tabs ?? []).forEach((tab: any) => {
+      addControls(tab?.controls);
+      addColumns(tab?.columns);
+    });
+
+    return [...ids];
+  };
+
   const pages = constraintDoc.pages.map((page: any) => ({
     ...page,
     components: [...(page.components ?? [])],
@@ -152,12 +175,10 @@ function moveRulesWithComponents(constraintDoc: any, moves: any[]) {
     const moveDialogs = (field: 'dialog' | 'qr_dialog') => {
       const list = Array.isArray(source[field]) ? source[field] : [];
       const moving = list.filter((dialog: any) => {
-        const controlIds = (dialog.columns ?? []).flatMap((column: any) =>
-          (column.controls ?? []).map((control: any) => String(control.id))
-        );
+        const controlIds = getDialogControlIds(dialog);
         return (
           controlIds.length > 0 &&
-          controlIds.every((id: string) => movedIds.has(id))
+          controlIds.some((id: string) => movedIds.has(id))
         );
       });
 
