@@ -47,6 +47,7 @@ type ReplayEventItem = {
   PDF_PAGE_CNT: number | null;
   STRK_SEQ: number | null;
   IMAGE_SEQ: number | null;
+  INSP_POINT_SEQ?: string | number | null;
   USER_ID: string;
   USER_FNM?: string | null;
   CHKPR_BLNG_JBPS_NM?: string | null;
@@ -348,6 +349,19 @@ function normalizeAttachment(
   };
 }
 
+// 입회점 상세 테이블의 CMP_JSON_DCR은 attachment 전체 스냅샷이다.
+// ViewerWorkspace는 text에 입회점 입력값만, 위치·크기는 최상위 필드로 받는다.
+function parseInspPointSnapshot(value: unknown): Record<string, any> | null {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+
+  try {
+    const parsed = JSON.parse(value);
+    return isRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 사진은 attachment.id, 입회점은 Android가 모든 이력(9~12)에 공통으로 전송하는
  * inspPointSeq를 식별자로 사용한다. 초기 JSON의 id와 이벤트의 INSP_POINT_SEQ가
@@ -385,6 +399,31 @@ function getReplayAttachmentKey(attachment: any): string | null {
 
   if (attachment.id == null || String(attachment.id).trim() === '') return null;
   return String(attachment.id);
+}
+
+// 입회점 삭제(11)는 INSP_POINT 객체 없이 INSP_POINT_SEQ만 전달될 수 있다.
+// 따라서 이벤트 자체의 번호를 우선 사용해야 삭제 이력이 리플레이에 반영된다.
+function getReplayEventAttachmentKey(
+  event: ReplayEventItem,
+  attachment: any
+): string | null {
+  const eventType = Number(event.EVENT_TYP_SQNO);
+
+  if (eventType >= 9 && eventType <= 12) {
+    const sequence =
+      event.INSP_POINT_SEQ ??
+      (event as any).inspPointSeq ??
+      (event as any).insp_point_seq ??
+      attachment?.inspPointSeq ??
+      attachment?.INSP_POINT_SEQ ??
+      attachment?.insp_point_seq;
+
+    if (sequence != null && String(sequence).trim() !== '') {
+      return `auditorbox:${String(sequence)}`;
+    }
+  }
+
+  return getReplayAttachmentKey(attachment);
 }
 
 function buildBasePagesFromPdf(
@@ -727,7 +766,7 @@ export function ReplayViewerPage() {
           continue;
         }
 
-        const attachmentKey = getReplayAttachmentKey(attachment);
+        const attachmentKey = getReplayEventAttachmentKey(ev, attachment);
 
         if (eventName === 'addAttachment' && attachment && attachmentKey) {
           const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
@@ -801,7 +840,7 @@ export function ReplayViewerPage() {
           continue;
         }
 
-        if (eventName === 'removeAttachment' && attachment && attachmentKey) {
+        if (eventName === 'removeAttachment' && attachmentKey) {
           const targetPage = findPageByCurrentPage(nextLogicalPages, pageNo);
           if (!targetPage) continue;
 
@@ -995,6 +1034,13 @@ export function ReplayViewerPage() {
             const attachmentSource = isInspPointEvent
               ? row.INSP_POINT ?? null
               : row.IMAGE ?? null;
+            const inspPointSnapshot = isInspPointEvent
+              ? parseInspPointSnapshot(
+                  attachmentSource?.CMP_JSON_DCR ?? row.CMP_JSON_DCR
+                )
+              : null;
+
+            const inspPointText = inspPointSnapshot?.text;
 
             const mappedImage =
               isImageEvent || isInspPointEvent
@@ -1004,6 +1050,7 @@ export function ReplayViewerPage() {
                         ? row.INSP_POINT_SEQ ??
                           attachmentSource?.INSP_POINT_SEQ ??
                           attachmentSource?.inspPointSeq ??
+                          inspPointSnapshot?.id ??
                           attachmentSource?.id ??
                           ''
                         : row.IMG_ID ?? row.IMAGE_SEQ ?? attachmentSource?.id ?? ''
@@ -1012,12 +1059,17 @@ export function ReplayViewerPage() {
                       ? 'auditorbox'
                       : attachmentSource?.type ?? 'camera',
                     text: isInspPointEvent
-                      ? attachmentSource?.CMP_JSON_DCR ?? row.CMP_JSON_DCR ?? null
+                      ? typeof inspPointText === 'string'
+                        ? inspPointText
+                        : inspPointText != null
+                          ? JSON.stringify(inspPointText)
+                          : ''
                       : attachmentSource?.text ?? null,
                     inspPointSeq: isInspPointEvent
                       ? row.INSP_POINT_SEQ ??
                         attachmentSource?.INSP_POINT_SEQ ??
                         attachmentSource?.inspPointSeq ??
+                        inspPointSnapshot?.inspPointSeq ??
                         null
                       : null,
 
@@ -1025,6 +1077,7 @@ export function ReplayViewerPage() {
                       attachmentSource?.x ??
                       attachmentSource?.posX ??
                       attachmentSource?.X_CRDNT ??
+                      inspPointSnapshot?.x ??
                       row.IMG_X_CRDNT ??
                       0,
 
@@ -1032,18 +1085,21 @@ export function ReplayViewerPage() {
                       attachmentSource?.y ??
                       attachmentSource?.posY ??
                       attachmentSource?.Y_CRDNT ??
+                      inspPointSnapshot?.y ??
                       row.IMG_Y_CRDNT ??
                       0,
 
                     width:
                       attachmentSource?.width ??
                       attachmentSource?.WDTH_NUMV ??
+                      inspPointSnapshot?.width ??
                       row.WDTH_NUMV ??
                       0,
 
                     height:
                       attachmentSource?.height ??
                       attachmentSource?.HDTH_NUMV ??
+                      inspPointSnapshot?.height ??
                       row.HDTH_NUMV ??
                       0,
 
