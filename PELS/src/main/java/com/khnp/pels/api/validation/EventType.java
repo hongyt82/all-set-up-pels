@@ -16,6 +16,10 @@ import java.util.stream.Collectors;
  *  - 6: 사진추가/변경
  *  - 7: 사진사이즈변경
  *  - 8: 사진삭제
+ *  - 9: 입회점추가
+ *  - 10: 입회점이동
+ *  - 11: 입회점삭제
+ *  - 12: 입회점수정
  * @author KwangYong
  * @since 2006-02-06
  */
@@ -27,7 +31,11 @@ public enum EventType {
     IMAGE_CONTAINER_ADD(5),
     IMAGE_UPSERT(6),
     IMAGE_RESIZE(7),
-    IMAGE_DELETE(8);
+    IMAGE_DELETE(8),
+    INSP_POINT_ADD(9),
+    INSP_POINT_MOVE(10),
+    INSP_POINT_DELETE(11),
+    INSP_POINT_UPDATE(12);
 
     private final int value;
     EventType(int value) {

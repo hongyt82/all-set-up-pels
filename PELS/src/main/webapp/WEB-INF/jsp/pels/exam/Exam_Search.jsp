@@ -295,7 +295,7 @@
 			<!-- #section:basics/page-button -->
 			<div class="PageButtonGroup" style="text-align:right">
 				<a class="btn-m" href="javascript:fnSelectedPdfDownload();"><span class="Text">선택 PDF 저장</span></a>
-				<a class="btn-m" href="javascript:fnExamReplay();"><span class="Text">리플레이</span></a>
+				<a class="btn-m" href="javascript:fnExamReplay();"><span class="Text">리플레이1</span></a>
 				<!-- 
 				<a class="btn-m" href="javascript:fnExamInput();"><span class="Text">등록</span></a>
                 <a class="btn-m" href="javascript:fnExamDetail();"><span class="Text">수정</span></a>

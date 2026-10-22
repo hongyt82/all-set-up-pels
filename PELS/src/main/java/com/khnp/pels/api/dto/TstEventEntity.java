@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TstEventEntity {
     private Long eventSno;                //이벤트일련번호
-    private Integer eventTypSqno;         //이벤트유형(1,2,3,4,5,6,7,8)
+    private Integer eventTypSqno;         //이벤트유형(1~12: 페이지/스트로크/사진/입회점)
     private String pwplId;                //발전소아이디
     private Long chckSno;                 //시험고유키값
     private Integer pageCnt;              //페이지번호

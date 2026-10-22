@@ -15,6 +15,7 @@
         <result property="pdfPageCnt" column="PDF_PAGE_CNT"/>
         <result property="strkSeq" column="STRK_SEQ"/>
         <result property="imgId" column="IMG_ID"/>
+        <result property="inspPointSeq" column="INSP_POINT_SEQ"/>
         <result property="userId" column="USER_ID"/>
         <result property="userFnm" column="USER_FNM"/>
         <result property="chkprBlngJbpsNm" column="CHKPR_BLNG_JBPS_NM"/>
@@ -34,6 +35,13 @@
             <result property="hdthNumv" column="HGHT_SZ"/>
             <result property="urlInfo" column="URL_INFO"/>
         </association>
+
+        <association property="inspPoint" javaType="com.khnp.pels.api.dto.TstEventInspPointMeta">
+            <result property="xCrdnt" column="INSP_POINT_X_CRDNT"/>
+            <result property="yCrdnt" column="INSP_POINT_Y_CRDNT"/>
+            <result property="cmpJsonDcr" column="CMP_JSON_DCR"/>
+        </association>
+
     </resultMap>
 
     <!-- 수행기록 이벤트 목록 조회 -->
@@ -48,6 +56,7 @@
                T1.PDF_PAGE_CNT,
                CASE WHEN T1.EVENT_SQNO IN (3,4) THEN T1.EVENT_TRGT_ID ELSE NULL END AS STRK_SEQ,
                CASE WHEN T1.EVENT_SQNO IN (5,6,7,8) THEN T1.EVENT_TRGT_ID ELSE NULL END AS IMG_ID,
+               CASE WHEN T1.EVENT_SQNO IN (9,10,11,12) THEN T1.EVENT_TRGT_ID ELSE NULL END AS INSP_POINT_SEQ,
                T1.USER_ID,
                T1.USER_FNM,
                CASE WHEN T1.CHKPR_BLNG_JBPS_NM IS NOT NULL THEN T1.CHKPR_BLNG_JBPS_NM ELSE T1.USER_FNM END AS CHKPR_BLNG_JBPS_NM,
@@ -60,12 +69,17 @@
                T3.Y_CRDNT AS IMG_Y_CRDNT,
                T3.WDTH_SZ,
                T3.HGHT_SZ,
-               T3.URL_INFO
+               T3.URL_INFO,
+               T4.X_CRDNT AS INSP_POINT_X_CRDNT,
+               T4.Y_CRDNT AS INSP_POINT_Y_CRDNT,
+               T4.CMP_JSON_DCR
           FROM GE_PL_EVENT01_M T1
                LEFT JOIN GE_PL_EVENT01_D T2
                          ON T1.EVENT_SNO = T2.EVENT_SNO
                LEFT JOIN GE_PL_EVENT02_D T3
                          ON T1.EVENT_SNO = T3.EVENT_SNO
+               LEFT JOIN GE_PL_EVENT03_D T4
+                         ON T1.EVENT_SNO = T4.EVENT_CRTE_NO
          WHERE T1.PWPL_ID = #{pwplId, jdbcType=VARCHAR}
            AND T1.CHCK_SNO = #{chckSno, jdbcType=BIGINT}
          ORDER

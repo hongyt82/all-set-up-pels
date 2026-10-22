@@ -65,6 +65,11 @@ public class TstEventMeta {
     @Size(max=50)
     private String imgId;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("INSP_POINT_SEQ")
+    @Size(max=50)
+    private String inspPointSeq;
+
     @JsonProperty("USER_ID")
     @NotBlank
     @Size(max=20)
@@ -93,5 +98,10 @@ public class TstEventMeta {
     @JsonProperty("IMAGE")
     @Valid
     private TstEventImageMeta image;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("INSP_POINT")
+    @Valid
+    private TstEventInspPointMeta inspPoint;
 
 }
